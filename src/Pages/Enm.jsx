@@ -7,7 +7,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Outlet } from 'react-router-dom';
 
-function CheckIn() {
+function Enm() {
     const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("precheck");
@@ -23,10 +23,10 @@ function CheckIn() {
     });
 
 
-    const { data: enmData } = useQuery({
-        queryKey: ["enms"],
-        queryFn: enms
-    });
+      const { data:enmData } = useQuery({
+             queryKey: ["enms"],
+             queryFn: enms
+         });
 
 
     const { mutate: uploadFileMutation, isLoading: isUploading } = useMutation({
@@ -70,47 +70,32 @@ function CheckIn() {
     };
 
     const handleUpload = () => {
-        console.log("Upload button clicked for:", selectedFilter, uploadedFiles1, uploadedFiles2);
+        console.log("Upload button clicked for:", selectedFilter);
         setError(null);
 
-        const formData = new FormData();
-
         if (selectedFilter === "precheck" && uploadedFiles1.length > 0) {
-            const precheckformData = new FormData();
             uploadedFiles1.forEach((file) => {
-                formData.append('precheck', file);
+                const formData = new FormData();
+                formData.append('file', file);
+                uploadFileMutation(formData);
             });
-
-            // formData.append("precheck", precheckformData)
-
-
-
-
         } else if (selectedFilter === "postcheck" && uploadedFiles1.length > 0 && uploadedFiles2.length > 0) {
-
-            const precheckformData = new FormData();
             uploadedFiles1.forEach((file) => {
-                formData.append('precheck', file);
-                // uploadFileMutation(formData);
+                const formData = new FormData();
+                formData.append('file', file);
+                uploadFileMutation(formData);
             });
 
-            const postcheckformData = new FormData();
             uploadedFiles2.forEach((file) => {
-                formData.append('postcheck', file);
-                // uploadFileMutation(formData);
+                const formData = new FormData();
+                formData.append('file', file);
+                uploadFileMutation(formData);
             });
-            // formData.append("precheck", precheckformData)
-            // formData.append("postcheck", postcheckformData)
-
-
         } else {
             const errorMessage = "Please select the required file(s) before uploading.";
             console.log(errorMessage);
             setError(errorMessage);
         }
-
-
-        uploadFileMutation(formData);
     };
 
     const handleGenerate = () => {
@@ -197,7 +182,7 @@ function CheckIn() {
                             <FolderSearch className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
-
+                     
                     </div>
 
                     <Button
@@ -250,7 +235,7 @@ function CheckIn() {
         (selectedFilter === "postcheck" && (uploadedFiles1.length === 0 || uploadedFiles2.length === 0));
 
     const totalFiles = uploadedFiles1.length + uploadedFiles2.length;
-
+    
     const uniqueCircles = useMemo(() => {
         if (!enmData) return [];
         const circles = enmData.map(item => item.circle);
@@ -263,7 +248,7 @@ function CheckIn() {
                 <Outlet />
 
                 <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
-
+                 
                     <div className="flex justify-center mb-6">
                         <div className="bg-gray-100 dark:bg-neutral-700 p-1.5 rounded-lg inline-flex">
                             <label className="flex items-center">
@@ -276,13 +261,13 @@ function CheckIn() {
                                     className="sr-only"
                                 />
                                 <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${selectedFilter === "precheck"
-                                    ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
-                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                        ? 'bg-white dark:bg-neutral-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
+                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                                     }`}>
-                                    Pre Check
+                                    ENM Command
                                 </div>
                             </label>
-                            <label className="flex items-center">
+                            {/* <label className="flex items-center">
                                 <input
                                     type="radio"
                                     name="userFilter"
@@ -292,22 +277,22 @@ function CheckIn() {
                                     className="sr-only"
                                 />
                                 <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${selectedFilter === "postcheck"
-                                    ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
-                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                        ? 'bg-white dark:bg-neutral-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
+                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                                     }`}>
                                     Post Check
                                 </div>
-                            </label>
+                            </label> */}
                         </div>
                     </div>
 
-                    <input ref={fileInputRef1} type="file" accept=".txt" onChange={(e) => handleFileUpload(e, 1)} multiple className="hidden" />
-                    <input ref={fileInputRef2} type="file" accept=".txt" onChange={(e) => handleFileUpload(e, 2)} multiple className="hidden" />
+                    <input ref={fileInputRef1} type="file" accept=".csv,.xlsx,.xls" onChange={(e) => handleFileUpload(e, 1)} multiple className="hidden" />
+                    <input ref={fileInputRef2} type="file" accept=".csv,.xlsx,.xls" onChange={(e) => handleFileUpload(e, 2)} multiple className="hidden" />
 
                     <div className="grid gap-6 mb-8">
                         {selectedFilter === "precheck" && (
                             <FileUploadCard
-                                title="PreCheck Log Files"
+                                title="Import Site List"
                                 files={uploadedFiles1}
                                 fileNumber={1}
                                 onBrowse={() => handleBrowseClick(fileInputRef1)}
@@ -361,7 +346,7 @@ function CheckIn() {
                                 className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-lg shadow-sm transition-all duration-200"
                             >
                                 <FileText className="h-4 w-4 mr-2" />
-                                Generate Report
+                                Generate Command
                             </Button>
                         </div>
 
@@ -373,37 +358,37 @@ function CheckIn() {
                     </div>
                 </div>
 
-                <div className="flex w-full flex-col md:flex-row justify-end gap-4">
-                    {/* First Select Box */}
-                    <div className="w-fit flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Select Circle:
-                        </label>
-                        <select
-                            className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
-                        >
-                            <option value="">Choose Circle</option>
-                            {uniqueCircles.map((circle) => (
-                                <option key={circle} value={circle}>{circle}</option>
-                            ))}
-                        </select>
-                    </div>
+<div className="flex w-full flex-col md:flex-row justify-end gap-4">
+  {/* First Select Box */}
+  <div className="w-fit flex items-center gap-2">
+    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      Select Circle:
+    </label>
+    <select
+      className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+    >
+      <option value="">Choose Circle</option>
+      {uniqueCircles.map((circle) => (
+        <option key={circle} value={circle}>{circle}</option>
+      ))}
+    </select>
+  </div>
 
-                    {/* Second Select Box */}
-                    <div className="w-fit flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Select ENM:
-                        </label>
-                        <select
-                            className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
-                        >
-                            <option value="">Choose ENM</option>
-                            {enmData?.map((item) => (
-                                <option key={item.id} value={item.enm}>{item.enm}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+  {/* Second Select Box */}
+  <div className="w-fit flex items-center gap-2">
+    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      Select ENM:
+    </label>
+    <select
+      className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+    >
+      <option value="">Choose ENM</option>
+      {enmData?.map((item) => (
+        <option key={item.id} value={item.enm}>{item.enm}</option>
+      ))}
+    </select>
+  </div>
+</div>
 
 
 
@@ -418,4 +403,4 @@ function CheckIn() {
     );
 }
 
-export default CheckIn;
+export default Enm;
