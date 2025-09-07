@@ -10,7 +10,7 @@ import uuid
 from werkzeug.utils import secure_filename
 from app.parsinglogic import parse_text_to_excel,Calculator
 import mimetypes
-
+import pandas as pd
 
 cal = Calculator()
 
@@ -201,6 +201,56 @@ def upload_file():
         "parsed_excel_filename": file_path_final
     }), 201
 
+
+
+
+
+@api.route("/uploadenm", methods=["POST"])
+@token_required
+def uploadenm_file():
+    if "file" not in request.files:
+        return jsonify({"message": "No file part"}), 400
+    
+    print(request.files.get("file"))
+    
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"message": "No selected file"}), 400
+
+
+    original_filename = secure_filename(file.filename)
+    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+    file_con = {
+        "original_filename":original_filename,
+        "unique_filename":unique_filename
+    }
+    file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"enm"), unique_filename)
+    file.save(file_path)
+    
+    
+    print(file_path,"file_pathfile_pathfile_path")
+    read_df = pd.read_excel(file_path)
+    
+    
+    print(read_df,"read_dfread_dfread_df")
+    
+    file_doc = {
+        "user_id": request.user.get("sub"),
+        "original_filename": original_filename,
+        "filename": unique_filename
+    }
+
+    result = mongo.db.files.insert_one(file_doc)
+    
+    return jsonify({
+        "message": "File uploaded successfully",
+        "file_id": str(result.inserted_id),
+        "filename": unique_filename,
+        "parsed_excel_filename": file_path_final
+    }), 201
+    
+    
+    
 @api.route("/user-files", methods=["GET"])
 @token_required
 def get_user_files():
@@ -297,10 +347,10 @@ def create_enm():
 
     result = mongo.db.enms.insert_one(enm)
 
+    print(enm,"enmenmenm")
     return jsonify({
         "message": "ENM created successfully",
-        "id": str(result.inserted_id),
-        "enm": enm
+        "id": str(result.inserted_id)
     }), 201
     
 @api.route("/enms/<enm_id>", methods=["DELETE"])
