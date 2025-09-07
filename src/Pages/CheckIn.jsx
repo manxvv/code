@@ -63,32 +63,47 @@ function CheckIn() {
     };
 
     const handleUpload = () => {
-        console.log("Upload button clicked for:", selectedFilter);
+        console.log("Upload button clicked for:", selectedFilter,uploadedFiles1,uploadedFiles2);
         setError(null);
 
+        const formData = new FormData();
+
         if (selectedFilter === "precheck" && uploadedFiles1.length > 0) {
+            const precheckformData = new FormData();
             uploadedFiles1.forEach((file) => {
-                const formData = new FormData();
-                formData.append('file', file);
-                uploadFileMutation(formData);
-            });
-        } else if (selectedFilter === "postcheck" && uploadedFiles1.length > 0 && uploadedFiles2.length > 0) {
-            uploadedFiles1.forEach((file) => {
-                const formData = new FormData();
-                formData.append('file', file);
-                uploadFileMutation(formData);
+                formData.append('precheck', file);
             });
 
-            uploadedFiles2.forEach((file) => {
-                const formData = new FormData();
-                formData.append('file', file);
-                uploadFileMutation(formData);
+            // formData.append("precheck", precheckformData)
+
+
+
+
+        } else if (selectedFilter === "postcheck" && uploadedFiles1.length > 0 && uploadedFiles2.length > 0) {
+
+            const precheckformData = new FormData();
+            uploadedFiles1.forEach((file) => {
+                formData.append('precheck', file);
+                // uploadFileMutation(formData);
             });
+
+            const postcheckformData = new FormData();
+            uploadedFiles2.forEach((file) => {
+                formData.append('postcheck', file);
+                // uploadFileMutation(formData);
+            });
+            // formData.append("precheck", precheckformData)
+            // formData.append("postcheck", postcheckformData)
+
+
         } else {
             const errorMessage = "Please select the required file(s) before uploading.";
             console.log(errorMessage);
             setError(errorMessage);
         }
+
+
+        uploadFileMutation(formData);
     };
 
     const handleGenerate = () => {
@@ -168,7 +183,7 @@ function CheckIn() {
 
     const FileUploadCard = ({ title, files, fileNumber, onBrowse, onRemove, className = "" }) => {
         const isEmpty = files.length === 0;
-        
+
         return (
             <div className={`bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 transition-all duration-200 hover:border-blue-400 dark:hover:border-blue-500 ${className}`}>
                 <div className="text-center">
@@ -181,8 +196,8 @@ function CheckIn() {
                             Drag and drop files or click to browse
                         </p>
                     </div>
-                    
-                    <Button 
+
+                    <Button
                         onClick={onBrowse}
                         className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2.5 rounded-lg shadow-sm transition-all duration-200"
                     >
@@ -255,11 +270,10 @@ function CheckIn() {
                                     onChange={(e) => setSelectedFilter(e.target.value)}
                                     className="sr-only"
                                 />
-                                <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${
-                                    selectedFilter === "precheck" 
-                                        ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium' 
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                                }`}>
+                                <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${selectedFilter === "precheck"
+                                    ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
+                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                    }`}>
                                     Pre Check
                                 </div>
                             </label>
@@ -272,19 +286,18 @@ function CheckIn() {
                                     onChange={(e) => setSelectedFilter(e.target.value)}
                                     className="sr-only"
                                 />
-                                <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${
-                                    selectedFilter === "postcheck" 
-                                        ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium' 
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                                }`}>
+                                <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${selectedFilter === "postcheck"
+                                    ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
+                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                    }`}>
                                     Post Check
                                 </div>
                             </label>
                         </div>
                     </div>
 
-                    <input ref={fileInputRef1} type="file" accept=".csv,.xlsx,.xls" onChange={(e) => handleFileUpload(e, 1)} multiple className="hidden" />
-                    <input ref={fileInputRef2} type="file" accept=".csv,.xlsx,.xls" onChange={(e) => handleFileUpload(e, 2)} multiple className="hidden" />
+                    <input ref={fileInputRef1} type="file" accept=".txt" onChange={(e) => handleFileUpload(e, 1)} multiple className="hidden" />
+                    <input ref={fileInputRef2} type="file" accept=".txt" onChange={(e) => handleFileUpload(e, 2)} multiple className="hidden" />
 
                     <div className="grid gap-6 mb-8">
                         {selectedFilter === "precheck" && (
@@ -320,9 +333,9 @@ function CheckIn() {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <div className="flex items-center gap-3">
-                            <Button 
-                                onClick={handleUpload} 
-                                disabled={isUploadDisabled || isUploading} 
+                            <Button
+                                onClick={handleUpload}
+                                disabled={isUploadDisabled || isUploading}
                                 className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-8 py-3 rounded-lg shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isUploading ? (
@@ -338,8 +351,8 @@ function CheckIn() {
                                 )}
                             </Button>
 
-                            <Button 
-                                onClick={handleGenerate} 
+                            <Button
+                                onClick={handleGenerate}
                                 className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-lg shadow-sm transition-all duration-200"
                             >
                                 <FileText className="h-4 w-4 mr-2" />
@@ -355,12 +368,12 @@ function CheckIn() {
                     </div>
                 </div>
 
-                    <DataTableDemo
-                        data={data || []}
-                        columns={columns}
-                        globalFilter={globalFilter}
-                        setGlobalFilter={setGlobalFilter}
-                    />
+                <DataTableDemo
+                    data={data || []}
+                    columns={columns}
+                    globalFilter={globalFilter}
+                    setGlobalFilter={setGlobalFilter}
+                />
             </div>
         </div>
     );
