@@ -62,6 +62,11 @@ export const uploadPdf = async (data) => {
   const response = await http.post(`${Urls.upload}`, data);
   return response.data;
 };
+
+export const uploadenm = async (data) => {
+  const response = await http.post(`${Urls.uploadenm}`, data);
+  return response.data;
+};
 export const Urlfiles = async (data) => {
   const response = await http.get(`${Urls.urlfiles}`, data);
   return response.data;

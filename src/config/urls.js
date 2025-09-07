@@ -23,8 +23,9 @@ const Urls = {
     files:"/files",
     dashboard:"/dashboard",
     analyze:"/analyze",
-    upload:"/upload",
     urlfiles:"/user-files",
+    upload:"/upload",
+    uploadenm:"/uploadenm",
     emns:"/enms",
     circles:"/circles"
     

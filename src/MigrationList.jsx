@@ -12,33 +12,38 @@ function MigrationList() {
     const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
 
-    const {data} = useQuery({
-        queryKey:["users"],
+    const { data } = useQuery({
+        queryKey: ["users"],
         queryFn: getUsers
     })
 
     let handleDelete
- const handleEdit = (user) => {
+    const handleEdit = (user) => {
         reset(userData);
         setEditingUserId(user?._id);
         setIsModalOpen(true);
-    };const columns = [
-  {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => row.getValue("name"),
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => row.getValue("email"),
-  },
-  {
-    accessorKey: "role",
-    header: "Role",
-    cell: ({ row }) => row.getValue("role"),
-  },
-     {
+    }; const columns = [
+        {
+            accessorKey: "name",
+            header: "Circle",
+            cell: ({ row }) => row.getValue("name"),
+        },
+        {
+            accessorKey: "email",
+            header: "ENM",
+            cell: ({ row }) => row.getValue("email"),
+        },
+        {
+            accessorKey: "role",
+            header: "Site Id",
+            cell: ({ row }) => row.getValue("role"),
+        },
+        {
+            accessorKey: "role",
+            header: "Node Id",
+            cell: ({ row }) => row.getValue("role"),
+        },
+        {
             id: "actions",
             header: "Actions",
             cell: ({ row }) => {
@@ -68,7 +73,7 @@ function MigrationList() {
             enableHiding: false,
         }
 
-];
+    ];
 
 
     return (
@@ -87,12 +92,12 @@ function MigrationList() {
                                 onChange={(event) => setGlobalFilter(event.target.value)}
                                 className="w-full sm:max-w-sm"
                             />
-                          
+
                         </div>
                     </div>
 
                     <DataTableDemo
-                        data = {[]}
+                        data={[]}
                         columns={columns}
                         globalFilter={globalFilter}
                         setGlobalFilter={setGlobalFilter}

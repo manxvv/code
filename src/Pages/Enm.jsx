@@ -1,6 +1,6 @@
 import { DataTableDemo } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
-import { enms, getUsers, uploadPdf, Urlfiles } from '@/lib/api';
+import { enms, getUsers, uploadenm, uploadPdf, Urlfiles } from '@/lib/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
 import React, { useState, useRef, useMemo } from 'react';
@@ -30,7 +30,7 @@ function Enm() {
 
 
     const { mutate: uploadFileMutation, isLoading: isUploading } = useMutation({
-        mutationFn: (formData) => uploadPdf(formData),
+        mutationFn: (formData) => uploadenm(formData),
         onSuccess: (res) => {
             console.log("File uploaded successfully:", res);
             queryClient.invalidateQueries(['datatable']);
