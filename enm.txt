@@ -1,0 +1,31 @@
+NodeStatus
+
+cmedit get 111; 123; 1234; AAA1; AA1; CC1; CC2
+CmFunction.(syncStatus);
+NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState);
+NRCellDU.(administrativeState,cellState,operationalState,serviceState,ssbDuration,ssbFrequency,ssbOffset,ssbPeriodicity);
+EUtranCellTDD.(administrativeState,cellSubscriptionCapacity,channelBandwidth,earfcn,operationalState);
+EUtranCellFDD.(administrativeState,dlChannelBandwidth,earfcndl,earfcnul,operationalState,ulChannelBandwidth);
+SectorCarrier.(SectorCarrierId,configuredMaxTxPower,operationalState,reservedBy,rfBranchRxRef,rfBranchTxRef);
+SectorEquipmentFunction.(administrativeState,operationalState,availableHwOutputPower,reservedBy,rfBranchRef);
+FieldReplaceableUnit.(administrativeState,operationalState,productData);
+TermPointToAmf.(administrativeState,operationalState,defaultAmf,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2,usedIpAddress) --list
+
+
+NodeAlarms
+
+alarm get 111; 123; 1234; AAA1; AA1; CC1; CC2 --list
+
+ScriptLogs
+
+cmedit get 111; 123; 1234; AAA1; AA1; CC1; CC2
+CUCP5qiTable.<w>;QosPriorityMapping.<w>;BWP.<w>;UeMobilityGroupDefinition.<w>;RadioBearerTable.<w>;UeCC.<w>;InactivityProfileUeCfg.<w>;EUtranFreqRelation.<w>;UeGroupSelection.<w>;GtpuSupervisionProfile.<w>;UeBb.<w>;
+Rohc.<w>;UeAdaptiveRlc.<w>;UeMCNrFreqRelProfileUeCfg.<w>;EUtraNetwork.<w>;UeAdaptiveRlcUeCfg.<w>;DrxProfileUeCfg.<w>;SignalingRadioBearer.<w>;EmCall.<w>;UserPlaneProfile.<w>;CUUP5qi.<w>;RrcInactiveProfileUeCfg.<w>;
+GNBDUFunction.<w>;NRCellDU.<w>;Rrc.<w>;AnrFunctionEUtran.<w>;UeMCEUtranFreqRelProfile.<w>;GNBCUUPFunction.<w>;Lm.<w>;InactivityProfile.<w>;UcmCellProfile.<w>;AnrFunction.<w>;McfbCellProfileUeCfg.<w>;EUtranFrequency.<w>;
+UeGroupSelectionProfile.<w>;UserPlaneProfileUeCfg.<w>;SrHandlingUeCfg.<w>;Rach.<w>;RachUeCfg.<w>;DrbRlc.<w>;Mcpc.<w>;UeServiceGroupDefinition.<w>;GNBCUCPFunction.<w>;NRCellCU.<w>;RrcInactiveProfile.<w>;UeBbProfile.<w>;
+SystemFunctions.<w>;McpcPCellEUtranFreqRelProfileUeCfg.<w>;TrafficSteering.<w>;DcDlCfg.<w>;AnrFunctionNR.<w>;DU5qiTable.<w>;DynPowerOpt.<w>;Mcfb.<w>;PriorityDomainMapping.<w>;McfbCellProfile.<w>;GtpuSupervision.<w>;
+TermPointToAmf.<w>;ManagedElement.<w>;BWPSetUeCfg.<w>;McpcPCellEUtranFreqRelProfile.<w>;McpcPCellProfileUeCfg.<w>;RadioLinkControl.<w>;EndpointResource.<w>;DU5qi.<w>;AnrFunctionEUtranUeCfg.<w>;SecurityHandling.<w>;
+McpcPCellProfile.<w>;SctpEndpoint.<w>;UeMC.<w>;DrbRlcUeCfg.<w>;UeMCCellProfile.<w>;Paging.<w>;BWPSet.<w>;DrxProfile.<w>;BWPSetCfg.<w>;SrHandling.<w>;CUCP5qi.<w>;UcmNrFreqRelProfile.<w>;CUUP5qiTable.<w>;TrStSaEUtranFreqRelProfile.<w>;
+FeatureKey.<w>;UeCovMeas.<w>;UcmCellProfileUeCfg.<w>;UeMCEUtranFreqRelProfileUeCfg.<w>;PrefUeGroupSelectionProfile.<w>;UeBbProfileUeCfg.<w>;Transport.<w>;RohcUeCfg.<w>;
+UeMCNrFreqRelProfile.<w>;TrStSaEUtranFreqRelProfileUeCfg.<w>;LocalSctpEndpoint.<w>;
+ENodeBFunction.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;UePolicyOptimization.<w>;ReportConfigB1NR.<w>;GUtranFreqRelation.<w> --list
