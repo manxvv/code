@@ -1,6 +1,7 @@
 import { DataTableDemo } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
-import { enms, getUsers, uploadenm, uploadPdf, Urlfiles } from '@/lib/api';
+import Urls from '@/config/urls';
+import { enms, getUsers, uploadenm, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
 import React, { useState, useRef, useMemo } from 'react';
@@ -19,14 +20,14 @@ function Enm() {
 
     const { data } = useQuery({
         queryKey: ["files"],
-        queryFn: Urlfiles
+        queryFn: Urlenmmfiles
     });
 
 
-      const { data:enmData } = useQuery({
-             queryKey: ["enms"],
-             queryFn: enms
-         });
+    const { data: enmData } = useQuery({
+        queryKey: ["enms"],
+        queryFn: enms
+    });
 
 
     const { mutate: uploadFileMutation, isLoading: isUploading } = useMutation({
@@ -120,26 +121,26 @@ function Enm() {
             cell: ({ row }) => row.getValue("activity_type"),
         },
         {
-            accessorKey: "username",
+            accessorKey: "userresult",
             header: "USERNAME",
-            cell: ({ row }) => row.getValue("username"),
+            cell: ({ row }) => {
+                return row.getValue("userresult")["full_name"] + " < " + row.getValue("userresult")["email"] + " > "
+                return row.getValue("userresult")
+            },
         },
         {
-            accessorKey: "timestamp",
-            header: "TIMESTAMP",
-            cell: ({ row }) => row.getValue("timestamp"),
-        },
-        {
-            accessorKey: "download_url",
+            accessorKey: "enm_file_name",
             header: "DOWNLOAD",
             cell: ({ row }) => {
+
                 const file = row.original;
                 const token = useSelector((state) => state.auth.access_token);
 
+                console.log(file, "enm_file_nameenm_file_nameenm_file_name")
                 return (
                     <Button
                         onClick={() =>
-                            downloadFile(file.download_url, token, file.circle + ".zip")
+                            downloadFile(Urls.downloadbaseURL + "/" + file.enm_file_name, token, file.original_filename)
                         }
                     >
                         Download
@@ -162,10 +163,18 @@ function Enm() {
             return;
         }
 
+
+
+
+        let filename_name = url.split("/").pop()
+
+        let filename_new = filename_name.split("\\").pop()
+
+
         const blob = await response.blob();
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
-        link.download = filename;
+        link.download = filename_new;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -182,7 +191,7 @@ function Enm() {
                             <FolderSearch className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
-                     
+
                     </div>
 
                     <Button
@@ -235,7 +244,7 @@ function Enm() {
         (selectedFilter === "postcheck" && (uploadedFiles1.length === 0 || uploadedFiles2.length === 0));
 
     const totalFiles = uploadedFiles1.length + uploadedFiles2.length;
-    
+
     const uniqueCircles = useMemo(() => {
         if (!enmData) return [];
         const circles = enmData.map(item => item.circle);
@@ -248,7 +257,7 @@ function Enm() {
                 <Outlet />
 
                 <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
-                 
+
                     <div className="flex justify-center mb-6">
                         <div className="bg-gray-100 dark:bg-neutral-700 p-1.5 rounded-lg inline-flex">
                             <label className="flex items-center">
@@ -261,8 +270,8 @@ function Enm() {
                                     className="sr-only"
                                 />
                                 <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${selectedFilter === "precheck"
-                                        ? 'bg-white dark:bg-neutral-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                    ? 'bg-white dark:bg-neutral-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
+                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                                     }`}>
                                     ENM Command
                                 </div>
@@ -358,37 +367,37 @@ function Enm() {
                     </div>
                 </div>
 
-<div className="flex w-full flex-col md:flex-row justify-end gap-4">
-  {/* First Select Box */}
-  <div className="w-fit flex items-center gap-2">
-    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-      Select Circle:
-    </label>
-    <select
-      className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
-    >
-      <option value="">Choose Circle</option>
-      {uniqueCircles.map((circle) => (
-        <option key={circle} value={circle}>{circle}</option>
-      ))}
-    </select>
-  </div>
+                <div className="flex w-full flex-col md:flex-row justify-end gap-4">
+                    {/* First Select Box */}
+                    <div className="w-fit flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Select Circle:
+                        </label>
+                        <select
+                            className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+                        >
+                            <option value="">Choose Circle</option>
+                            {uniqueCircles.map((circle) => (
+                                <option key={circle} value={circle}>{circle}</option>
+                            ))}
+                        </select>
+                    </div>
 
-  {/* Second Select Box */}
-  <div className="w-fit flex items-center gap-2">
-    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-      Select ENM:
-    </label>
-    <select
-      className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
-    >
-      <option value="">Choose ENM</option>
-      {enmData?.map((item) => (
-        <option key={item.id} value={item.enm}>{item.enm}</option>
-      ))}
-    </select>
-  </div>
-</div>
+                    {/* Second Select Box */}
+                    <div className="w-fit flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Select ENM:
+                        </label>
+                        <select
+                            className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+                        >
+                            <option value="">Choose ENM</option>
+                            {enmData?.map((item) => (
+                                <option key={item.id} value={item.enm}>{item.enm}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
 
 
 

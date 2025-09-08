@@ -1,5 +1,6 @@
 import { DataTableDemo } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
+import Urls from '@/config/urls';
 import { enms, getUsers, uploadPdf, Urlfiles } from '@/lib/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
@@ -132,17 +133,22 @@ function CheckIn() {
         {
             accessorKey: "activity_type",
             header: "ACTIVITY TYPE",
-            cell: ({ row }) => row.getValue("activity_type"),
+            cell: ({ row }) => {
+                return row.getValue("activity_type")
+            },
         },
         {
-            accessorKey: "username",
+            accessorKey: "userresult",
             header: "USERNAME",
-            cell: ({ row }) => row.getValue("username"),
+            cell: ({ row }) => {
+                return row.getValue("userresult")["full_name"] + " < "+row.getValue("userresult")["email"] + " > "
+                return row.getValue("userresult")
+            },
         },
         {
-            accessorKey: "timestamp",
+            accessorKey: "time_stamp",
             header: "TIMESTAMP",
-            cell: ({ row }) => row.getValue("timestamp"),
+            cell: ({ row }) => row.getValue("time_stamp"),
         },
         {
             accessorKey: "download_url",
@@ -154,7 +160,7 @@ function CheckIn() {
                 return (
                     <Button
                         onClick={() =>
-                            downloadFile(file.download_url, token, file.circle + ".zip")
+                            downloadFile(Urls.downloadbaseURL+"/"+file.path, token)
                         }
                     >
                         Download
@@ -177,10 +183,15 @@ function CheckIn() {
             return;
         }
 
+        
+        let filename_name = url.split("/").pop()
+
+        let filename_new = filename_name.split("\\").pop()
+
         const blob = await response.blob();
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
-        link.download = filename;
+        link.download = filename_new;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -319,7 +330,7 @@ function CheckIn() {
                         {selectedFilter === "postcheck" && (
                             <div className="grid md:grid-cols-2 gap-6">
                                 <FileUploadCard
-                                    title="PostCheck Log Files"
+                                    title="PreCheck Log Files"
                                     files={uploadedFiles1}
                                     fileNumber={1}
                                     onBrowse={() => handleBrowseClick(fileInputRef1)}

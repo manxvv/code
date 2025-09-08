@@ -71,6 +71,10 @@ export const Urlfiles = async (data) => {
   const response = await http.get(`${Urls.urlfiles}`, data);
   return response.data;
 };
+export const Urlenmmfiles = async (data) => {
+  const response = await http.get(`${Urls.urlenmfiles}`, data);
+  return response.data;
+};
 
 export const enms = async (data) => {
   const response = await http.get(`${Urls.emns}`, data);
