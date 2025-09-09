@@ -7,6 +7,7 @@ import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } fr
 import React, { useState, useRef, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Outlet } from 'react-router-dom';
+import Swal from 'sweetalert2'
 
 function Enm() {
     const queryClient = useQueryClient();
@@ -38,9 +39,11 @@ function Enm() {
             setUploadedFiles1([]);
             setUploadedFiles2([]);
             setError(null);
+            Swal.fire("", "Successful", "success");
         },
         onError: (error) => {
-            console.error("File upload failed:", error);
+            console.error("File upload failed:", error?.response?.data?.error);
+            Swal.fire("", error?.response?.data?.error || "Something went wrong during file upload", "error");
             setError(error.message || "Something went wrong during file upload");
         },
     });
@@ -111,14 +114,9 @@ function Enm() {
             cell: ({ row }) => row.getValue("circle"),
         },
         {
-            accessorKey: "enm",
+            accessorKey: "enms",
             header: "ENM",
-            cell: ({ row }) => row.getValue("enm"),
-        },
-        {
-            accessorKey: "activity_type",
-            header: "ACTIVITY TYPE",
-            cell: ({ row }) => row.getValue("activity_type"),
+            cell: ({ row }) => row.getValue("enms"),
         },
         {
             accessorKey: "userresult",
@@ -140,7 +138,7 @@ function Enm() {
                 return (
                     <Button
                         onClick={() =>
-                            downloadFile(Urls.downloadbaseURL + "/" + file.enm_file_name, token, file.original_filename)
+                            downloadFile(Urls.downloadbaseURL + "/enm_downloads/" + file.uID, token, file.original_filename)
                         }
                     >
                         Download

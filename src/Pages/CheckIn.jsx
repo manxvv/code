@@ -7,6 +7,7 @@ import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } fr
 import React, { useState, useRef, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Outlet } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 function CheckIn() {
     const queryClient = useQueryClient();
@@ -17,6 +18,7 @@ function CheckIn() {
     const fileInputRef1 = useRef(null);
     const fileInputRef2 = useRef(null);
     const [error, setError] = useState(null);
+    const [upload, setUpload] = useState(false);
 
     const { data } = useQuery({
         queryKey: ["files"],
@@ -31,19 +33,40 @@ function CheckIn() {
 
 
     const { mutate: uploadFileMutation, isLoading: isUploading } = useMutation({
-        mutationFn: (formData) => uploadPdf(formData),
+        mutationFn: async (formData) => {
+            setUpload(true);
+
+            Swal.fire({
+                title: "Processing...",
+                text: "Please wait",
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading(); // shows loader
+                },
+            });
+
+            // return the promise so React Query waits
+            return uploadPdf(formData);
+        },
         onSuccess: (res) => {
+            Swal.close(); // hide loader
             console.log("File uploaded successfully:", res);
-            queryClient.invalidateQueries(['datatable']);
+            queryClient.invalidateQueries(["datatable"]);
             setUploadedFiles1([]);
             setUploadedFiles2([]);
             setError(null);
+            setUpload(false);
+
+            // optional success popup
+            // Swal.fire("Done!", "Your task is finished.", "success");
         },
         onError: (error) => {
             console.error("File upload failed:", error);
             setError(error.message || "Something went wrong during file upload");
+            Swal.close(); // close loader if error happens
         },
     });
+
 
     const handleFileUpload = (event, fileNumber) => {
         const files = Array.from(event.target.files);
@@ -141,7 +164,7 @@ function CheckIn() {
             accessorKey: "userresult",
             header: "USERNAME",
             cell: ({ row }) => {
-                return row.getValue("userresult")["full_name"] + " < "+row.getValue("userresult")["email"] + " > "
+                return row.getValue("userresult")["full_name"] + " < " + row.getValue("userresult")["email"] + " > "
                 return row.getValue("userresult")
             },
         },
@@ -160,7 +183,7 @@ function CheckIn() {
                 return (
                     <Button
                         onClick={() =>
-                            downloadFile(Urls.downloadbaseURL+"/"+file.path, token)
+                            downloadFile(Urls.downloadbaseURL + "/" + file.path, token)
                         }
                     >
                         Download
@@ -183,7 +206,7 @@ function CheckIn() {
             return;
         }
 
-        
+
         let filename_name = url.split("/").pop()
 
         let filename_new = filename_name.split("\\").pop()

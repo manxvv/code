@@ -9,6 +9,7 @@ import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom';
 import Modal from './Modal';
 import { useForm } from 'react-hook-form';
+import Swal from 'sweetalert2';
 
 function Admin() {
     const queryClient = useQueryClient();
@@ -29,10 +30,16 @@ console.log(selectedEnmId,"fdff");
     const { mutate } = useMutation({
         mutationFn: createEnms,
         onSuccess: () => {
+            
+            Swal.fire("", "Successful", "success");
             queryClient.invalidateQueries(["enms"]); 
             setIsModalOpen(false);
         },
         onError: (error) => {
+
+            Swal.fire("", error?.response?.data?.message || "Error", "error");
+            // setError(error.message || "Something went wrong during file upload");
+
             console.error("Error creating ENM:", error);
         }
     });
