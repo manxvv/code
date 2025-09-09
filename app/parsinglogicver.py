@@ -471,7 +471,11 @@ class Calculator:
         filtered_data = merged
         filtered_data["status"] = np.where(
             filtered_data["_merge"] == "both", 
-            "Status Changes", 
+            np.where(
+                filtered_data["operationalState_pre"] != filtered_data["operationalState_post"], 
+                "Status Changes", 
+                "No Status Changes"
+            ),
             np.where(
                 filtered_data["_merge"] == "left_only", 
                 "Missing in post check", 
@@ -521,10 +525,27 @@ class Calculator:
         # print(self.file_parsed)
         
         
-        df = pd.read_excel(file_parsed, sheet_name="CellStatus")
-        amfdf = pd.read_excel(file_parsed, sheet_name="TermPointToAmf")
-        syncStatus_data = pd.read_excel(self.file_parsed, sheet_name="CmFunction")
+        all_sheets = pd.read_excel(file_parsed, sheet_name=None)
+        list_of_sheet_name = list(all_sheets.keys())
+        print(list_of_sheet_name,"pd.read_excel(file_parsed)")
+        df = pd.DataFrame([])
+        amfdf = pd.DataFrame([])
+        syncStatus_data = pd.DataFrame([])
+        
+        print(df,amfdf,syncStatus_data,"syncStatus_datasyncStatus_datasyncStatus_datasyncStatus_data")
 
+        if("CellStatus" in list_of_sheet_name):
+            df = pd.read_excel(file_parsed, sheet_name="CellStatus")
+            
+            
+        
+        if("TermPointToAmf" in list_of_sheet_name):
+            amfdf = pd.read_excel(file_parsed, sheet_name="TermPointToAmf")
+            
+            
+        if("CmFunction5" in list_of_sheet_name):
+            syncStatus_data = pd.read_excel(self.file_parsed, sheet_name="CmFunction")
+       
 
         # print(amfdf,"amfdfamfdfamfdfamfdf")
         
@@ -612,6 +633,7 @@ class Calculator:
         green  = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")  # red
         gray = PatternFill(start_color="808080", end_color="808080", fill_type="solid")  # gray
         red = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")  # red
+        white = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")  # red
         reddish = PatternFill(start_color="EF6767", end_color="EF6767", fill_type="solid")  # red
         yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
@@ -681,10 +703,15 @@ class Calculator:
                         os_cell.fill = gray
                         as_cell.fill = gray
                         
+                    print(os_cell.value,"amit os_cell.value")
+                    print(as_cell.value,"amit as_cell.value")
                     
                     if(pre_os_col_idx and pre_as_col_idx):
                         pre_os_cell = ws.cell(row=row, column=pre_os_col_idx)
                         pre_as_cell = ws.cell(row=row, column=pre_as_col_idx)
+                        
+                        print(pre_os_cell.value,"amit pre_os_cell.value")
+                        print(pre_as_cell.value,"amit pre_as_cell.value")
                         
                         if pre_os_cell.value == "ENABLED":
                             pre_os_cell.fill = green
@@ -703,6 +730,8 @@ class Calculator:
                     if(post_os_col_idx and post_as_col_idx):
                         post_os_cell = ws.cell(row=row, column=post_os_col_idx)
                         post_as_cell = ws.cell(row=row, column=post_as_col_idx)
+                        print(post_os_cell.value,"amit post_os_cell.value")
+                        print(post_as_cell.value,"amit post_as_cell.value")
                         
                         if post_os_cell.value == "ENABLED":
                             post_os_cell.fill = green
@@ -731,6 +760,9 @@ class Calculator:
                     if status_cell.value == "Status Changes" and operationalState_post_cell.value == "DISABLED":
                         for col in range(1, ws.max_column + 1):
                             ws.cell(row=row, column=col).fill = red
+                    elif status_cell.value == "No Status Changes":
+                        for col in range(1, ws.max_column + 1):
+                            ws.cell(row=row, column=col).fill = white
                             
                     elif status_cell.value == "Missing in post check":
                         for col in range(1, ws.max_column + 1):

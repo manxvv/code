@@ -13,6 +13,12 @@ from app.parsinglogicver import Calculator
 import mimetypes
 import pandas as pd
 
+import os
+import tempfile
+import shutil
+import zipfile
+from typing import List
+
 cal = Calculator()
 
 api = Blueprint("api", __name__)
@@ -20,6 +26,29 @@ api = Blueprint("api", __name__)
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+def create_zip_from_files(file_paths: List[str], zip_filename: str) -> str:
+    
+    temp_dir = tempfile.mkdtemp()
+
+    try:
+        
+        for file_path in file_paths:
+            if os.path.isfile(file_path):
+                shutil.copy(file_path, temp_dir)
+
+        # 2. Create zip file
+        with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, _, files in os.walk(temp_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.basename(file_path)  # just filename inside zip
+                    zipf.write(file_path, arcname)
+
+        return os.path.abspath(zip_filename)
+
+    finally:
+        # 3. Clean up
+        shutil.rmtree(temp_dir)
 
 
 
@@ -338,6 +367,20 @@ def uploadenm_file():
     
     print(request.files.get("file"))
     
+    
+    enm_circle_cursor = mongo.db.enms.find({
+        "user_id":request.user.get("sub")  
+    })
+    
+    
+    enm_circle_list = list(enm_circle_cursor)
+
+    df = pd.DataFrame(enm_circle_list)
+    
+    print(df,"dfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdf")
+    
+    
+    
     file = request.files.get("file")
     if not file:
         return jsonify({"message": "No selected file"}), 400
@@ -358,7 +401,53 @@ def uploadenm_file():
     
     read_df["Node"] = read_df['Node'].apply(str)
     
-    file_text_content = """NodeStatus
+    
+    fileNameList = []
+    
+    enmList = []
+    
+    
+    updf = df[["circle","enm"]]
+    
+    
+    updf["merge_ce"] = updf["circle"]+"_cp_"+updf["enm"]
+    
+    read_df["merge_ce"] = read_df["circle"]+"_cp_"+read_df["ENM"]
+    
+    
+    print(updf,read_df,"updfupdfupdfupdfupdf")
+    read_df_enmmm = set(read_df["merge_ce"].unique())
+    
+    unique_enm = set(updf["merge_ce"].unique())
+
+    # Find which subset ENMs are missing
+    missing_enms = [enm for enm in read_df_enmmm if enm not in unique_enm]
+
+    print("Missing ENMs:", missing_enms)
+
+
+    if(len(missing_enms) > 0):
+        final_enn = ""
+        for oneenm in missing_enms:
+            final_enn=final_enn+" Circle - "+oneenm.split("_cp_")[0]+" & "+"ENM - "+oneenm.split("_cp_")[1]+", "
+        return jsonify({"error": final_enn + " is missing "}), 400
+    
+    
+    for node, group in read_df.groupby("ENM"):
+        
+        
+        print(node,group,"node,groupnode,group")
+        
+        enmList.append(node)
+        
+        nodes_list = group["Node"].to_list()
+    
+    
+    
+    
+    
+        
+        file_text_content = """NodeStatus
 
 cmedit get NodeId1;NodeId2
 CmFunction.(syncStatus);
@@ -389,28 +478,36 @@ McpcPCellProfile.<w>;SctpEndpoint.<w>;UeMC.<w>;DrbRlcUeCfg.<w>;UeMCCellProfile.<
 FeatureKey.<w>;UeCovMeas.<w>;UcmCellProfileUeCfg.<w>;UeMCEUtranFreqRelProfileUeCfg.<w>;PrefUeGroupSelectionProfile.<w>;UeBbProfileUeCfg.<w>;Transport.<w>;RohcUeCfg.<w>;
 UeMCNrFreqRelProfile.<w>;TrStSaEUtranFreqRelProfileUeCfg.<w>;LocalSctpEndpoint.<w>;
 ENodeBFunction.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;UePolicyOptimization.<w>;ReportConfigB1NR.<w>;GUtranFreqRelation.<w> --list"""
-    
-    nodes_list = read_df["Node"].to_list()
-    
-    
-    
+        
+        
+        
 
-    print(nodes_list,"; ".join(nodes_list),"nodes_listnodes_listnodes_list")
-    final_text = file_text_content.replace("NodeId1;NodeId2","; ".join(nodes_list))
-    
-    print(final_text,"final_textfinal_textfinal_text")
-    
-    ffnme = os.path.join("downloads","enm_"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + ".txt")
+        print(nodes_list,"; ".join(nodes_list),"nodes_listnodes_listnodes_list")
+        final_text = file_text_content.replace("NodeId1;NodeId2",";".join(nodes_list)+" ")
         
-    with open(os.path.join(os.getcwd(),ffnme),"w+") as file:
+        print(final_text,"final_textfinal_textfinal_text")
         
-        file.write(final_text)
+        # ffnme = os.path.join("downloads",node+"_Command_"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S")+"_"+uuid.uuid4().hex+ ".txt")
+        ffnme = os.path.join("downloads",node+"_Command_"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + ".txt")
+            
+        with open(os.path.join(os.getcwd(),ffnme),"w+") as file:
+            
+            file.write(final_text)
+    
+    
+        fileNameList.append(ffnme)
+        
+        
+    circle_list = read_df["circle"].unique().tolist()
+    enm_list = read_df["ENM"].unique().tolist()
     
     file_doc = {
         "user_id": request.user.get("sub"),
         "original_filename": original_filename,
         "filename": unique_filename,
-        "enm_file_name": ffnme
+        "enm_file_name": ",".join(fileNameList),
+        "enms": "/".join(enm_list),
+        "circle":"/".join(circle_list)
     }
 
     result = mongo.db.enmfiles.insert_one(file_doc)
@@ -569,7 +666,35 @@ def download_file(file_id):
         final_file,
         as_attachment=True
     ) 
+    
     return send_from_directory("downloads", download_name, as_attachment=True)
+
+
+@api.route("/enm_downloads/<file_id>", methods=["GET"])
+# @token_required
+def enm_download_file(file_id):
+    
+    
+    print(file_id,"file_idfile_idfile_id")
+    
+    enm_listt = mongo.db.enmfiles.find_one({
+        "_id": ObjectId(file_id)
+    })
+    
+    print(enm_listt["enm_file_name"],"enm_listtenm_listtenm_listt")
+    
+    enm_zip_file = []
+    for enmfilei in enm_listt["enm_file_name"].split(","):
+        
+        enm_zip_file.append(os.path.join(os.getcwd(),enmfilei))
+    
+
+    zip_path = create_zip_from_files(enm_zip_file, os.path.join("downloads","enm_output.zip"))
+    print("ZIP created at:", zip_path)
+    return send_file(
+        zip_path,
+        as_attachment=True
+    ) 
 
 @api.route("/circles", methods=["POST"])
 @token_required
@@ -602,12 +727,12 @@ def create_enm():
 
     # Validate required fields
     if not data or "enm" not in data or "circle" not in data:
-        return jsonify({"message": "Invalid input, 'enm' and 'circle' are required"}), 400
+        return jsonify({"message": "Invalid input, 'ENM' and 'Circle' are required"}), 400
 
     # Check if the combination already exists
     existing = mongo.db.enms.find_one({"enm": data["enm"], "circle": data["circle"]})
     if existing:
-        return jsonify({"message": "ENM with this 'enm' and 'circle' already exists"}), 400
+        return jsonify({"message": "ENM with this 'ENM' and 'Circle' already exists"}), 400
 
     enm = {
         "user_id": request.user.get("sub"),
