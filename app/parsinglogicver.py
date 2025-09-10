@@ -79,8 +79,11 @@ class Calculator:
     
     def amf_count_states(self, celltype, df, status):
         if(len(df) > 0):
+            print(df)
                 
-            subset = df["NodeId"] == celltype
+            subset = df[df["NodeId"] == celltype]
+            print(subset)
+                
             enabled = (subset["operationalState"] == "ENABLED").sum()
             disabled = (subset["operationalState"] == "DISABLED").sum()
             
