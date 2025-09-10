@@ -318,11 +318,16 @@ def upload_file():
     if(len(precheck_files) > 0):
         clc.rearrangecol(pre_file)
         clc.coloring_formatting(pre_file)
+        clc.re_arrange_node_status(pre_file)
     
     if(len(postcheck_files) > 0):
         clc.rearrangecol(post_file)
         clc.coloring_formatting(post_file)
-
+    
+    
+        # clc.re_arrange_node_status(post_file)
+    
+    
     
     
     tss  = datetime.now().strftime("%d-%m-%Y %H:%M:%S")

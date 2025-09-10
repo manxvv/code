@@ -5,6 +5,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import json
 
+from openpyxl.styles import Alignment
 import pandas as pd
 from io import StringIO
 import os
@@ -59,7 +60,7 @@ class Calculator:
         color = "lightgreen" if "ENABLED" in str(val) else "white"
         return f"background-color: {color}"
 
-    def count_states(self, df, celltype):
+    def count_states(self, df, celltype,status):
         
         subset = df[df["CellType"] == celltype]
         # print("subset",subset,"subsetsubsetsubset")
@@ -69,21 +70,29 @@ class Calculator:
         if(enabled+disabled == 0):
             return "NA"
         else:
-            return f"{enabled}/{enabled+disabled}"
+            if(status):
+                return f"{enabled}"
+            else:
+                return f"{enabled+disabled}"
     
     
     
-    def amf_count_states(self, df, celltype):
-        subset = df
-        enabled = (subset["operationalState"] == "ENABLED").sum()
-        disabled = (subset["operationalState"] == "DISABLED").sum()
-        
-        if(enabled+disabled == 0):
-            return "NA"
+    def amf_count_states(self, celltype, df, status):
+        if(len(df) > 0):
+                
+            subset = df["NodeId"] == celltype
+            enabled = (subset["operationalState"] == "ENABLED").sum()
+            disabled = (subset["operationalState"] == "DISABLED").sum()
+            
+            if(enabled+disabled == 0):
+                return "NA"
+            else:
+                if(status):
+                    return f"{enabled}"
+                else:
+                    return f"{enabled+disabled}"
         else:
-            return f"{enabled}/{enabled+disabled}"
-    
-    
+            return "NA"
     
     def count_alarms(self, df, celltype):
         
@@ -532,7 +541,7 @@ class Calculator:
         amfdf = pd.DataFrame([])
         syncStatus_data = pd.DataFrame([])
         
-        print(df,amfdf,syncStatus_data,"syncStatus_datasyncStatus_datasyncStatus_datasyncStatus_data")
+        print(df,amfdf,syncStatus_data,list_of_sheet_name,"list_of_sheet_namelist_of_sheet_namelist_of_sheet_name")
 
         if("CellStatus" in list_of_sheet_name):
             df = pd.read_excel(file_parsed, sheet_name="CellStatus")
@@ -543,7 +552,7 @@ class Calculator:
             amfdf = pd.read_excel(file_parsed, sheet_name="TermPointToAmf")
             
             
-        if("CmFunction5" in list_of_sheet_name):
+        if("CmFunction" in list_of_sheet_name):
             syncStatus_data = pd.read_excel(self.file_parsed, sheet_name="CmFunction")
        
 
@@ -567,31 +576,37 @@ class Calculator:
             row = {
                 "NodeId": node,
                 "Syncstatus": "N/A",  
-                "TermPointToAmf": self.amf_count_states(group , amfdf),
-                "FDDCell": self.count_states(group, "FDD"),
-                "TDDCell": self.count_states(group, "TDD"),
-                "NRCell": self.count_states(group, "NR"),
+                "TermPointToAmfEnabled": self.amf_count_states(node , amfdf, True),
+                "TermPointToAmfTotal": self.amf_count_states(node , amfdf, False),
+                "FDDCellEnabled": self.count_states(group, "FDD",True),
+                "FDDCellTotal": self.count_states(group, "FDD",False),
+                "TDDCellEnabled": self.count_states(group, "TDD",True),
+                "TDDCellTotal": self.count_states(group, "TDD",False),
+                "NRCellEnabled": self.count_states(group, "NR",True),
+                "NRCellTotal": self.count_states(group, "NR",False),
                 # placeholders for other metrics
-                "CriticalAlarm": self.count_alarms(node_alarms,"CRITICAL"),
-                "MajorAlarm": self.count_alarms(node_alarms,"MAJOR"),
-                "MinorAlarm": self.count_alarms(node_alarms,"MINOR"),
-                "WarningAlarm": self.count_alarms(node_alarms,"WARNING"),
+                "Critical": self.count_alarms(node_alarms,"CRITICAL"),
+                "Major": self.count_alarms(node_alarms,"MAJOR"),
+                "Total": len(node_alarms),
             }
             summary_rows.append(row)
 
         summary_df = pd.DataFrame(summary_rows)
         
-        if("NetworkElement" in syncStatus_data.columns):
+        
+        
+        if("NodeId" in syncStatus_data.columns):
                 
             summary_df["Syncstatus"] = summary_df["NodeId"].map(
-                syncStatus_data.set_index("NetworkElement")["syncStatus"]
-            ).fillna("N/A")
+                syncStatus_data.set_index("NodeId")["syncStatus"]
+            ).fillna("NA")
         
+        summary_df.fillna("NA", inplace=True)
+        print(summary_df,"summary_dfsummary_dfsummary_df")
         with pd.ExcelWriter(self.file_parsed, engine="openpyxl", mode="a") as writer:
             summary_df.to_excel(writer, sheet_name="NodeStatus", index=False)
             self.alarm_data.to_excel(writer, sheet_name="AlarmStatus", index=False)
 
-        # print("New sheet added successfully.")
         
         
     def remove_extra_col(self,file_parsed):
@@ -617,6 +632,143 @@ class Calculator:
             for sheet_name, df in sheet_dfs.items():
                 df.to_excel(writer, sheet_name=sheet_name, index=False)
 
+        
+    
+    def re_arrange_node_status(self, filename):
+        
+        
+        all_sheets = pd.read_excel(filename, sheet_name=None)
+            
+        list_of_sheet_name = list(all_sheets.keys())
+        
+        if("NodeStatus" in list_of_sheet_name):
+            
+            new_row = {
+                'NodeId': 0,
+                'Syncstatus': 0,
+                'TermPointToAmfEnabled': 0,
+                'TermPointToAmfTotal': 0,
+                'FDDCellEnabled': 0,
+                'FDDCellTotal': 0,
+                'TDDCellEnabled': 0,
+                'TDDCellTotal': 0,
+                'NRCellEnabled': 0,
+                'NRCellTotal': 0,
+                'Critical': 0,
+                'Major': 0,
+                'Total': 0
+            }
+            
+            
+            node_status_df = pd.read_excel(filename, sheet_name="NodeStatus")
+
+            # create a blank row based on existing columns
+            blank_row = {col: "" for col in node_status_df.columns}
+
+            # put blank row at the top
+            new_df = pd.concat(
+                [pd.DataFrame([blank_row]), node_status_df],
+                ignore_index=True
+            )
+
+            print(new_df, "new_dfnew_dfnew_dfnew_dfnew_df")
+            
+            
+            wb = load_workbook(filename)
+            ws = wb["NodeStatus"]
+             # new text for merged cell
+
+            # Merge first column’s second & third rows (A2:A3)
+            # ws.merge_cells(start_row=1, start_column=1, end_row=2, end_column=1)
+            # ws.merge_cells(start_row=1, start_column=2, end_row=2, end_column=2)
+            # ws['A1'] = "NodeId" 
+            # ws['B1'] = "Syncstatus" 
+            
+            
+            new_df.fillna("NA", inplace=True)
+            with pd.ExcelWriter(filename, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+                
+                new_df.to_excel(writer, sheet_name="NodeStatus", index=False)
+
+            
+            
+            wb = load_workbook(filename)
+            ws = wb["NodeStatus"]
+             # new text for merged cell
+
+            ws.merge_cells('A1:A2'); ws['A1'] = "NodeId"
+            ws.merge_cells('B1:B2'); ws['B1'] = "SyncState"
+
+            ws.merge_cells('C1:D1'); ws['C1'] = "TermPointToAmf"
+            ws.merge_cells('E1:F1'); ws['E1'] = "FDD Cell Count"
+            ws.merge_cells('G1:H1'); ws['G1'] = "TDD Cell Count"
+            ws.merge_cells('I1:J1'); ws['I1'] = "NR Cell Count"
+            ws.merge_cells('K1:N1'); ws['K1'] = "Alarm Count"
+
+            # row2 subheaders
+            ws['C2'] = "Enabled"; ws['D2'] = "Total"
+            ws['E2'] = "Enabled"; ws['F2'] = "Total"
+            ws['G2'] = "Enabled"; ws['H2'] = "Total"
+            ws['I2'] = "Enabled"; ws['J2'] = "Total"
+            ws['K2'] = "CRITICAL"; ws['L2'] = "MAJOR"
+            ws['M2'] = "Total"
+
+            # optional: center align headers
+            for row in ws.iter_rows(min_row=1, max_row=2,
+                                    min_col=1, max_col=13):  # adjust max_col
+                for cell in row:
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+ 
+            yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+            for row in ws.iter_rows(min_row=1, max_row=2):  # row 1 and row 2
+                for cell in row:
+                    cell.fill = yellow_fill
+
+            
+            green = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+            red = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+            grey = PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+
+            for row in ws.iter_rows(min_row=3):  # skip the two header rows
+                node_id = row[0].value
+                sync_state = row[1].value
+
+                # SyncState colour
+                if sync_state == "SYNCHRONIZED":
+                    row[1].fill = green
+                else:
+                    row[1].fill = red
+
+                # Enabled/Total sets
+                for enabled_col, total_col in [(2,3), (4,5), (6,7), (8,9)]:  # adjust for your layout
+                    enabled = row[enabled_col].value
+                    total = row[total_col].value
+
+                    if enabled == "NA" or total == "NA":
+                        row[enabled_col].fill = grey
+                        row[total_col].fill = grey
+                    elif enabled == total:
+                        row[enabled_col].fill = green
+                        row[total_col].fill = green
+                    else:
+                        row[enabled_col].fill = red
+                        row[total_col].fill = red
+
+                # Alarm Count
+                critical = row[10].value  # adjust indices
+                major = row[11].value
+                if critical > 0:
+                    row[10].fill = red
+                if major > 0:
+                    row[11].fill = red
+                    
+                if critical == 0:
+                    row[10].fill = green
+                if major == 0:
+                    row[11].fill = green
+            wb.save(filename)
+
+        
         
     def coloring_formatting(self, filename):
         
