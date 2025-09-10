@@ -84,6 +84,11 @@ export const enms = async (data) => {
   return response.data;
 };
 
+export const getEnms = async (data) => {
+  const response = await http.get(`${Urls.emns}`, data);
+  return response.data;
+};
+
 export const circleData = async (data) => {
   const response = await http.get(`${Urls.circles}`, data);
   return response.data;
