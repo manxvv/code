@@ -526,6 +526,55 @@ ENodeBFunction.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;UePolic
     
     
     
+    
+    
+@api.route("/uploadScripting", methods=["POST"])
+@token_required
+def uploadScripting_file():
+    if "eFile" not in request.files and not "siteList" in request.files:
+        return jsonify({"message": "No file part"}), 400
+    
+    eFile = request.files.get("eFile")
+    if not eFile:
+        return jsonify({"message": "No selected eFile file"}), 400
+
+
+    siteList = request.files.get("siteList")
+    if not siteList:
+        return jsonify({"message": "No selected siteList file"}), 400
+
+
+    siteList_original_filename = secure_filename(siteList.filename)
+    eFile_original_filename = secure_filename(eFile.filename)
+    siteList_unique_filename = f"{uuid.uuid4().hex}_{siteList_original_filename}"
+    eFile_unique_filename = f"{uuid.uuid4().hex}_{eFile_original_filename}"
+    file_con = {
+        "siteList_original_filename":siteList_original_filename,
+        "siteList_unique_filename":siteList_unique_filename,
+        "eFile_original_filename":eFile_original_filename,
+        "eFile_unique_filename":eFile_unique_filename,
+    }
+    
+    
+    
+    siteList_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"scripting_sites"), siteList_unique_filename)
+    siteList.save(siteList_file_path)
+    eFile_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"scripting_enm"), eFile_unique_filename)
+    eFile.save(eFile_file_path)
+    
+    
+    
+    
+    
+    return jsonify({
+        "message": "File uploaded successfully",
+        "file_id": str(result.inserted_id),
+        "filename": unique_filename,
+        "enm_file_name": ffnme
+    }), 201
+    
+    
+    
 @api.route("/user-files", methods=["GET"])
 @token_required
 def get_user_files():
