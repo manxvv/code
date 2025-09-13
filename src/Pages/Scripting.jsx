@@ -1,18 +1,24 @@
-import React, { useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Modal from '@/components/Modal';
-import { DataTableDemo } from '@/components/DataTable';
-import { Edit, Trash2, Download } from 'lucide-react';
-import { getUsers, getEnms } from '@/lib/api';
-import { Outlet } from 'react-router-dom';
+import React, { useState, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Swal from "sweetalert2";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Modal from "@/components/Modal";
+import { DataTableDemo } from "@/components/DataTable";
+import { Edit, Trash2, Download } from "lucide-react";
+import { enms, getUsers, uploadScripting, Urlenmmfiles } from "@/lib/api";
 
 function Scripting() {
-  const { register, handleSubmit, watch, setValue } = useForm();
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, watch } = useForm();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+
 
   // Fetch users
   const { data: users = [] } = useQuery({
@@ -20,100 +26,136 @@ function Scripting() {
     queryFn: getUsers,
   });
 
-  // Fetch ENMs
-  const { data: enmsdata = [] } = useQuery({
-    queryKey: ["enmsdata"],
-    queryFn: getEnms,
+  const { data } = useQuery({
+    queryKey: ["files"],
+    queryFn: Urlenmmfiles
   });
 
-  // Watch selected circle and ENM
-  const selectedCircle = watch('circle') || '';
-  const selectedEnm = watch('enm') || '';
+
+  const { data: enmsdata } = useQuery({
+    queryKey: ["enms"],
+    queryFn: enms
+  });
+
+
+
+
+  // ✅ mutation for file upload
+  const { mutate: uploadFileMutation, isLoading: isUploading } = useMutation({
+    mutationFn: async (formData) => {
+      setUploading(true);
+      Swal.fire({
+        title: "Processing...",
+        text: "Please wait",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      return uploadScripting(formData);
+    },
+    onSuccess: (res) => {
+      Swal.close();
+      setUploading(false);
+      setError(null);
+      queryClient.invalidateQueries(["datatable"]);
+      console.log("File uploaded successfully:", res);
+    },
+    onError: (err) => {
+      Swal.close();
+      setUploading(false);
+      setError(err?.message || "Something went wrong during file upload");
+      console.error("File upload failed:", err);
+    },
+  });
+
+  const onSubmit = (data) => {
+    const formData = new FormData();
+    formData.append("circle", data.circle);
+    formData.append("enm", data.enm);
+    formData.append("softwareRelease", data.softwareRelease);
+
+    if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
+    if (data.siteList?.length) formData.append("siteList", data.siteList[0]);
+
+    uploadFileMutation(formData);
+  };
+
+  const columns = useMemo(
+    () => [
+      { Header: "Circle", accessor: "circle", id: "circle" },
+      { Header: "ENM", accessor: "enm", id: "enm" },
+      { Header: "Software Release", accessor: "softwareRelease", id: "softwareRelease" },
+      {
+        Header: "Actions",
+        id: "actions", // 👈 add this
+        Cell: ({ row }) => (
+          <div className="flex gap-2">
+            <Edit
+              size={16}
+              className="cursor-pointer text-blue-500"
+              onClick={() => console.log("edit", row.original)}
+            />
+            <Trash2
+              size={16}
+              className="cursor-pointer text-red-500"
+              onClick={() => console.log("delete", row.original)}
+            />
+            <Download
+              size={16}
+              className="cursor-pointer text-green-500"
+              onClick={() => console.log("download", row.original)}
+            />
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
+
+  const selectedCircle = watch("circle") || "";
+  const selectedEnm = watch("enm") || "";
 
   // Filter options based on selections
   const filteredCircles = useMemo(() => {
-    if (!selectedEnm) return [...new Set(enms.map(e => e.circle))];
-    return [...new Set(enms.filter(e => e.enm === selectedEnm).map(e => e.circle))];
-  }, [enms, selectedEnm]);
+    if (!selectedEnm) return [...new Set(enmsdata && enmsdata.map((e) => e.circle))];
+    return [
+      ...new Set(
+        enmsdata.filter((e) => e.enm === selectedEnm).map((e) => e.circle)
+      ),
+    ];
+  }, [enmsdata, selectedEnm]);
 
   const filteredEnms = useMemo(() => {
-    if (!selectedCircle) return [...new Set(enms.map(e => e.enm))];
-    return [...new Set(enms.filter(e => e.circle === selectedCircle).map(e => e.enm))];
-  }, [enms, selectedCircle]);
-
-  const columns = [
-    { accessorKey: "circle", header: "CIRCLE" },
-    { accessorKey: "enm", header: "ENM" },
-    { accessorKey: "username", header: "USERNAME" },
-    { accessorKey: "site_count", header: "SITE COUNT" },
-    { accessorKey: "created_time", header: "CREATED TIME" },
-    {
-      id: "download",
-      header: "DOWNLOAD",
-      cell: ({ row }) => (
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Download className="h-4 w-4" /> ZIP
-        </Button>
+    if (!selectedCircle) return [...new Set(enmsdata && enmsdata.map((e) => e.enm))];
+    return [
+      ...new Set(
+        enmsdata.filter((e) => e.circle === selectedCircle).map((e) => e.enm)
       ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex gap-2">
-          <Button variant="ghost" size="icon">
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Trash2 className="h-4 w-4 text-red-600" />
-          </Button>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ];
+    ];
+  }, [enmsdata, selectedCircle]);
 
-  const onSubmit = (data) => {
-    console.log("Form submitted:", data);
-  };
 
   return (
-    <>
-      <div className="flex flex-1">
-        <div className="p-2 md:p-10 bg-white dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full">
-          <Outlet />
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4 py-4">
-            <div className="flex flex-col sm:flex-row flex-end gap-2 w-full md:w-auto">
-              <Button
-                className="bg-orange-500 text-white font-bold px-8 py-2.5 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 w-full"
-                onClick={() => setIsModalOpen(true)}
-              >
-                Create Script
-              </Button>
-
-              <Input
-                placeholder="Search users..."
-                value={globalFilter ?? ""}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full sm:max-w-sm"
-              />
-            </div>
-          </div>
-
-          <DataTableDemo
-            data={users}
-            columns={columns}
-            globalFilter={globalFilter}
-            setGlobalFilter={setGlobalFilter}
-          />
-        </div>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <Input
+          placeholder="Search..."
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          className="max-w-xs"
+        />
+        <Button onClick={() => setIsModalOpen(true)}>Upload Script</Button>
       </div>
 
-      {/* Modal */}
+      {/* Table */}
+      <DataTableDemo
+        columns={columns}
+        data={users || []} // or whatever data you want to show
+        globalFilter={globalFilter}
+        setGlobalFilter={setGlobalFilter}
+      />
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -126,69 +168,87 @@ function Scripting() {
         <div className="max-h-[70vh] overflow-y-auto p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
               {/* Circle */}
               <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">Circle</label>
+                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
+                  Circle
+                </label>
                 <select
-                  {...register('circle')}
+                  {...register("circle")}
                   className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
                 >
                   <option value="">Select</option>
                   {filteredCircles.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </div>
 
               {/* ENM */}
               <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">ENM</label>
+                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
+                  ENM
+                </label>
                 <select
-                  {...register('enm')}
+                  {...register("enm")}
                   className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
                 >
                   <option value="">Select</option>
                   {filteredEnms.map((e) => (
-                    <option key={e} value={e}>{e}</option>
+                    <option key={e} value={e}>
+                      {e}
+                    </option>
                   ))}
                 </select>
               </div>
 
               {/* Software Release */}
               <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">Software Release</label>
+                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
+                  Software Release
+                </label>
                 <select
-                  {...register('softwareRelease')}
+                  {...register("softwareRelease")}
                   className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
                 >
                   <option value="">Select</option>
-                  {["24Q2"].map(op => <option key={op} value={op}>{op}</option>)}
+                  {["24Q2"].map((op) => (
+                    <option key={op} value={op}>
+                      {op}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               {/* Site List */}
               <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">Site List</label>
+                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
+                  Site List
+                </label>
                 <input
                   type="file"
-                  {...register('siteList')}
+                  {...register("siteList")}
                   accept=".xlsx,.xls"
+                  onChange={(e) => setValue("siteList", e.target.files[0])}
                   className="p-1.5 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
                 />
               </div>
 
               {/* ENM Logs */}
               <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">ENM Logs</label>
+                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
+                  ENM Log
+                </label>
                 <input
                   type="file"
-                  {...register('Efile')}
+                  {...register("Efile")}
                   accept=".txt"
+                  onChange={(e) => setValue("Efile", e.target.files[0])}
                   className="p-1.5 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
                 />
               </div>
-
             </div>
 
             <div className="pt-6 flex justify-end">
@@ -202,7 +262,7 @@ function Scripting() {
           </form>
         </div>
       </Modal>
-    </>
+    </div>
   );
 }
 
