@@ -1406,6 +1406,17 @@ def get_enms():
 
 
 
+@api.route("/create_user", methods=["GET"])
+def create_mera_user():
+    
+    hashed_pw = bcrypt.hash("Sarfraz@123")
+    user = {
+        "full_name": "Sarfraz",
+        "email": "sarfraz@datayog.com",
+        "hashed_password": hashed_pw
+    }
+
+    mongo.db.users.insert_one(user)
 
 @api.route("/check_conn", methods=["GET"])
 def check_conn():
