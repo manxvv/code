@@ -14,6 +14,8 @@ from app.parsinglogicver import Calculator
 import mimetypes
 import pandas as pd
 
+import pymongo
+
 import os
 import tempfile
 import shutil
@@ -1401,3 +1403,22 @@ def get_enms():
         })
 
     return jsonify(enms), 200
+
+
+
+
+@api.route("/check_conn", methods=["GET"])
+def check_conn():
+    
+    
+    
+    mongo_uri = os.environ.get("MONGO_URI")
+    temp_client = pymongo.MongoClient(mongo_uri)
+    try:
+        temp_client.admin.command('ping')
+        print("✅ Connected to MongoDB")
+        
+        return "✅ Connected to MongoDB"
+    except Exception as e:
+        print("❌ Connection failed:", e)
+        return "❌ Connection failed:" + str(e)
