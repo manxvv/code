@@ -297,19 +297,27 @@ def upload_file():
     
     
     
-    print(postcheck_files,precheck_files)
+    print(postcheck_files,taskId,precheck_files)
+    
+    
+    print("taskIdtaskId",taskId,"taskIdtaskId")
     
     
     
+    
+    
+    one_task_data = mongo.db.enmfiles.find_one({"task_id":taskId})
+
+    print(one_task_data,"one_task_dataone_task_data")
     clc = Calculator()
     
     pre_file = ""
     post_file = ""
     if(len(precheck_files) > 0):
-        pre_file=clc.start_parser(precheck_files,"Pre_")
+        pre_file=clc.start_parser(precheck_files,"Pre_",os.path.join(os.getcwd(),UPLOAD_FOLDER,"enm",one_task_data["filename"]))
         
     if(len(postcheck_files) > 0):
-        post_file=clc.start_parser(postcheck_files,"Post_")
+        post_file=clc.start_parser(postcheck_files,"Post_",os.path.join(os.getcwd(),UPLOAD_FOLDER,"enm",one_task_data["filename"]))
     # pre_file="post08_09_2025_01_56_16_cells_data_temp.xlsx"
     # pre_file="pre08_09_2025_02_03_56_cells_data_temp.xlsx"
     # post_file="post08_09_2025_02_04_01_cells_data_temp.xlsx"
@@ -331,6 +339,9 @@ def upload_file():
     if(len(postcheck_files) > 0):
         clc.rearrangecol(post_file)
         clc.coloring_formatting(post_file)
+    
+    
+    
     
     
         # clc.re_arrange_node_status(post_file)
@@ -638,31 +649,34 @@ def uploadScripting_file():
         return jsonify({"message": "No selected eFile file"}), 400
 
 
-    siteList = request.files.get("siteList")
-    if not siteList:
-        return jsonify({"message": "No selected siteList file"}), 400
+    # siteList = request.files.get("siteList")
+    # if not siteList:
+    #     return jsonify({"message": "No selected siteList file"}), 400
 
 
-    siteList_original_filename = secure_filename(siteList.filename)
+    # siteList_original_filename = secure_filename(siteList.filename)
     eFile_original_filename = secure_filename(eFile.filename)
-    siteList_unique_filename = f"{uuid.uuid4().hex}_{siteList_original_filename}"
+    # siteList_unique_filename = f"{uuid.uuid4().hex}_{siteList_original_filename}"
     eFile_unique_filename = f"{uuid.uuid4().hex}_{eFile_original_filename}"
     
     
     curr_dir = os.getcwd()
     
     
-    circle_name = request.form.get('circle')
-    enm_name = request.form.get('enm')
+    # circle_name = request.form.get('circle')
+    # enm_name = request.form.get('enm')
     taskId = request.form.get('taskId')
     
     
     
+    one_task_data = mongo.db.enmfiles.find_one({"task_id":taskId})
     
+    print(one_task_data["filename"],"one_task_dataone_task_dataone_task_data")
     
+    siteList_file_path = os.path.join(UPLOAD_FOLDER,"enm",one_task_data["filename"])
     
-    siteList_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"scripting_sites"), siteList_unique_filename)
-    siteList.save(siteList_file_path)
+    # siteList_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"scripting_sites"), siteList_unique_filename)
+    # siteList.save(siteList_file_path)
     eFile_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"scripting_enm"), eFile_unique_filename)
     eFile.save(eFile_file_path)
     
@@ -673,7 +687,7 @@ def uploadScripting_file():
     
     print(sys.path,"sys.pathsys.pathsys.pathsys.path")
     
-    nsa_op_folder = scripting_nsa_sa(siteList_original_filename,eFile_original_filename,nsa_sa_path,circle_name,enm_name,os.path.join(curr_dir,siteList_file_path),os.path.join(curr_dir,eFile_file_path),curr_dir)
+    nsa_op_folder = scripting_nsa_sa(one_task_data["original_filename"],eFile_original_filename,nsa_sa_path,one_task_data["circle"],one_task_data["enms"],os.path.join(curr_dir,siteList_file_path),os.path.join(curr_dir,eFile_file_path),curr_dir)
 
     list_dirr = os.listdir(nsa_op_folder)
     
@@ -689,8 +703,8 @@ def uploadScripting_file():
             
     
     file_con = {
-        "siteList_original_filename":siteList_original_filename,
-        "siteList_unique_filename":siteList_unique_filename,
+        "siteList_original_filename":one_task_data["original_filename"],
+        "siteList_unique_filename":one_task_data["filename"],
         "eFile_original_filename":eFile_original_filename,
         "eFile_unique_filename":eFile_unique_filename,
         "nsa_op_folder":nsa_op_folder.replace(os.getcwd(),"")+".zip",

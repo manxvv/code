@@ -528,12 +528,15 @@ class Calculator:
             
         
     
-    def alarm_checker(self,file_parsed):
+    def alarm_checker(self,file_parsed,file_sitess):
 
 
         # print(self.alarm_data)
         # print(self.file_parsed)
         
+        
+        
+        sites_data = pd.read_excel(file_sitess)
         
         all_sheets = pd.read_excel(file_parsed, sheet_name=None)
         list_of_sheet_name = list(all_sheets.keys())
@@ -568,6 +571,8 @@ class Calculator:
             
         
             node_alarms = pd.DataFrame([])
+            
+            
             if "NodeName" in self.alarm_data.columns:
                 node_alarms = self.alarm_data[self.alarm_data["NodeName"] == node]
             
@@ -593,11 +598,16 @@ class Calculator:
             summary_rows.append(row)
 
         summary_df = pd.DataFrame(summary_rows)
+
         
+        
+        print(self.alarm_data,sites_data,"summary_dfsummary_df")
+        
+        self.alarm_data = self.alarm_data[self.alarm_data["NodeName"].isin(sites_data["Node"])]
         
         
         if("NodeId" in syncStatus_data.columns):
-                
+            print(summary_df,"summary_dfsummary_df")
             summary_df["Syncstatus"] = summary_df["NodeId"].map(
                 syncStatus_data.set_index("NodeId")["syncStatus"]
             ).fillna("NA")
@@ -960,7 +970,42 @@ class Calculator:
 
         
         
+    
         
+    def filtering_header(self, filename,file_sitess):
+        
+        print(filename)
+        xls = pd.ExcelFile(filename)
+        sites_data = pd.read_excel(file_sitess)
+        sites_data["NodeId"] = sites_data["Node"]
+
+        updated_sheets = {}
+
+        for sheet in xls.sheet_names:
+            df = pd.read_excel(xls, sheet_name=sheet)
+            
+            
+            if "NodeId" not in df.columns and "Node" in df.columns:
+                df["NodeId"] = df["Node"]
+            if "NodeId" not in df.columns and "NodeName" in df.columns:
+                df["NodeId"] = df["NodeName"]
+
+
+            
+            df_filtered = df[df["NodeId"].isin(sites_data["NodeId"])]
+            
+            print(df_filtered,sites_data["NodeId"],"df_filtereddf_filtereddf_filtered")
+
+            updated_sheets[sheet] = df_filtered
+        with pd.ExcelWriter(filename, engine='openpyxl', mode='w') as writer:
+            for sheet_name, data in updated_sheets.items():
+                data.to_excel(writer, sheet_name=sheet_name, index=False)
+                
+        
+        
+    
+    
+    
     def renaming_header(self, filename):
         xls = pd.ExcelFile(filename)
         
@@ -1155,7 +1200,7 @@ class Calculator:
         
         
     
-    def start_parser(self,files,p_type):
+    def start_parser(self,files,p_type,file_sitess):
         
         alarm_check = False
         converted_file = []
@@ -1170,7 +1215,11 @@ class Calculator:
                     # print("FDN in filedat")
                     file_parsed = self.txt_to_csv(one_file,p_type)
                     self.file_parsed = file_parsed
+                    
                     self.renaming_header(file_parsed)
+                    self.filtering_header(file_parsed,file_sitess)
+                    
+                    print()
                     self.merge_row_tdd_fdd_nr(file_parsed)
                     self.coloring_formatting(file_parsed)
                     
@@ -1190,7 +1239,7 @@ class Calculator:
             # print(alarms_data,"alarms_data")
             
         if(alarm_check):
-            self.alarm_checker(file_parsed)
+            self.alarm_checker(file_parsed,file_sitess)
         
         
         
