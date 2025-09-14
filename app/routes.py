@@ -98,7 +98,7 @@ def login():
         {
             "sub": str(user["_id"]),
             "role": user.get("role", "admin"),  
-            "exp": datetime.utcnow() + timedelta(hours=1)
+            "exp": datetime.utcnow() + timedelta(hours=6)
         },
         current_app.config["JWT_SECRET"],
         algorithm=current_app.config["JWT_ALGORITHM"]
@@ -250,6 +250,8 @@ def upload_file():
     
     
     precheckfile = request.files.getlist("precheck")
+    
+    taskId = request.form.get("taskId")
     print(precheckfile!=0)
     postcheckfile = request.files.getlist("postcheck")
     print(len(postcheckfile) != 0 and len(precheckfile) != 0)
@@ -354,7 +356,8 @@ def upload_file():
         "activity_type":"Post Check" if len(postcheck_files) > 0 else "Pre Check",
         # "prefiledata_nodes":", ".join(prefiledata["nodeIdList"]),
         # "postfiledata_nodes":", ".join(prefiledata["nodeIdList"]),
-        "path": post_file if len(postcheck_files) > 0 else pre_file
+        "path": post_file if len(postcheck_files) > 0 else pre_file,
+        "taskId":taskId
     }
 
     result = mongo.db.files.insert_one(file_doc)
@@ -379,9 +382,10 @@ def uploadenm_file():
     print(request.files.get("file"))
     
     
-    enm_circle_cursor = mongo.db.enms.find({
-        "user_id":request.user.get("sub")  
-    })
+    # enm_circle_cursor = mongo.db.enms.find({
+    #     "user_id":request.user.get("sub")  
+    # })
+    enm_circle_cursor = mongo.db.enms.find()
     
     
     enm_circle_list = list(enm_circle_cursor)
@@ -417,6 +421,10 @@ def uploadenm_file():
     
     enmList = []
     
+    if(len(df) == 0):
+        return jsonify({"error": "Please add Circle & ENM in Admin."}), 400
+    
+    
     
     updf = df[["circle","enm"]]
     
@@ -429,6 +437,10 @@ def uploadenm_file():
     print(updf,read_df,"updfupdfupdfupdfupdf")
     read_df_enmmm = set(read_df["merge_ce"].unique())
     
+    print(read_df_enmmm,"read_df_enmmmread_df_enmmmread_df_enmmm")
+    
+    if(len(read_df_enmmm) > 1): 
+        return jsonify({"error": "Multiple combination of ENM & Circle Exist "}), 400
     unique_enm = set(updf["merge_ce"].unique())
 
     # Find which subset ENMs are missing
@@ -507,7 +519,32 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
     SiteID_list = read_df["SiteID"].unique().tolist()
     Node_list = read_df["Node"].unique().tolist()
     
+    
+    one_last_data = mongo.db.enmfiles.find_one(sort=[('_id', -1)])
+
+    task_id = "DY000001"
+
+    if(one_last_data):
+        last_task = one_last_data["task_id"].replace("DY","")
+        
+        new_id = int(last_task)+1
+        
+        
+        str_new_id = len(str(new_id))
+        
+        task_id = "DY"+(6-str_new_id)*"0"+str(new_id)
+        
+        
+        print(task_id)
+        
+
+    
+    print(one_last_data,"one_last_dataone_last_dataone_last_data")
+    
+    
     file_doc = {
+        "datetime":datetime.now().timestamp(),
+        "datetime_stamp":datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "user_id": request.user.get("sub"),
         "original_filename": original_filename,
         "filename": unique_filename,
@@ -515,11 +552,35 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
         "enms": "/".join(enm_list),
         "circle":"/".join(circle_list),
         "site_id":"/".join(SiteID_list),
-        "nodes":"/".join(Node_list)
+        "nodes":"/".join(Node_list),
+        "task_id":task_id
     }
+    
+    
+    
+    task_file_doc={
+        "task_id":task_id,
+        "status":"ENM Command Executed"
+    }
+    
+    
+    
+    
+    
+    result = mongo.db.site_id_status.insert_one(task_file_doc)
 
     result = mongo.db.enmfiles.insert_one(file_doc)
-    result = mongo.db.migration.insert_one({**file_doc,"status":"Pending"})
+    
+    
+    for index, oneValDf in read_df.iterrows():
+        print(oneValDf["ENM"],"sajdsakdaskjdsak")
+        final_data = {
+            "enms": oneValDf["ENM"],
+            "circle":oneValDf["circle"],
+            "site_id":oneValDf["SiteID"],
+            "nodes":oneValDf["Node"]
+        }
+        mongo.db.migration.insert_one({**final_data,"status":"Pending"})
     
     return jsonify({
         "message": "File uploaded successfully",
@@ -530,7 +591,7 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
     
     
     
-def script_entry_migration(file_con,file_path):
+def script_entry_migration(taskId,file_con,file_path):
     
     
     df = pd.read_excel(file_path,sheet_name=None)
@@ -593,6 +654,7 @@ def uploadScripting_file():
     
     circle_name = request.form.get('circle')
     enm_name = request.form.get('enm')
+    taskId = request.form.get('taskId')
     
     
     
@@ -632,8 +694,9 @@ def uploadScripting_file():
         "eFile_original_filename":eFile_original_filename,
         "eFile_unique_filename":eFile_unique_filename,
         "nsa_op_folder":nsa_op_folder.replace(os.getcwd(),"")+".zip",
+        "taskId":taskId
     }
-    script_entry_migration(file_con,os.path.join(nsa_op_folder,excel_file))
+    script_entry_migration(taskId,file_con,os.path.join(nsa_op_folder,excel_file))
     
     # with zipfile.ZipFile(nsa_op_folder+".zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
     #     for root, _, files in os.walk(nsa_op_folder):
@@ -703,11 +766,24 @@ def get_user_files():
                 'preserveNullAndEmptyArrays': True
             }
         }, {
+            '$lookup': {
+                'from': 'enmfiles', 
+                'localField': 'taskId', 
+                'foreignField': 'task_id', 
+                'as': 'taskIdresult'
+            }
+        }, {
+            '$unwind': {
+                'path': '$taskIdresult', 
+                'preserveNullAndEmptyArrays': True
+            }
+        }, {
             '$project': {
                 'user_id_obj': 0, 
                 'userresult.hashed_password': 0, 
                 'userresult._id': 0, 
-                '_id': 0
+                '_id': 0, 
+                'taskIdresult._id': 0
             }
         }
     ]
@@ -762,6 +838,10 @@ def get_user_enm_files():
             '$unwind': {
                 'path': '$userresult', 
                 'preserveNullAndEmptyArrays': True
+            }
+        },{
+            '$sort': {
+                '_id': -1
             }
         }, {
             '$project': {
@@ -1037,6 +1117,37 @@ def create_enm():
         "id": str(result.inserted_id)
     }), 201
     
+    
+    
+
+@api.route("/users", methods=["POST"])
+@token_required
+def create_users():
+    data = request.get_json()
+
+    # Validate required fields
+    if not data or "email" not in data or "full_name" not in data or "password" not in data:
+        return jsonify({"message": "Invalid input, All fiels are required"}), 400
+
+    # Check if the combination already exists
+    existing = mongo.db.enms.find_one({"email": data["email"]})
+    if existing:
+        return jsonify({"message": "Email already exists"}), 400
+
+    enm = {
+        "user_id": request.user.get("sub"),
+        "enm": data["enm"],
+        "circle": data["circle"]
+    }
+
+    result = mongo.db.enms.insert_one(enm)
+
+    print(enm,"enmenmenm")
+    return jsonify({
+        "message": "ENM created successfully",
+        "id": str(result.inserted_id)
+    }), 201
+    
 @api.route("/enms/<enm_id>", methods=["DELETE"])
 @token_required
 def delete_enm(enm_id):
@@ -1057,12 +1168,33 @@ def delete_enm(enm_id):
         return jsonify({"message": "Error deleting ENM", "error": str(e)}), 500
 
 
+
+@api.route("/users/<user_id>", methods=["DELETE"])
+@token_required
+def delete_user(user_id):
+    try:
+        enm = mongo.db.users.find_one({
+            "_id": ObjectId(user_id)
+        })
+
+        if not enm:
+            return jsonify({"message": "User not found"}), 404
+
+        mongo.db.users.delete_one({"_id": ObjectId(user_id)})
+
+        return jsonify({"message": "User deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"message": "Error deleting ENM", "error": str(e)}), 500
+
+
 @api.route("/enms", methods=["GET"])
 @token_required
 def get_enms():
     user_id = request.user.get("sub")
 
-    enms_cursor = mongo.db.enms.find({"user_id": user_id})
+    # enms_cursor = mongo.db.enms.find({"user_id": user_id})
+    enms_cursor = mongo.db.enms.find()
     enms = []
     for e in enms_cursor:
         enms.append({
