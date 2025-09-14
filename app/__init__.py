@@ -23,6 +23,7 @@ def create_app():
     app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
     app.config["JWT_ALGORITHM"] = os.getenv("JWT_ALGORITHM", "HS256")
 
+    print(app.config)
     # DB
     init_db(app)
 
