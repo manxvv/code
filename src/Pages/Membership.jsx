@@ -226,7 +226,7 @@ const Users = () => {
 
                         <div className="flex gap-2">
                             <Input
-                                placeholder="Search users..."
+                                placeholder="Search..."
                                 value={globalFilter ?? ""}
                                 onChange={(event) => setGlobalFilter(event.target.value)}
                                 className="max-w-sm"

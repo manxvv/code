@@ -123,6 +123,11 @@ function Scripting() {
 
   const columns = [
     {
+      accessorKey: "taskId",
+      header: "Task Id",
+      cell: ({ row }) => row.getValue("taskId"),
+    },
+    {
       accessorKey: "circle",
       header: "Circle",
       cell: ({ row }) => row.getValue("circle"),

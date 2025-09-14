@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx
-import { Dashboarddata, Dropdown } from "@/lib/api";
+import { dashboard, Dashboarddata, Dropdown } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -22,10 +22,12 @@ const Dashboard = () => {
 
   // Fetch dropdown data
   const { data, isLoading } = useQuery({
-    queryKey: ["files"],
-    queryFn: Dropdown
+    queryKey: ["dashboard"],
+    queryFn: dashboard
   });
 
+
+  console.log(data, "datadatadatadatadatadata")
   // Auto-select first file when data loads
   useEffect(() => {
     if (!isLoading && data?.data?.length > 0 && !selectedFile) {
@@ -103,6 +105,34 @@ const Dashboard = () => {
     </ResponsiveContainer>
   );
 
+
+  let list = [{
+    "value": "ENM Command Executed",
+    "userValue": "Total Sites - ENM Commands",
+    "bgcolor": "bg-[#9606f8]",
+    "textcolor": "text-[#ffffff]"
+  }, {
+    "value": "Pre Check Completed",
+    "userValue": "Total Sites - Pre Check",
+    "bgcolor": "bg-[#f14919]",
+    "textcolor": "text-[#ffffff]"
+  }, {
+    "value": "Post Check Completed",
+    "userValue": "Total Sites - Post Check",
+    "bgcolor": "bg-[#26c885]",
+    "textcolor": "text-[#ffffff]"
+  }, {
+    "value": "Post Check Completed",
+    "userValue": "Total Sites - Scripting Done",
+    "bgcolor": "bg-[#26c885]",
+    "textcolor": "text-[#ffffff]"
+  }, {
+    "value": "Post Check Completed",
+    "userValue": "Total Sites - Migration Done",
+    "bgcolor": "bg-[#26c885]",
+    "textcolor": "text-[#ffffff]"
+  }]
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-50">
       <div className="max-w-7xl mx-auto p-6">
@@ -111,7 +141,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-end mb-4">
-            
+
             {/* File Selector */}
             <div className="relative">
               <select
@@ -133,35 +163,56 @@ const Dashboard = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Signs</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1 ">Total Sites</div>
             <div className="text-2xl font-semibold">
-              {dashboardLoading ? (
-                <Loader2 className="h-6 w-6 animate-spin text-gray-500 dark:text-gray-400" />
-              ) : (
-                totalSigns.toLocaleString()
-              )}
+              {
+                data && data.total_count || 0
+              }
             </div>
           </div>
-          
-          <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Status</div>
-            <div className="text-lg font-medium">
-              {dashboardLoading ? "Processing" : "Complete"}
-            </div>
-          </div>
-          
-          <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
+        </div> */}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {
+
+
+            list.map((oneValueOfBoard) => {
+              return <><div className={` ${oneValueOfBoard.bgcolor} dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700`}>
+                <div className={`text-xl dark:text-gray-400 mb-1 font-bold ${oneValueOfBoard.textcolor}`}>{oneValueOfBoard.userValue || "N/A"}</div>
+                <div className={`text-2xl font-medium ${oneValueOfBoard.textcolor}`}>
+                  {data && data.site_id_status.find((onelist) => onelist.status == oneValueOfBoard.value)?.["count"] || "0"}
+                  {/* {oneValueOfBoard.count} */}
+                </div>
+              </div>
+              </>
+            })
+          }
+
+          {/*           
+          {
+            data && data.site_id_status.map((oneValueOfBoard) => {
+              return <><div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{list.find((onelist) => onelist.value == oneValueOfBoard.status)?.["userValue"] || "N/A"}</div>
+                <div className="text-lg font-medium">
+                  {oneValueOfBoard.count}
+                </div>
+              </div>
+              </>
+            })
+          } */}
+
+          {/* <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">File</div>
             <div className="text-sm font-medium truncate">
               {selectedFile ? data?.data?.find(f => f._id === selectedFile)?.filename : "None selected"}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {1 != 1 && <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Bar Chart */}
           <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
             <h2 className="text-lg font-medium mb-4">Hazard Signs by Sector</h2>
@@ -229,9 +280,9 @@ const Dashboard = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>}
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -79,7 +79,7 @@ const columns = [
 
                         <div className="flex flex-col sm:flex-row flex-end gap-2 w-full md:w-auto">
                             <Input
-                                placeholder="Search users..."
+                                placeholder="Search..."
                                 value={globalFilter ?? ""}
                                 onChange={(event) => setGlobalFilter(event.target.value)}
                                 className="w-full sm:max-w-sm"

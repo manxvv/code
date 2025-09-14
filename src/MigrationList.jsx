@@ -30,6 +30,11 @@ function MigrationList() {
     
     const columns = [
         {
+            accessorKey: "task_id",
+            header: "Task Id",
+            cell: ({ row }) => row.getValue("task_id"),
+        },
+        {
             accessorKey: "circle",
             header: "Circle",
             cell: ({ row }) => row.getValue("circle"),
@@ -50,38 +55,32 @@ function MigrationList() {
             cell: ({ row }) => row.getValue("nodes"),
         },
         {
-            accessorKey: "status",
-            header: "Billing Status",
-            cell: ({ row }) => row.getValue("status"),
+            accessorKey: "statuses",
+            header: "Pre Check Status",
+            cell: ({ row }) => {
+                return row ? row.getValue("statuses").indexOf("pre_check") != -1 ? "Completed" : "N/A" : "N/A"
+            },
         },
         {
-            id: "actions",
-            header: "Actions",
+            accessorKey: "status",
+            header: "Scripting Status",
             cell: ({ row }) => {
-                const user = row.original;
-
-                return (
-                    <div className="flex gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(user)}
-                        >
-
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(user._id)}
-                        >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                    </div>
-                );
+                return row ? row.getValue("statuses").indexOf("scripting_completed") != -1 ? "Completed" : "N/A" : "N/A"
             },
-            enableSorting: false,
-            enableHiding: false,
+        },
+        {
+            accessorKey: "status",
+            header: "Post Check Status",
+            cell: ({ row }) => {
+                return row ? row.getValue("statuses").indexOf("post_check") != -1 ? "Completed" : "N/A" : "N/A"
+            },
+        },
+        {
+            accessorKey: "status",
+            header: "Migration Status",
+            cell: ({ row }) => {
+                return row ? row.getValue("statuses").indexOf("Migration Completed") != -1 ? "Completed" : "N/A" : "N/A"
+            },
         }
 
     ];
@@ -101,7 +100,7 @@ function MigrationList() {
 
                         <div className="flex flex-col sm:flex-row flex-end gap-2 w-full md:w-auto">
                             <Input
-                                placeholder="Search users..."
+                                placeholder="Search..."
                                 value={globalFilter ?? ""}
                                 onChange={(event) => setGlobalFilter(event.target.value)}
                                 className="w-full sm:max-w-sm"

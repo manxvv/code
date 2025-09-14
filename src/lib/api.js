@@ -108,6 +108,10 @@ export const Dropdown = async (data) => {
   const response = await http.get(`${Urls.files}`, data);
   return response.data;
 };
+export const dashboard = async (data) => {
+  const response = await http.get(`${Urls.dashboard}`, data);
+  return response.data;
+};
 export const Dashboarddata = async ({ queryKey }) => {
   const [, selectedFile] = queryKey; // ["dashboard", selectedFile]
   const response = await http.get(`${Urls.dashboard}?_id=${selectedFile}`);
