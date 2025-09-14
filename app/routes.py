@@ -308,79 +308,96 @@ def upload_file():
     
     one_task_data = mongo.db.enmfiles.find_one({"task_id":taskId})
 
-    print(one_task_data,"one_task_dataone_task_data")
-    clc = Calculator()
-    
-    pre_file = ""
-    post_file = ""
-    if(len(precheck_files) > 0):
-        pre_file=clc.start_parser(precheck_files,"Pre_",os.path.join(os.getcwd(),UPLOAD_FOLDER,"enm",one_task_data["filename"]))
+    try:    
+        print(one_task_data,"one_task_dataone_task_data")
+        clc = Calculator()
         
-    if(len(postcheck_files) > 0):
-        post_file=clc.start_parser(postcheck_files,"Post_",os.path.join(os.getcwd(),UPLOAD_FOLDER,"enm",one_task_data["filename"]))
-    # pre_file="post08_09_2025_01_56_16_cells_data_temp.xlsx"
-    # pre_file="pre08_09_2025_02_03_56_cells_data_temp.xlsx"
-    # post_file="post08_09_2025_02_04_01_cells_data_temp.xlsx"
+        pre_file = ""
+        post_file = ""
+        if(len(precheck_files) > 0):
+            pre_file=clc.start_parser(precheck_files,"Pre_",os.path.join(os.getcwd(),UPLOAD_FOLDER,"enm",one_task_data["filename"]))
+            
+        if(len(postcheck_files) > 0):
+            post_file=clc.start_parser(postcheck_files,"Post_",os.path.join(os.getcwd(),UPLOAD_FOLDER,"enm",one_task_data["filename"]))
+        # pre_file="post08_09_2025_01_56_16_cells_data_temp.xlsx"
+        # pre_file="pre08_09_2025_02_03_56_cells_data_temp.xlsx"
+        # post_file="post08_09_2025_02_04_01_cells_data_temp.xlsx"
 
 
 
 
 
 
-    if(len(postcheck_files) > 0):
-        clc.startdiffCalc(pre_file,post_file)
+        if(len(postcheck_files) > 0):
+            clc.startdiffCalc(pre_file,post_file)
 
-    
-    if(len(precheck_files) > 0):
-        clc.rearrangecol(pre_file)
-        clc.coloring_formatting(pre_file)
-        clc.re_arrange_node_status(pre_file)
-    
-    if(len(postcheck_files) > 0):
-        clc.rearrangecol(post_file)
-        clc.coloring_formatting(post_file)
-    
-    
-    
-    
-    
-        # clc.re_arrange_node_status(post_file)
-    
-    
-    
-    
-    tss  = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    
         
-    
-    
-    
-    file_doc = {
-        "user_id": request.user.get("sub"),
-        "org_file_pre": org_file_pre,
-        "org_file_post": org_file_post,
-        "filename": unique_filename,
-        "time_stamp":tss,
-        "ts":datetime.now().timestamp(),
-        "precheck_files":", ".join(precheck_files),
-        "postcheck_files":", ".join(postcheck_files),
-        "activity_type":"Post Check" if len(postcheck_files) > 0 else "Pre Check",
-        # "prefiledata_nodes":", ".join(prefiledata["nodeIdList"]),
-        # "postfiledata_nodes":", ".join(prefiledata["nodeIdList"]),
-        "path": post_file if len(postcheck_files) > 0 else pre_file,
-        "taskId":taskId
-    }
+        if(len(precheck_files) > 0):
+            clc.rearrangecol(pre_file)
+            clc.coloring_formatting(pre_file)
+            clc.re_arrange_node_status(pre_file)
+            
+            datafind = {
+                "task_id":taskId
+            }
+            mongo.db.site_id_status.update_one(
+                datafind,
+                {"$set": {"status": "Pre Check Completed"}}
+            )
+        if(len(postcheck_files) > 0):
+            clc.rearrangecol(post_file)
+            clc.coloring_formatting(post_file)
+            datafind = {
+                "task_id":taskId
+            }
+            mongo.db.site_id_status.update_one(
+                datafind,
+                {"$set": {"status": "Post Check Completed"}}
+            )
+        
+        
+        
+        
+        
+            # clc.re_arrange_node_status(post_file)
+        
+        
+        
+        
+        tss  = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        
+            
+        
+        
+        
+        file_doc = {
+            "user_id": request.user.get("sub"),
+            "org_file_pre": org_file_pre,
+            "org_file_post": org_file_post,
+            "filename": unique_filename,
+            "time_stamp":tss,
+            "ts":datetime.now().timestamp(),
+            "precheck_files":", ".join(precheck_files),
+            "postcheck_files":", ".join(postcheck_files),
+            "activity_type":"Post Check" if len(postcheck_files) > 0 else "Pre Check",
+            # "prefiledata_nodes":", ".join(prefiledata["nodeIdList"]),
+            # "postfiledata_nodes":", ".join(prefiledata["nodeIdList"]),
+            "path": post_file if len(postcheck_files) > 0 else pre_file,
+            "taskId":taskId
+        }
 
-    result = mongo.db.files.insert_one(file_doc)
-    
-    return jsonify({
-        "message": "File uploaded successfully",
-        "file_id": str(result.inserted_id),
-        "filename": unique_filename,
-        "parsed_excel_filename": post_file if len(postcheck_files) > 0 else pre_file
-    }), 201
+        result = mongo.db.files.insert_one(file_doc)
+        
+        return jsonify({
+            "message": "File uploaded successfully",
+            "file_id": str(result.inserted_id),
+            "filename": unique_filename,
+            "parsed_excel_filename": post_file if len(postcheck_files) > 0 else pre_file
+        }), 201
 
-
+    except Exception as e:
+        
+        return jsonify({"message": "Please check the file again"}), 400
 
 
 
@@ -589,7 +606,8 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
             "enms": oneValDf["ENM"],
             "circle":oneValDf["circle"],
             "site_id":oneValDf["SiteID"],
-            "nodes":oneValDf["Node"]
+            "nodes":oneValDf["Node"],
+            "task_id":task_id,
         }
         mongo.db.migration.insert_one({**final_data,"status":"Pending"})
     
