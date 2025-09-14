@@ -1,5 +1,5 @@
-from Script import Script
 import copy
+from Script import Script
 
 
 class aa_01_5qiTable_BWP(Script):
@@ -9,19 +9,40 @@ class aa_01_5qiTable_BWP(Script):
         self.mo_dict['5qi'] = {
             'managedElementId': self.node,
             'GNBDUFunction': {'gNBDUFunctionId': '1', 'DU5qiTable': {
-            'attributes': {'xc:operation': 'create'}, 'dU5qiTableId': '1', 'default5qiTable': 'true', 'DU5qi': []}},
+                'attributes': {'xc:operation': 'create'}, 'dU5qiTableId': '1', 'default5qiTable': 'true', 'DU5qi': []}},
             'GNBCUCPFunction': {'gNBCUCPFunctionId': '1', 'CUCP5qiTable': {
-            'attributes': {'xc:operation': 'create'}, 'cUCP5qiTableId': '1', 'default5qiTable': 'true', 'CUCP5qi': []}},
+                'attributes': {'xc:operation': 'create'}, 'cUCP5qiTableId': '1', 'default5qiTable': 'true', 'CUCP5qi': []}},
             'GNBCUUPFunction': {'gNBCUUPFunctionId': '1', 'CUUP5qiTable': {
-            'attributes': {'xc:operation': 'create'}, 'cUUP5qiTableId': '1', 'default5qiTable': 'true', 'CUUP5qi': []}},
+                'attributes': {'xc:operation': 'create'}, 'cUUP5qiTableId': '1', 'default5qiTable': 'true', 'CUUP5qi': []}},
         }
         for mo_type in ['DU', 'CUCP', 'CUUP']:
             tmp_list = self.usid.db[F'{mo_type}5qi'].columns.tolist()
+            mo_table = F'GNB{mo_type}Function=1,{mo_type}5qiTable=1'
+            if self.site.fdn_exists(fdn=mo_table):
+                del self.mo_dict['5qi'][F'GNB{mo_type}Function'][F'{mo_type}5qiTable']['attributes']
             for r in self.usid.db[F'{mo_type}5qi'].itertuples():
+                mo_5qi = F'{mo_table},{mo_type}5qi=1'
                 tmp_dict = {_: r.__getattribute__(_) for _ in tmp_list}
-                tmp_dict |= {'attributes': {'xc:operation': 'create'}}
+                if self.site.fdn_exists(fdn=mo_5qi):
+                    for para in ['logicalChannelGroupId', 'profile5qi']:
+                        if para in tmp_dict.keys():
+                            del tmp_dict[para]
+                        else:
+                            "Parameter not found:"
+                    tmp_dict |= {'attributes': {'xc:operation': 'update'}}
+                else:
+                    tmp_dict |= {'attributes': {'xc:operation': 'create'}}
                 self.mo_dict['5qi'][F'GNB{mo_type}Function'][F'{mo_type}5qiTable'][F'{mo_type}5qi'].append(copy.deepcopy(tmp_dict))
 
+        # bwp_dict = {
+        #     '100': {'numberOfRBs': '273', 'bWPSetId': '1'},
+        #     '90': {'numberOfRBs': '245', 'bWPSetId': '2'},
+        #     '80': {'numberOfRBs': '217', 'bWPSetId': '3'},
+        #     '70': {'numberOfRBs': '189', 'bWPSetId': '4'},
+        #     '60': {'numberOfRBs': '162', 'bWPSetId': '5'},
+        #     '50': {'numberOfRBs': '133', 'bWPSetId': '6'},
+        #     '40': {'numberOfRBs': '106', 'bWPSetId': '7'},
+        # }
         # GNBDUFunction -- BWP & BWPSet & sNSSAIList
         self.mo_dict['GNBDUFunction_BWP'] = {
             'managedElementId': self.node,
@@ -73,7 +94,7 @@ class aa_01_5qiTable_BWP(Script):
                 'NRCellDU': [],
             },
         }
-
+        # NRCellDU
         for cell in self.site.du_cell:
             self.mo_dict['GNBDUFunction_BWP']['GNBDUFunction']['NRCellDU'].append({
                 'attributes': {'xc:operation': 'update'}, 'nRCellDUId': cell,

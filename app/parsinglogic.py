@@ -282,7 +282,7 @@ class Calculator:
                 
                 
         print(list_of_sheet_name,"list_of_sheet_namelist_of_sheet_name")
-        file_name = calc+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data_temp.xlsx"
+        file_name = calc+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
         with pd.ExcelWriter(os.path.join("downloads",file_name), engine="xlsxwriter") as writer:
             
             for i, df in enumerate(list_of_sheet, start=1):
@@ -463,7 +463,7 @@ class Calculator:
             
             
         print(len(list_of_sheet),"list_of_sheetlist_of_sheet")
-        file_name = "alarmsss"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data_temp.xlsx"
+        file_name = "alarmsss"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
         with pd.ExcelWriter(os.path.join("downloads",file_name), engine="xlsxwriter") as writer:
             
             for i, df in enumerate(list_of_sheet, start=1):

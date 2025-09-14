@@ -18,6 +18,12 @@ import tempfile
 import shutil
 import zipfile
 from typing import List
+import sys
+
+path_nsa_sa = os.path.join(os.path.join(os.getcwd(),"app"),"nsa_sa")
+print(sys.path)
+sys.path.append(path_nsa_sa)
+from app.nsa_sa.script_runner import scripting_nsa_sa
 
 cal = Calculator()
 
@@ -298,10 +304,10 @@ def upload_file():
     pre_file = ""
     post_file = ""
     if(len(precheck_files) > 0):
-        pre_file=clc.start_parser(precheck_files,"pre")
+        pre_file=clc.start_parser(precheck_files,"Pre_")
         
     if(len(postcheck_files) > 0):
-        post_file=clc.start_parser(postcheck_files,"post")
+        post_file=clc.start_parser(postcheck_files,"Post_")
     # pre_file="post08_09_2025_01_56_16_cells_data_temp.xlsx"
     # pre_file="pre08_09_2025_02_03_56_cells_data_temp.xlsx"
     # post_file="post08_09_2025_02_04_01_cells_data_temp.xlsx"
@@ -473,16 +479,9 @@ alarm get NodeId1;NodeId2 --list
 ScriptLogs
 
 cmedit get NodeId1;NodeId2
-CUCP5qiTable.<w>;QosPriorityMapping.<w>;BWP.<w>;UeMobilityGroupDefinition.<w>;RadioBearerTable.<w>;UeCC.<w>;InactivityProfileUeCfg.<w>;EUtranFreqRelation.<w>;UeGroupSelection.<w>;GtpuSupervisionProfile.<w>;UeBb.<w>;
-Rohc.<w>;UeAdaptiveRlc.<w>;UeMCNrFreqRelProfileUeCfg.<w>;EUtraNetwork.<w>;UeAdaptiveRlcUeCfg.<w>;DrxProfileUeCfg.<w>;SignalingRadioBearer.<w>;EmCall.<w>;UserPlaneProfile.<w>;CUUP5qi.<w>;RrcInactiveProfileUeCfg.<w>;
-GNBDUFunction.<w>;NRCellDU.<w>;Rrc.<w>;AnrFunctionEUtran.<w>;UeMCEUtranFreqRelProfile.<w>;GNBCUUPFunction.<w>;Lm.<w>;InactivityProfile.<w>;UcmCellProfile.<w>;AnrFunction.<w>;McfbCellProfileUeCfg.<w>;EUtranFrequency.<w>;
-UeGroupSelectionProfile.<w>;UserPlaneProfileUeCfg.<w>;SrHandlingUeCfg.<w>;Rach.<w>;RachUeCfg.<w>;DrbRlc.<w>;Mcpc.<w>;UeServiceGroupDefinition.<w>;GNBCUCPFunction.<w>;NRCellCU.<w>;RrcInactiveProfile.<w>;UeBbProfile.<w>;
-SystemFunctions.<w>;McpcPCellEUtranFreqRelProfileUeCfg.<w>;TrafficSteering.<w>;DcDlCfg.<w>;AnrFunctionNR.<w>;DU5qiTable.<w>;DynPowerOpt.<w>;Mcfb.<w>;PriorityDomainMapping.<w>;McfbCellProfile.<w>;GtpuSupervision.<w>;
-TermPointToAmf.<w>;ManagedElement.<w>;BWPSetUeCfg.<w>;McpcPCellEUtranFreqRelProfile.<w>;McpcPCellProfileUeCfg.<w>;RadioLinkControl.<w>;EndpointResource.<w>;DU5qi.<w>;AnrFunctionEUtranUeCfg.<w>;SecurityHandling.<w>;
-McpcPCellProfile.<w>;SctpEndpoint.<w>;UeMC.<w>;DrbRlcUeCfg.<w>;UeMCCellProfile.<w>;Paging.<w>;BWPSet.<w>;DrxProfile.<w>;BWPSetCfg.<w>;SrHandling.<w>;CUCP5qi.<w>;UcmNrFreqRelProfile.<w>;CUUP5qiTable.<w>;TrStSaEUtranFreqRelProfile.<w>;
-FeatureKey.<w>;UeCovMeas.<w>;UcmCellProfileUeCfg.<w>;UeMCEUtranFreqRelProfileUeCfg.<w>;PrefUeGroupSelectionProfile.<w>;UeBbProfileUeCfg.<w>;Transport.<w>;RohcUeCfg.<w>;
-UeMCNrFreqRelProfile.<w>;TrStSaEUtranFreqRelProfileUeCfg.<w>;LocalSctpEndpoint.<w>;
-ENodeBFunction.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;UePolicyOptimization.<w>;ReportConfigB1NR.<w>;GUtranFreqRelation.<w> --list"""
+TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandling,ipv6Address1,ipv6Address2,ipv4Address1,ipv4Address2);SystemFunctions.<w>;Lm.<w>;FeatureState.(description,featureState,featureStateId,licenseState,serviceState);CmFunction.(syncStatus);ManagedElement.<w>;AnrFunction.<w>;AnrFunctionNR.<w>;AnrFunctionNRUeCfg.<w>;AnrFunctionEUtran.<w>;AnrFunctionEUtranUeCfg.<w>;Transport.<w>;SctpProfile.<w>;Sctp.<w>;SctpEndpoint.<w>;AddressIPv4.<w>;AddressIPv6.<w>;EndpointResource.<w>;LocalSctpEndpoint.<w>;LocalIpEndpoint.<w>;GNBDUFunction.<w>;NRCellDU.<w>;NRSectorCarrier.<w>;DU5qiTable.<w>;DU5qi.<w>;Paging.<w>;Rrc.<w>;RadioBearerTable.<w>;SignalingRadioBearer.<w>;BWP.<w>;BWPSet.<w>;DynPowerOpt.<w>;BWPSetUeCfg.<w>;BWPSetCfg.<w>;UeCC.<w>;UeBb.<w>;UeBbProfile.<w>;UeBbProfileUeCfg.<w>;Rach.<w>;RachUeCfg.<w>;RadioLinkControl.<w>;DrbRlc.<w>;DrbRlcUeCfg.<w>;UeAdaptiveRlc.<w>;UeAdaptiveRlcUeCfg.<w>;QosPriorityMapping.<w>;PriorityDomainMapping.<w>;DrxProfile.<w>;DrxProfileUeCfg.<w>;PuschRepRel16Drx.<w>;GNBCUCPFunction.<w>;NRCellCU.<w>;EmCall.<w>;SecurityHandling.<w>;CUCP5qiTable.<w>;CUCP5qi.<w>;NRNetwork.<w>;NRFrequency.<w>;NRFreqRelation.<w>;EUtraNetwork.<w>;EUtranFrequency.<w>;EUtranFreqRelation.<w>;NRCellRelation.<w>;Mcpc.<w>;McpcPCellEUtranFreqRelProfile.<w>;McpcPCellEUtranFreqRelProfileUeCfg.<w>;McpcPCellProfile.<w>;McpcPCellProfileUeCfg.<w>;UeCC.<w>;InactivityProfile.<w>;InactivityProfileUeCfg.<w>;SrHandling.<w>;SrHandlingUeCfg.<w>;DrbRlc.<w>;DrbRlcUeCfg.<w>;UserPlaneProfile.<w>;UserPlaneProfileUeCfg.<w>;RrcInactiveProfile.<w>;RrcInactiveProfileUeCfg.<w>;Rohc.<w>;RohcUeCfg.<w>;Mcfb.<w>;McfbCellProfile.<w>;McfbCellProfileUeCfg.<w>;TrafficSteering.<w>;TrStPSCellNrFreqRelProfile.<w>;TrStPSCellNrFreqRelProfileUeCfg.<w>;TrStPSCellProfile.<w>;TrStPSCellProfileUeCfg.<w>;TrStSaCellProfile.<w>;TrStSaCellProfileUeCfg.<w>;TrStSaEUtranFreqRelProfile.<w>;TrStSaEUtranFreqRelProfileUeCfg.<w>;TrStSaNrFreqRelProfile.<w>;TrStSaNrFreqRelProfileUeCfg.<w>;UeMC.<w>;UeMCNrFreqRelProfile.<w>;UeMCNrFreqRelProfileUeCfg.<w>;UeMCCellProfile.<w>;UeMCCellProfileUeCfg.<w>;UeMCEUtranFreqRelProfile.<w>;UeMCEUtranFreqRelProfileUeCfg.<w>;UeCovMeas.<w>;UcmCellProfile.<w>;UcmCellProfileUeCfg.<w>;UcmNrFreqRelProfile.<w>;UeGroupSelection.<w>;PrefUeGroupSelectionProfile.<w>;UeAdmissionGroupDefinition.<w>;UeGroupSelectionProfile.<w>;UeMobilityGroupDefinition.<w>;UeServiceGroupDefinition.<w>;GNBCUUPFunction.<w>;CUUP5qiTable.<w>;CUUP5qi.<w>;UeCC.<w>;DcDlCfg.<w>;GtpuSupervision.<w>;GtpuSupervisionProfile.<w>;ENodeBFunction.<w>;UePolicyOptimization.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;ReportConfigB1NR.<w>;GUtranSyncSignalFrequency.<w>;GUtranFreqRelation.<w>;GUtranCellRelation.<w> --dynamic
+
+"""
         
         
         
@@ -502,9 +501,11 @@ ENodeBFunction.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;UePolic
     
         fileNameList.append(ffnme)
         
-        
+    print(read_df,"read_dfread_dfread_df")
     circle_list = read_df["circle"].unique().tolist()
     enm_list = read_df["ENM"].unique().tolist()
+    SiteID_list = read_df["SiteID"].unique().tolist()
+    Node_list = read_df["Node"].unique().tolist()
     
     file_doc = {
         "user_id": request.user.get("sub"),
@@ -512,10 +513,13 @@ ENodeBFunction.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;UePolic
         "filename": unique_filename,
         "enm_file_name": ",".join(fileNameList),
         "enms": "/".join(enm_list),
-        "circle":"/".join(circle_list)
+        "circle":"/".join(circle_list),
+        "site_id":"/".join(SiteID_list),
+        "nodes":"/".join(Node_list)
     }
 
     result = mongo.db.enmfiles.insert_one(file_doc)
+    result = mongo.db.migration.insert_one({**file_doc,"status":"Pending"})
     
     return jsonify({
         "message": "File uploaded successfully",
@@ -523,6 +527,40 @@ ENodeBFunction.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;UePolic
         "filename": unique_filename,
         "enm_file_name": ffnme
     }), 201
+    
+    
+    
+def script_entry_migration(file_con,file_path):
+    
+    
+    df = pd.read_excel(file_path,sheet_name=None)
+    print(file_path,df,"file_pathfile_pathfile_pathfile_path")
+    
+    print(df["Site"])
+    
+    unique_circle = df["Site"]["circle"].unique()
+    unique_enm = df["Site"]["enm"].unique()
+    SiteID_list = df["Site"]["siteid"].unique().tolist()
+    Node_list = df["Site"]["node"].unique().tolist()
+    
+    datafind = {
+        "enms": "/".join(unique_enm),
+        "circle":"/".join(unique_circle),
+        "site_id":"/".join(SiteID_list),
+        "nodes":"/".join(Node_list)
+    }
+    
+    
+    final_data = {**file_con,**datafind}
+    
+    mongo.db.scripting.insert_one(
+        final_data
+    )
+    
+    mongo.db.migration.update_one(
+        datafind,
+        {"$set": {"status": "Done"}}
+    )
     
     
     
@@ -548,12 +586,16 @@ def uploadScripting_file():
     eFile_original_filename = secure_filename(eFile.filename)
     siteList_unique_filename = f"{uuid.uuid4().hex}_{siteList_original_filename}"
     eFile_unique_filename = f"{uuid.uuid4().hex}_{eFile_original_filename}"
-    file_con = {
-        "siteList_original_filename":siteList_original_filename,
-        "siteList_unique_filename":siteList_unique_filename,
-        "eFile_original_filename":eFile_original_filename,
-        "eFile_unique_filename":eFile_unique_filename,
-    }
+    
+    
+    curr_dir = os.getcwd()
+    
+    
+    circle_name = request.form.get('circle')
+    enm_name = request.form.get('enm')
+    
+    
+    
     
     
     
@@ -563,14 +605,65 @@ def uploadScripting_file():
     eFile.save(eFile_file_path)
     
     
+    nsa_sa_path = os.path.join(os.getcwd(),"app","nsa_sa")
+    
+    sys.path.append(nsa_sa_path)
+    
+    print(sys.path,"sys.pathsys.pathsys.pathsys.path")
+    
+    nsa_op_folder = scripting_nsa_sa(siteList_original_filename,eFile_original_filename,nsa_sa_path,circle_name,enm_name,os.path.join(curr_dir,siteList_file_path),os.path.join(curr_dir,eFile_file_path),curr_dir)
+
+    list_dirr = os.listdir(nsa_op_folder)
+    
+    excel_file = ""
+    
+    
+
+    shutil.make_archive(nsa_op_folder, 'zip', nsa_op_folder)
+
+    for i in list_dirr:
+        if("xlsx" in i):
+            excel_file = i
+            
+    
+    file_con = {
+        "siteList_original_filename":siteList_original_filename,
+        "siteList_unique_filename":siteList_unique_filename,
+        "eFile_original_filename":eFile_original_filename,
+        "eFile_unique_filename":eFile_unique_filename,
+        "nsa_op_folder":nsa_op_folder.replace(os.getcwd(),"")+".zip",
+    }
+    script_entry_migration(file_con,os.path.join(nsa_op_folder,excel_file))
+    
+    # with zipfile.ZipFile(nsa_op_folder+".zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
+    #     for root, _, files in os.walk(nsa_op_folder):
+    #         print(file,"filefilefile")
+    #         for file in files:
+                
+    #             print(file,"filefilefile")
+    #         deoijejdi3e
+                
+    #             # file_path = os.path.join(root, file)
+    #             # arcname = os.path.basename(file_path)  # just filename inside zip
+    #             # zipf.write(file_path, arcname)
+
+    # print(os.path.abspath(nsa_op_folder),"abspathabspathabspath")
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
     return jsonify({
-        "message": "File uploaded successfully",
-        "file_id": str(result.inserted_id),
-        "filename": unique_filename,
-        "enm_file_name": ffnme
+        "message": "File uploaded successfully"
     }), 201
     
     
@@ -635,6 +728,7 @@ def get_user_files():
 
 
 
+
 @api.route("/user-enm-files", methods=["GET"])
 @token_required
 def get_user_enm_files():
@@ -683,6 +777,128 @@ def get_user_enm_files():
     files_cursor = mongo.db.enmfiles.aggregate(aggr)
     
     
+    
+    files_list = []
+    for f in files_cursor:
+        
+        print(f)
+        
+        
+        files_list.append(f)
+    
+    return jsonify(files_list), 200
+
+
+
+
+
+@api.route("/user-scripting-files", methods=["GET"])
+@token_required
+def get_user_scripting_files():
+    user_id = request.user.get("sub")  
+    
+    
+    aggr = [
+        {
+            '$addFields': {
+                'user_id_obj': {
+                    '$convert': {
+                        'input': '$user_id', 
+                        'to': 'objectId'
+                    }
+                }, 
+                'uID': {
+                    '$convert': {
+                        'input': '$_id', 
+                        'to': 'string'
+                    }
+                }
+            }
+        }, {
+            '$lookup': {
+                'from': 'users', 
+                'localField': 'user_id_obj', 
+                'foreignField': '_id', 
+                'as': 'userresult'
+            }
+        }, {
+            '$unwind': {
+                'path': '$userresult', 
+                'preserveNullAndEmptyArrays': True
+            }
+        }, {
+            '$project': {
+                'user_id_obj': 0, 
+                'userresult.hashed_password': 0, 
+                'userresult._id': 0, 
+                '_id': 0
+            }
+        }
+    ]
+
+    # files_cursor = mongo.db.files.find({"user_id": user_id})
+    files_cursor = mongo.db.scripting.aggregate(aggr)
+    
+    
+    
+    files_list = []
+    for f in files_cursor:
+        
+        print(f)
+        
+        
+        files_list.append(f)
+    
+    return jsonify(files_list), 200
+
+@api.route("/migrationList", methods=["GET"])
+@token_required
+def migrationList():
+    user_id = request.user.get("sub")  
+    
+    
+    aggr = [
+        {
+            '$addFields': {
+                'user_id_obj': {
+                    '$convert': {
+                        'input': '$user_id', 
+                        'to': 'objectId'
+                    }
+                }, 
+                'uID': {
+                    '$convert': {
+                        'input': '$_id', 
+                        'to': 'string'
+                    }
+                }
+            }
+        }, {
+            '$lookup': {
+                'from': 'users', 
+                'localField': 'user_id_obj', 
+                'foreignField': '_id', 
+                'as': 'userresult'
+            }
+        }, {
+            '$unwind': {
+                'path': '$userresult', 
+                'preserveNullAndEmptyArrays': True
+            }
+        }, {
+            '$project': {
+                'user_id_obj': 0, 
+                'userresult.hashed_password': 0, 
+                'userresult._id': 0, 
+                '_id': 0
+            }
+        }
+    ]
+
+    # files_cursor = mongo.db.files.find({"user_id": user_id})
+    files_cursor = mongo.db.migration.aggregate(aggr)
+    
+    
     files_list = []
     for f in files_cursor:
         
@@ -719,10 +935,29 @@ def download_file(file_id):
     return send_file(
         final_file,
         as_attachment=True
-    ) 
+    )
+    
+    
+     
     
     return send_from_directory("downloads", download_name, as_attachment=True)
 
+
+
+
+
+@api.route("/downloads/nsa_sa/<file_id>", methods=["GET"])
+@token_required
+def download_file_nsa_sa(file_id):
+    
+    final_file = os.path.join(os.getcwd(),"downloads","nsa_sa",file_id)
+    content_type = mimetypes.guess_type(final_file)
+    
+    print(content_type,"content_typecontent_type")
+    return send_file(
+        final_file,
+        as_attachment=True
+    )
 
 @api.route("/enm_downloads/<file_id>", methods=["GET"])
 # @token_required

@@ -26,38 +26,36 @@ class Script:
         self.mo_dict = {}
         self.s_dict = {'cli': [], 'cmedit': []}
         self.site = self.usid.sites[self.node]
-        self.me = ''
+        self.me = self.site.me
         self.relative_path = {}
         self.set_node_site_and_para_for_dcgk(node)
 
-        # File Name and Path
+    def compare_current_and_gs_value(self, value, gs_value) -> bool:
+        if type(value) not in (dict, str, list): value = str(value)
+        if type(value) is list and (sum([type(_) is dict for _ in value]) == len(value)) and \
+                type(gs_value) is list and (sum([type(_) is dict for _ in gs_value]) == len(gs_value)):
+            return set([str(_) for _ in value]).difference(set([str(_) for _ in gs_value])) == \
+                set([str(_) for _ in gs_value]).difference(set([str(_) for _ in value]))
+        return value == gs_value
 
-        # sc_name = '_'.join([self.node, self.__class__.__name__, self.usid.circle])
-        # self.relative_path = {
-        #     'cli': ['Nodes', self.node, 'bulk_import_' + sc_name + '.txt'],
-        #     'cmedit': ['Nodes', self.node, 'command_line_' + sc_name + '.txt']
-        # }
+    def add_mo_para_to_para_check_list(self, mo, para, proposed_value, current_mo, current_value) -> None:
+        self.usid.para_list.append({
+            'node': self.node, 'mo': mo, 'para': para, 'proposed_value': proposed_value,
+            'current_mo': current_mo, 'current_value': current_value, 'flag': 'OK'})
 
     def set_node_site_and_para_for_dcgk(self, node):
         self.node = node
         self.mo_dict = {}
         self.site = self.usid.sites[self.node]
         self.me = self.site.me
-        # self.df_enb_cell = self.usid.df_enb_cell.copy().loc[(self.usid.df_enb_cell.postsite == self.node)]
-        # self.df_gnb_cell = self.usid.df_gnb_cell.copy().loc[(self.usid.df_gnb_cell.postsite == self.node)]
-        # End
-
-        # File Name and Path
         self.s_dict = {'cli': [], 'cmedit': []}
         sc_name = '_'.join([self.node, self.usid.circle, *self.__class__.__name__.split('_')[1:], '.txt'])
         self.relative_path = {
-            'cli': ['Nodes', self.node, 'import_' + sc_name],
-            'cmedit': ['Nodes', self.node, 'command_' + sc_name]
+            'cli': ['Nodes', self.node, 'bulk_' + sc_name],
+            'cmedit': ['Nodes', self.node, 'cli_' + sc_name]
         }
 
-
-    def create_rpc_msg(self):
-        pass
+    def create_rpc_msg(self): pass
 
     def create_script_from_mo_dict(self):
         for mo_fdn in self.mo_dict:
@@ -96,8 +94,6 @@ class Script:
 
     @staticmethod
     def non_null_flag(*, val: object) -> bool: return str(val) not in ['None', 'null', 'empty', '', '""', '[]', '{}']
-
-    # [None, 'None', '', '""', 'XX', 'nan', np.nan, [], {}]
 
     def netconf_value_update(self, val):
         """ :rtype: str """
@@ -268,10 +264,13 @@ class Script:
         if mo is [None, 'None', '', {}, []] or mo_fdn in [None, 'None', '', {}, []]: return []
         if mo.get('managedElementId') is not None: mo_fdn = F'{self.me}'
         script = []
-        if len(mo_fdn) > 0 and mo_fdn.split(',')[-1].split('=')[0] not in self.usid.dump_list:
-            self.usid.dump_list.append(mo_fdn.split(',')[-1].split('=')[0])
+        if len(mo_fdn) > 0 and mo_fdn.split(',')[-1].split('=')[0] not in self.usid.log_mos:
+            self.usid.log_mos += F';{mo_fdn.split(",")[-1].split("=")[0]}.<w>'
         if mo.get('attributes') is not None:
-            if self.site.fdn_exists(fdn=mo_fdn) and mo['attributes']['xc:operation'] == 'create':
+            mo_ldn = mo_fdn
+            if re.match('(.*,ManagedElement=[^,]*),.*', mo_ldn):
+                mo_ldn = re.match('(.*,ManagedElement=[^,]*),.*', mo_ldn).group(1)
+            if self.site.fdn_exists(fdn=mo_ldn) and mo['attributes']['xc:operation'] == 'create':
                 mo['attributes']['xc:operation'] = 'update'
             tmp_dict = dict((k, v) for k, v in mo.items() if k[0].islower())
             script.extend(self.cmedit_cli_mo_form_dict(script_type, mo_fdn, tmp_dict))
@@ -284,127 +283,14 @@ class Script:
                     script.extend(self.cmedit_list_form_dict(script_type, F'{mo_fdn},{para}={mo[para].get(self.get_moc_id(para))}', mo[para]))
         return script
 
-    def get_end_moc(self, mo: str) -> str:
-        return mo.split(',')[-1].split('=')[0]
+    @staticmethod
+    def get_end_moc(mo: str) -> str: return mo.split(',')[-1].split('=')[0]
 
-    def get_moc_id(self, moc: str) -> str:
-        return moc[0].lower() + moc[1:] + 'Id'
+    @staticmethod
+    def get_moc_id(moc: str) -> str: return moc[0].lower() + moc[1:] + 'Id'
 
-    def lower_first_char(self, para: str) -> str:
-        return para[0].lower() + para[1:]
 
-    def get_db_attributes(self, moc: str) -> dict:
-        qs = self.MoDetail.objects.filter((Q(mo__software=self.usid.client.software) & Q(mo__moc=moc) & Q(mo__motype=self.motype) & Q(flag=True))
-                                          & (Q(bbversion='') | Q(bbversion__contains=self.bbversion))).order_by('parameter').distinct().values('parameter', 'value')
-        return {_.get('parameter'): json.loads(_.get('value')) for _ in qs}
 
-    def get_mo_related_attributes(self, mo) -> dict:
-        qs = getattr(mo, 'modetail_set').filter((Q(flag=True)) & (Q(bbversion='') | Q(bbversion__contains=self.bbversion))).order_by('parameter').distinct().values('parameter', 'value')
-        ret_dict = {self.lower_first_char(_.get('parameter')): json.loads(_.get('value')) for _ in qs}
-        ret_dict |= {self.get_moc_id(mo.moc): mo.moid}
-        return ret_dict
-
-    def get_db_dict_with_cr_for_mo_moid(self, *, moc: str, moid: str = '') -> dict:
-        mos = self.MoName.objects.filter(moc=moc, software=self.usid.client.software, motype=self.motype)
-        for mo in mos:
-            if mo.moid == moid:
-                break
-        ret_dict = self.get_mo_related_attributes(mo) if 'mo' in locals() else {}
-        ret_dict |= {'attributes': {'xc:operation': 'create'}, self.get_moc_id(moc): moid}
-        return ret_dict
-
-    def get_mo_attributes(self, *, moc: str, moid: str = '') -> dict:
-        mos = self.MoName.objects.filter(moc=moc, software=self.usid.client.software, motype=self.motype)
-        for mo in mos:
-            if mo.moid == moid:
-                break
-        ret_dict = self.get_mo_related_attributes(mo) if 'mo' in locals() else {}
-        ret_dict |= {self.get_moc_id(moc): moid}
-        return ret_dict
-
-    def update_db_attr_with_mo_data(self, moc, site, mo) -> dict:
-        ret_dict = self.get_mo_attributes(moc=moc)
-        mo_data = site.site_extract_data(mo=mo) if site and mo in site.mo_list else {}
-        ret_dict |= {_: mo_data.get(_, ret_dict[_]) for _ in ret_dict}
-        return ret_dict
-
-    def get_mo_dict_for_moc_node_fdn(self, moc, node=None, mo=None) -> dict:
-        """ :rtype: dict """
-        ret_dict = self.get_mo_attributes(moc=moc)
-        if F'site_{node}' in self.usid.sites and mo in self.usid.sites.get(F'site_{node}').mo_list:
-            mo_data = self.usid.sites.get(F'site_{node}').site_extract_data(mo=mo)
-            ret_dict |= {_: mo_data.get(_, ret_dict[_]) for _ in ret_dict}
-        return ret_dict
-
-    def log_append_child_tags(self, moc, rel_tag, parent_mo='', node=None):
-        ret_mos = {moc: []}
-        if parent_mo in [None, 'None', '', 'XX', 'nan', np.nan, '""', [], {}]:
-            ret_mos[moc].extend(self.db_append_child_list(moc, rel_tag))
-        else:
-            site = self.usid.sites.get(F'site_{node}', None)
-            mos = site.find_mo_ending_with_parent_str(moc=moc, parent=parent_mo) if site else []
-            if len(mos) > 0:
-                for mo in mos:
-                    mo_attrs_db = {self.get_moc_id(moc): '1'}
-                    mo_attrs_db |= self.get_db_attributes(self.get_end_moc(mo))
-                    mo_attrs_site = site.get_mo_attr_str(mo)
-                    for para in mo_attrs_db:
-                        mo_attrs_db[para] = mo_attrs_site.get(para, mo_attrs_db[para])
-                    # Add to support cli and cmedit for Para Scripts
-                    mo_attrs_db['attributes'] = {'xc:operation': 'update' if moc in self.systemCreated_list else 'create'}
-                    for child in self.MoRelation.objects.filter(parent=moc, tag=rel_tag, software=self.usid.client.software):
-                        mo_attrs_db |= self.log_append_child_tags(child.child, rel_tag, mo, node)
-                    ret_mos[moc].append(mo_attrs_db.copy())
-            else:
-                ret_mos[moc].extend(self.db_append_child_list(moc, rel_tag))
-        return ret_mos
-
-    def append_child_tags_dict(self, mo, rel_tag):
-        """ :rtype: dict """
-        parent_mo_dict = self.get_mo_related_attributes(mo)
-        parent_mo_dict['attributes'] = {'xc:operation': 'update' if mo.moc in self.systemCreated_list else 'create'}
-        for child_mos in self.MoRelation.objects.filter(parent=mo.moc, tag=rel_tag, software=self.usid.client.software):
-            parent_mo_dict[child_mos.child] = []
-            for child in self.MoName.objects.filter(moc=child_mos.child, software=self.usid.client.software, motype=self.motype):
-                if child.moid in [None, 'None', '', 'XX', 'nan', np.nan, '""', [], {}]:
-                    continue
-                if child.modetail_set.filter((Q(flag=True)) & (Q(bbversion='') | Q(bbversion__contains=self.bbversion))).exists():
-                    parent_mo_dict[child.moc].append(self.append_child_tags_dict(child, rel_tag))
-        return parent_mo_dict
-
-    def db_append_child_list(self, moc, rel_tag):
-        """ :rtype: list """
-        ret_mos = []
-        mos = self.MoName.objects.filter(moc=moc, software=self.usid.client.software, motype=self.motype)
-        if mos.exists():
-            for mo in mos:
-                if mo.moid in [None, 'None', '', 'XX', 'nan', np.nan, '""', [], {}]:
-                    continue
-                else:
-                    ret_mos.append(self.append_child_tags_dict(mo, rel_tag=rel_tag).copy())
-        return ret_mos
-
-    def get_mo_dict_for_id_tag(self, moc, moid, prev_site=None, parent=''):
-        """ :rtype: dict """
-        if prev_site not in [None, 'None', '', [], {}]:
-            site = self.usid.sites.get(F'site_{prev_site}')
-            mo = site.find_mo_ending_with_parent_str_with_id(parent=parent, moc=moc, moid=moid)
-            if len(mo) > 0:
-                tmp_dict = self.update_db_attr_with_mo_data(moc, site, mo[0])
-            else:
-                tmp_dict = self.get_mo_attributes(moc=moc, moid=moid)
-        else:
-            tmp_dict = self.get_mo_attributes(moc=moc, moid=moid)
-        tmp_dict |= {self.get_moc_id(moc): moid}
-        return tmp_dict
-
-    def mo_para_db_dict(self, mo, site):
-        """ :rtype: dict """
-        mo_attrs_db = {self.get_moc_id(self.get_end_moc(mo)): '1'}
-        mo_attrs_db.update(self.get_db_attributes(self.get_end_moc(mo)))
-        mo_attrs_site = site.get_mo_attr_str(mo)
-        for para in mo_attrs_db: mo_attrs_db[para] = mo_attrs_site.get(para, mo_attrs_db[para])
-        return mo_attrs_db
 
     def netconf_hello_msg(self):
         """ :rtype: list """
@@ -427,15 +313,118 @@ class Script:
                 [']]>]]>', '']
         return lines
 
-    def validate_mo_exist_on_site_with_no_eq_change(self, *, fdn: str) -> bool:
-        return True if self.dcg_flag and fdn in self.site.mo_list else False
-
-    def get_mo_dict_from_moc_node_fdn_moid(self, moc: str, node: str = None, mo_fdn: str = None, moid: str = None) -> dict:
-        tmp_dict = self.get_mo_dict_for_moc_node_fdn(moc, node, mo_fdn)
-        if not self.null_flag(val=moid):
-            tmp_dict |= {self.get_moc_id(moc): moid}
-        elif self.get_moc_id(moc) not in tmp_dict.keys():
-            tmp_dict |= {self.get_moc_id(moc): '1'}
-        if not self.validate_mo_exist_on_site_with_no_eq_change(fdn=mo_fdn):
-            tmp_dict['attributes'] = {'xc:operation': 'create'}
-        return tmp_dict
+    # def get_db_attributes(self, moc: str) -> dict:
+    #     qs = self.MoDetail.objects.filter((Q(mo__software=self.usid.client.software) & Q(mo__moc=moc) & Q(mo__motype=self.motype) & Q(flag=True))
+    #                                       & (Q(bbversion='') | Q(bbversion__contains=self.bbversion))).order_by('parameter').distinct().values('parameter', 'value')
+    #     return {_.get('parameter'): json.loads(_.get('value')) for _ in qs}
+    # @staticmethod
+    # def lower_first_char(para: str) -> str: return para[0].lower() + para[1:]
+    #
+    # def get_mo_related_attributes(self, mo) -> dict:
+    #     qs = getattr(mo, 'modetail_set').filter((Q(flag=True)) & (Q(bbversion='') | Q(bbversion__contains=self.bbversion))).order_by('parameter').distinct().values('parameter', 'value')
+    #     ret_dict = {self.lower_first_char(_.get('parameter')): json.loads(_.get('value')) for _ in qs}
+    #     ret_dict |= {self.get_moc_id(mo.moc): mo.moid}
+    #     return ret_dict
+    #
+    # def get_db_dict_with_cr_for_mo_moid(self, *, moc: str, moid: str = '') -> dict:
+    #     mos = self.MoName.objects.filter(moc=moc, software=self.usid.client.software, motype=self.motype)
+    #     mo = None
+    #     for mo in mos:
+    #         if mo.moid == moid:
+    #             break
+    #     ret_dict = self.get_mo_related_attributes(mo) if 'mo' in locals() else {}
+    #     ret_dict |= {'attributes': {'xc:operation': 'create'}, self.get_moc_id(moc): moid}
+    #     return ret_dict
+    #
+    # def get_mo_attributes(self, *, moc: str, moid: str = '') -> dict:
+    #     mos = self.MoName.objects.filter(moc=moc, software=self.usid.client.software, motype=self.motype)
+    #     for mo in mos:
+    #         if mo.moid == moid:
+    #             break
+    #     ret_dict = self.get_mo_related_attributes(mo) if 'mo' in locals() else {}
+    #     ret_dict |= {self.get_moc_id(moc): moid}
+    #     return ret_dict
+    #
+    # def update_db_attr_with_mo_data(self, moc, site, mo) -> dict:
+    #     ret_dict = self.get_mo_attributes(moc=moc)
+    #     mo_data = site.site_extract_data(mo=mo) if site and mo in site.mo_list else {}
+    #     ret_dict |= {_: mo_data.get(_, ret_dict[_]) for _ in ret_dict}
+    #     return ret_dict
+    #
+    # def get_mo_dict_for_moc_node_fdn(self, moc, node=None, mo=None) -> dict:
+    #     """ :rtype: dict """
+    #     ret_dict = self.get_mo_attributes(moc=moc)
+    #     if F'site_{node}' in self.usid.sites and mo in self.usid.sites.get(F'site_{node}').mo_list:
+    #         mo_data = self.usid.sites.get(F'site_{node}').site_extract_data(mo=mo)
+    #         ret_dict |= {_: mo_data.get(_, ret_dict[_]) for _ in ret_dict}
+    #     return ret_dict
+    #
+    # def log_append_child_tags(self, moc, rel_tag, parent_mo='', node=None):
+    #     ret_mos = {moc: []}
+    #     if parent_mo in [None, 'None', '', 'XX', 'nan', np.nan, '""', [], {}]:
+    #         ret_mos[moc].extend(self.db_append_child_list(moc, rel_tag))
+    #     else:
+    #         site = self.usid.sites.get(F'site_{node}', None)
+    #         mos = site.find_mo_ending_with_parent_str(moc=moc, parent=parent_mo) if site else []
+    #         if len(mos) > 0:
+    #             for mo in mos:
+    #                 mo_attrs_db = {self.get_moc_id(moc): '1'}
+    #                 mo_attrs_db |= self.get_db_attributes(self.get_end_moc(mo))
+    #                 mo_attrs_site = site.get_mo_attr_str(mo)
+    #                 for para in mo_attrs_db:
+    #                     mo_attrs_db[para] = mo_attrs_site.get(para, mo_attrs_db[para])
+    #                 # Add to support cli and cmedit for Para Scripts
+    #                 mo_attrs_db['attributes'] = {'xc:operation': 'update' if moc in self.systemCreated_list else 'create'}
+    #                 for child in self.MoRelation.objects.filter(parent=moc, tag=rel_tag, software=self.usid.client.software):
+    #                     mo_attrs_db |= self.log_append_child_tags(child.child, rel_tag, mo, node)
+    #                 ret_mos[moc].append(mo_attrs_db.copy())
+    #         else:
+    #             ret_mos[moc].extend(self.db_append_child_list(moc, rel_tag))
+    #     return ret_mos
+    #
+    # def append_child_tags_dict(self, mo, rel_tag):
+    #     """ :rtype: dict """
+    #     parent_mo_dict = self.get_mo_related_attributes(mo)
+    #     parent_mo_dict['attributes'] = {'xc:operation': 'update' if mo.moc in self.systemCreated_list else 'create'}
+    #     for child_mos in self.MoRelation.objects.filter(parent=mo.moc, tag=rel_tag, software=self.usid.client.software):
+    #         parent_mo_dict[child_mos.child] = []
+    #         for child in self.MoName.objects.filter(moc=child_mos.child, software=self.usid.client.software, motype=self.motype):
+    #             if child.moid in [None, 'None', '', 'XX', 'nan', np.nan, '""', [], {}]:
+    #                 continue
+    #             if child.modetail_set.filter((Q(flag=True)) & (Q(bbversion='') | Q(bbversion__contains=self.bbversion))).exists():
+    #                 parent_mo_dict[child.moc].append(self.append_child_tags_dict(child, rel_tag))
+    #     return parent_mo_dict
+    #
+    # def db_append_child_list(self, moc, rel_tag):
+    #     """ :rtype: list """
+    #     ret_mos = []
+    #     mos = self.MoName.objects.filter(moc=moc, software=self.usid.client.software, motype=self.motype)
+    #     if mos.exists():
+    #         for mo in mos:
+    #             if mo.moid in [None, 'None', '', 'XX', 'nan', np.nan, '""', [], {}]:
+    #                 continue
+    #             else:
+    #                 ret_mos.append(self.append_child_tags_dict(mo, rel_tag=rel_tag).copy())
+    #     return ret_mos
+    # def mo_para_db_dict(self, mo, site):
+    #     """ :rtype: dict """
+    #     mo_attrs_db = {self.get_moc_id(self.get_end_moc(mo)): '1'}
+    #     mo_attrs_db.update(self.get_db_attributes(self.get_end_moc(mo)))
+    #     mo_attrs_site = site.get_mo_attr_str(mo)
+    #     for para in mo_attrs_db: mo_attrs_db[para] = mo_attrs_site.get(para, mo_attrs_db[para])
+    #     return mo_attrs_db
+    #
+    #
+    # def get_mo_dict_for_id_tag(self, moc, moid, prev_site=None, parent=''):
+    #     """ :rtype: dict """
+    #     if prev_site not in [None, 'None', '', [], {}]:
+    #         site = self.usid.sites.get(F'site_{prev_site}')
+    #         mo = site.find_mo_ending_with_parent_str_with_id(parent=parent, moc=moc, moid=moid)
+    #         if len(mo) > 0:
+    #             tmp_dict = self.update_db_attr_with_mo_data(moc, site, mo[0])
+    #         else:
+    #             tmp_dict = self.get_mo_attributes(moc=moc, moid=moid)
+    #     else:
+    #         tmp_dict = self.get_mo_attributes(moc=moc, moid=moid)
+    #     tmp_dict |= {self.get_moc_id(moc): moid}
+    #     return tmp_dict

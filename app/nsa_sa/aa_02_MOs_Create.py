@@ -5,15 +5,10 @@ from Script import Script
 class aa_02_MOs_Create(Script):
     def create_rpc_msg(self):
         if self.node not in self.usid.nr_node: return
-        # 'attributes': {'xc:operation': 'create'},
-        # 'attributes': {'xc:operation': 'update'},
-        # 'attributes': {'xc:operation': 'delete'},
-        # Transport=1,Router=LTEUP,InterfaceIPv6=NR,AddressIPv6=NR
-        # 'Transport=1,Router=LTE_NR,InterfaceIPv6=NR,AddressIPv6=NR_S1U_OAM',
         # ToDo Need to update SCTP and localIpAddress, Validate if existing
         self.mo_dict['mos'] = {
             'managedElementId': self.node,
-            'Transport': {'transportId': '1', 'SctpEndpoint': []},
+            'Transport': {'transportId': '1', 'SctpEndpoint': {}},
             'GNBCUCPFunction': {
                 'gNBCUCPFunctionId': '1',
                 'EndpointResource': {'endpointResourceId': '1', 'LocalSctpEndpoint': {}},
@@ -22,8 +17,10 @@ class aa_02_MOs_Create(Script):
             },
 
         }
-        # Transport, EndpointResource
-
+        # Transport, EndpointResource, LocalSctpEndpoint, SctpEndpoint
+        tn_dict, a, b, c = self.site.get_sctp_local_sctp_dicts()
+        if len(tn_dict) > 0: self.mo_dict['mos'].update(tn_dict)
+        else: self.custom_log.log.exception(F'TN MOs need to be validated :  {self.node} -- {b} -- {c} -- {a} -- ')
         # TermPointToAmf
         tmp_list = ['termPointToAmfId', 'ipv6Address1', 'ipv6Address2', 'ipv4Address1', 'ipv4Address2', 'administrativeState',
                     'defaultAmf', 'pwsRestartHandling']
@@ -134,7 +131,7 @@ class aa_02_MOs_Create(Script):
         }
         # EUtranFrequency
         for r in self.usid.db['EUtranFreqRelation']['eUtranFreqRelationId'].tolist():
-            if not self.site.fdn_exists(fdn=F'{self.site.me},GNBCUCPFunction=1,EUtraNetwork=1,EUtranFrequency={r}'):
+            if not self.site.fdn_exists(fdn=F'GNBCUCPFunction=1,EUtraNetwork=1,EUtranFrequency={r}'):
                 self.mo_dict['EUtranFreqRelation']['GNBCUCPFunction']['EUtraNetwork']['EUtranFrequency'].append({
                     'attributes': {'xc:operation': 'create'}, 'arfcnValueEUtranDl': r, 'eUtranFrequencyId': r
                 })

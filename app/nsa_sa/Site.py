@@ -1,24 +1,22 @@
 import copy
 import re
 import sys
+from custom_log import Custom_Log
 
 
 class Site:
-    def __init__(self, *, node: str, mos: dict):
+    def __init__(self, *, node: str, mos: dict, custom_log: Custom_Log):
+
         self.node = node
         self.mos = mos
-        # print(self.mos.keys())
+        self.me = F'SubNetwork=ONRM_ROOT_MO,SubNetwork=LTE_5G,MeContext={self.node},ManagedElement={self.node}'
+        if 'me_me' in self.mos.keys():
+            self.me = self.mos['me_me']
+            del self.mos['me_me']
+        else:
+            custom_log.log.exception(F'Error : For Node: {self.node} dnPrefix could not be found')
         self.fdns = sorted(list(self.mos.keys()))
-        print(self.fdns[0])
-        self.me = F'SubNetwork=ONRM_ROOT_MO,SubNetwork=LTE_5G,MeContext={self.node}'
-        if ',MeContext=' in self.fdns[0]:
-            self.me = re.match('.*,MeContext=([^,]*),.*', self.fdns[0]).group(1)
-        elif self.fdns[0].startswith('NetworkElement='):
-            self.me = re.match('NetworkElement=([^,]*),.*', self.fdns[0]).group(1)
-        self.me = self.me + F',ManagedElement={self.me.strip("=")[-1]}'
 
-        # self.me = re.match('(.*,ManagedElement=[^,]*).*', self.fdns[0]).group(1) if len(self.fdns[0]) > 0 else \
-        #     F'SubNetwork=ONRM_ROOT_MO,SubNetwork=LTE_5G,MeContext={self.node},ManagedElement={self.node}'
         self.du_cell = sorted([re.match(".*,NRCellDU=([^,]*)$", _).group(1)
                                for _ in self.fdns if re.match(".*,NRCellDU=([^,]*)$", _)])
         self.cu_cell = sorted([re.match(".*,NRCellCU=([^,]*)$", _).group(1)
@@ -28,14 +26,6 @@ class Site:
         self.tdd_cell = sorted([re.match(".*,EUtranCellTDD=([^,]*)$", _).group(1)
                                 for _ in self.fdns if re.match(".*,EUtranCellTDD=([^,]*)$", _)])
         self.tn_dict, self.xn_ip, self.xn_sctp, self.type_int = self.get_sctp_local_sctp_dicts()
-        # print(self.tn_dict)
-        # print(self.xn_ip, self.xn_sctp, self.type_int)
-        # print(self.node)
-        # print(self.me)
-        # print(F'DU -- {self.du_cell}')
-        # print(F'CU -- {self.cu_cell}')
-        # print(F'FDD -- {self.fdd_cell}')
-        # print(F'TDD -- {self.tdd_cell}')
 
     def fdn_exists(self, *, fdn: str) -> bool: return fdn in self.fdns
 
@@ -66,16 +56,16 @@ class Site:
         xn_ip, xn_sctp, type_int = None, None, None
         tn_dict = {
             'Transport': {'transportId': '1', 'SctpEndpoint': {
-                'attributes': {'xc:operation': 'create'}, 'sctpEndpointId': 'XN', 'dtlsSctpSecurityMode': '0 (DISABLED)',
+                'attributes': {'xc:operation': 'create'}, 'sctpEndpointId': 'XN', 'dtlsSctpSecurityMode': 'DISABLED',
                 'portNumber': '38422', 'localIpAddress': 'Transport=1,Router=LTE_NR,InterfaceIPv6=NR,AddressIPv6=NR_S1U_OAM',
                 'sctpProfile': 'Transport=1,SctpProfile=1'}},
             'GNBCUCPFunction': {'gNBCUCPFunctionId': '1', 'EndpointResource': {
                 'endpointResourceId': '1', 'LocalSctpEndpoint': {
-                    'attributes': {'xc:operation': 'create'}, 'localSctpEndpointId': '4', 'interfaceUsed': '6 (XN)',
+                    'attributes': {'xc:operation': 'create'}, 'localSctpEndpointId': '4', 'interfaceUsed': 'XN',
                     'sctpEndpointRef': 'Transport=1,SctpEndpoint=XN'}
             }}
         }
-        tmp_fdns = [_ for _ in self.fdns if re.match('.*,GNBCUCPFunction=1,EndpointResource=[^,]*$', _)]
+        tmp_fdns = [_ for _ in self.fdns if re.match('GNBCUCPFunction=1,EndpointResource=[^,]*$', _)]
         if len(tmp_fdns) > 0:
             endpointResourceId, localSctpEndpointId, sctpEndpointId = tmp_fdns[0].split('=')[-1], '4', 'XN'
             tmp_list = [_.split('=')[-1] for _ in self.fdns if re.match(F'{tmp_fdns[0]},LocalSctpEndpoint=[^,]*$', _)]
@@ -84,7 +74,7 @@ class Site:
             if sctpEndpointId in tmp_list: sctpEndpointId = 'XN_XN' if 'XN_XN' not in tmp_list else 'XN_1'
             xn_ip, xn_sctp, xn_type_interface = self.get_sctp_ip(fdn=tmp_fdns[0], type_interface='XN')
             if xn_ip and xn_sctp:
-                tn_dict, xn_ip, xn_sctp, type_int = {}, xn_ip, xn_sctp, 'Already Exist - Please Validate'
+                tn_dict, xn_ip, xn_sctp, type_int = {}, xn_ip, xn_sctp, 'Exist - Please Validate'
             else:
                 ng_ip, ng_sctp, ng_type_interface = self.get_sctp_ip(fdn=tmp_fdns[0], type_interface='NG')
                 x2_ip, x2_sctp, x2_type_interface = self.get_sctp_ip(fdn=tmp_fdns[0], type_interface='X2')
@@ -100,7 +90,19 @@ class Site:
                     xn_ip, xn_sctp, type_int = x2_ip, x2_sctp, x2_type_interface
                 else: type_int = 'NotFound'
         else:
+            
+            print(tn_dict["GNBCUCPFunction"]["EndpointResource"])
             tn_dict['GNBCUCPFunction']['EndpointResource'] |= {'attributes': {'xc:operation': 'create'}}
-        # if len(xn_ip) > 0: xn_ip = re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_ip).group(1)
-        # if len(xn_sctp) > 0: xn_sctp = re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_sctp).group(1)
+        if xn_ip and re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_ip):
+            xn_ip = re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_ip).group(1)
+        if xn_sctp and re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_sctp):
+            xn_sctp = re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_sctp).group(1)
         return tn_dict, xn_ip, xn_sctp, type_int
+
+
+
+# for _ in self.fdns:
+#     if re.match('(.*,ManagedElement=[^,]*),.*', _):
+#         self.me = re.match('(.*,ManagedElement=[^,]*),.*', _).group(1)
+#         print(re.match('(.*,ManagedElement=[^,]*),.*', _).group(1))
+#         break

@@ -1,0 +1,59 @@
+import os
+import importlib
+from datetime import datetime
+from USID import USID
+from custom_log import Custom_Log
+import uuid
+import shutil
+
+def scripting_nsa_sa(siteList_original_filename,eFile_original_filename,nsa_sa_path,circle,enm,site_file,para_file,curr_dir):
+    
+    
+    
+    
+    print(circle,enm,site_file,para_file,curr_dir,"para_file,site_file")
+    current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
+    unq_name = f"{circle}_{enm}_{current_time}"
+    site_name = unq_name
+    # circle, enm = 'ROTN', 'ENM1'
+    file_path = curr_dir
+    base_dir = os.path.join(file_path,"downloads","nsa_sa", site_name)
+    print(base_dir,"base_dirbase_dirbase_dirbase_dirbase_dirbase_dirbase_dirbase_dir")
+    
+    
+    
+    
+    
+    
+    os.mkdir(base_dir)
+    
+    print(site_file,"site_file=>>>>>>>>>>",site_file)
+    print(para_file,"para_file=>>>>>>>>>>",para_file)
+    shutil.copy(para_file,os.path.join(base_dir,"input_"+eFile_original_filename))
+    shutil.copy(site_file,os.path.join(base_dir,"input_"+siteList_original_filename))
+    log_file = os.path.join(base_dir, F'{site_name}_{current_time}.log')
+    # para_file = os.path.join(file_path, 'Paraemeter.txt')
+    # site_file = os.path.join(file_path, 'site_list.xlsx')
+
+
+    custom_log = Custom_Log(log_file=log_file)
+    usid = USID(nsa_sa_path=nsa_sa_path,base_dir=base_dir, custom_log=custom_log, para_file=para_file, site_file=site_file, circle=circle, enm=enm)
+    modules = ['aa_01_5qiTable_BWP', 'aa_02_MOs_Create', 'aa_03_Lock_NR', 'aa_04_Parameter', 'aa_05_UnLock_NR']
+    # aa_Command
+    for node in usid.nodes:
+        for module in modules:
+            self = getattr(importlib.import_module(F'{module}'), module)(usid=usid, node=node)
+            self.run()
+    # Write a command Files and Process docs
+    print(usid.nodes)
+    if len(usid.nodes) > 0:
+        node = usid.nodes[0]
+        self = getattr(importlib.import_module(F'aa_Command'), 'aa_Command')(usid=usid, node=node)
+        self.run()
+
+    usid.save_different_dataframe(current_time=current_time)
+
+    print(F'cmedit get {usid.log_mos} --dynamic')
+    
+    
+    return base_dir

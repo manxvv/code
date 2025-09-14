@@ -79,10 +79,8 @@ class Calculator:
     
     def amf_count_states(self, celltype, df, status):
         if(len(df) > 0):
-            print(df)
                 
             subset = df[df["NodeId"] == celltype]
-            print(subset)
                 
             enabled = (subset["operationalState"] == "ENABLED").sum()
             disabled = (subset["operationalState"] == "DISABLED").sum()
@@ -238,7 +236,7 @@ class Calculator:
         conn.commit()
                 
                 
-        file_name = calc+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data_temp.xlsx"
+        file_name = calc+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
         with pd.ExcelWriter(os.path.join("downloads",file_name), engine="xlsxwriter") as writer:
             
             for i, df in enumerate(list_of_sheet, start=1):
@@ -404,7 +402,7 @@ class Calculator:
             
             
         # print(len(list_of_sheet),"list_of_sheetlist_of_sheet")
-        file_name = "alarmsss"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data_temp.xlsx"
+        file_name = "alarmsss"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
         with pd.ExcelWriter(os.path.join("downloads",file_name), engine="xlsxwriter") as writer:
             
             for i, df in enumerate(list_of_sheet, start=1):
@@ -1056,7 +1054,7 @@ class Calculator:
     def txt_to_csv(self, file_name, p_type):
         
         
-        final_file = os.path.join("downloads",p_type+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data_temp.xlsx")
+        final_file = os.path.join("downloads",p_type+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx")
         
         # print(file_name)
         with open(os.path.join(os.getcwd(),file_name)) as file:

@@ -5,20 +5,22 @@ from Script import Script
 
 class aa_04_Parameter(Script):
     def create_rpc_msg(self):
-        # if self.node in self.usid.nr_node: self.nr_parameter_update()
+        if self.node in self.usid.nr_node: self.nr_parameter_update()
         if self.node in self.usid.lte_node: self.lte_parameter_update()
 
     def nr_parameter_update(self):
         for r in self.usid.db['MOC'].itertuples():
-            if '=' not in r.__getattribute__('mo'): continue
-            if (self.site.get_fdn_parameter(fdn=F'{self.site.me},{r.__getattribute__("mo")}', para=r.__getattribute__('parameter')) !=
-                    r.__getattribute__('value')):
-                tmp_dict = {r.__getattribute__('parameter'): r.__getattribute__('value')}
-                # tmp_dict[r.__getattribute__('parameter')] = r.__getattribute__('value')
-                mo_para = F'{r.__getattribute__("mo")}--{r.__getattribute__("value")}'
-                self.mo_dict[mo_para] = {'managedElementId': self.node}
-                self.mo_dict[mo_para].update(self.create_mo_dict_from_mo(mo=r.__getattribute__('mo'), para_dict=tmp_dict))
-            else: print(r.__getattribute__('value'))
+            mo, para, value = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')
+            if '=' not in mo: continue
+            if self.site.get_fdn_parameter(fdn=mo, para=para) != value:
+                self.custom_log.log.info(F' Check MO/Parameter --->   {mo}--{para}--{value}----'
+                                         F'{self.site.get_fdn_parameter(fdn=mo, para=para) }')
+                self.mo_dict[F'{mo}_{para}'] = {'managedElementId': self.node}
+                self.mo_dict[F'{mo}_{para}'].update(self.create_mo_dict_from_mo(mo=mo, para_dict={para: value}))
+            elif self.site.get_fdn_parameter(fdn=mo, para=para) == value:
+                self.custom_log.log.info(F' Check MO/Parameter Values is Matching --->   {mo}--{para}--{value}----'
+                                         F'{self.site.get_fdn_parameter(fdn=mo, para=para)}')
+            else: self.custom_log.log.info(F' Check MO/Parameter --->   {mo}--{para}--{value}')
 
         # UeMCEUtranFreqRelProfile
         self.mo_dict['UeMCEUtranFreqRelProfile'] = {'managedElementId': self.node, 'GNBCUCPFunction': {
@@ -35,31 +37,12 @@ class aa_04_Parameter(Script):
                 self.mo_dict['UeMCEUtranFreqRelProfile']['GNBCUCPFunction']['UeMC']['UeMCEUtranFreqRelProfile'].append({
                     'ueMCEUtranFreqRelProfileId': mo_id, 'UeMCEUtranFreqRelProfileUeCfg': copy.deepcopy(tmp_dict)})
 
-        # if len(tmp_dict) > 0:
-        #     self.mo_dict[mo] = {'managedElementId': self.node}
-        #     self.mo_dict[mo].update(self.create_mo_dict_from_mo(mo=mo, para_dict=tmp_dict))
-        # NRCellCU
-        # tmp_dict = {}
-        # for r in self.usid.db['MOC'].loc[self.usid.db['MOC'].mo == 'NRCellCU'].itertuples():
-        #     tmp_dict[r.__getattribute__('parameter')] = r.__getattribute__('value')
-        # for cell in self.site.cu_cell:
-        #     tmp_mo_dict = {}
-        #     mo = F'{self.site.me},GNBCUCPFunction=1,NRCellCU={cell}'
-        #     for r in tmp_dict.keys():
-        #         if (self.site.get_fdn_parameter(fdn=F'{mo}', para=r) != tmp_dict.get(r)):
-        #             tmp_mo_dict[r] = tmp_dict.get(r)
-        #     if len(tmp_mo_dict) > 0:
-        #         tmp_mo_dict |= {'nRCellCUId': cell, 'attributes': {'xc:operation': 'update'}}
-        #         self.mo_dict[mo] = {'managedElementId': self.node, 'GNBCUCPFunction': {
-        #             'gNBCUCPFunctionId': '1', 'NRCellCU': copy.deepcopy(tmp_mo_dict)}}
-
-
         # NRCellCU
         tmp_dict = {}
         for r in self.usid.db['MOC'].loc[self.usid.db['MOC'].mo == 'NRCellCU'].itertuples():
             tmp_dict[r.__getattribute__('parameter')] = r.__getattribute__('value')
         for cell in self.site.cu_cell:
-            mo = F'{self.site.me},GNBCUCPFunction=1,NRCellCU={cell}'
+            mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
             for r in tmp_dict.keys():
                 self.mo_dict[F'{mo}{r}'] = {'managedElementId': self.node, 'GNBCUCPFunction': {
                     'gNBCUCPFunctionId': '1', 'NRCellCU': {
@@ -70,7 +53,7 @@ class aa_04_Parameter(Script):
         for r in self.usid.db['MOC'].loc[self.usid.db['MOC'].mo == 'NRCellDU'].itertuples():
             tmp_dict[r.__getattribute__('parameter')] = r.__getattribute__('value')
         for cell in self.site.cu_cell:
-            mo = F'{self.site.me},GNBDUFunction=1,NRCellDU={cell}'
+            mo = F'GNBDUFunction=1,NRCellDU={cell}'
             for r in tmp_dict.keys():
                 self.mo_dict[F'{mo}{r}'] = {'managedElementId': self.node, 'GNBDUFunction': {
                     'gNBDUFunctionId': '1', 'NRCellDU': {
@@ -119,7 +102,6 @@ class aa_04_Parameter(Script):
 
             })
 
-
     @staticmethod
     def create_mo_dict_from_mo(*, mo: str, para_dict: dict) -> dict:
         mo_dict = {}
@@ -134,3 +116,21 @@ class aa_04_Parameter(Script):
                     current_level[moc[0]] |= para_dict
             current_level = current_level[moc[0]]
         return mo_dict
+
+    # if len(tmp_dict) > 0:
+    #     self.mo_dict[mo] = {'managedElementId': self.node}
+    #     self.mo_dict[mo].update(self.create_mo_dict_from_mo(mo=mo, para_dict=tmp_dict))
+    # NRCellCU
+    # tmp_dict = {}
+    # for r in self.usid.db['MOC'].loc[self.usid.db['MOC'].mo == 'NRCellCU'].itertuples():
+    #     tmp_dict[r.__getattribute__('parameter')] = value
+    # for cell in self.site.cu_cell:
+    #     tmp_mo_dict = {}
+    #     mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
+    #     for r in tmp_dict.keys():
+    #         if (self.site.get_fdn_parameter(fdn=F'{mo}', para=r) != tmp_dict.get(r)):
+    #             tmp_mo_dict[r] = tmp_dict.get(r)
+    #     if len(tmp_mo_dict) > 0:
+    #         tmp_mo_dict |= {'nRCellCUId': cell, 'attributes': {'xc:operation': 'update'}}
+    #         self.mo_dict[mo] = {'managedElementId': self.node, 'GNBCUCPFunction': {
+    #             'gNBCUCPFunctionId': '1', 'NRCellCU': copy.deepcopy(tmp_mo_dict)}}
