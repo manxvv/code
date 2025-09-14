@@ -714,7 +714,7 @@ class Calculator:
             ws.merge_cells('E1:F1'); ws['E1'] = "FDD Cell Count"
             ws.merge_cells('G1:H1'); ws['G1'] = "TDD Cell Count"
             ws.merge_cells('I1:J1'); ws['I1'] = "NR Cell Count"
-            ws.merge_cells('K1:N1'); ws['K1'] = "Alarm Count"
+            ws.merge_cells('K1:M1'); ws['K1'] = "Alarm Count"
 
             # row2 subheaders
             ws['C2'] = "Enabled"; ws['D2'] = "Total"
@@ -766,8 +766,11 @@ class Calculator:
                         row[total_col].fill = red
 
                 # Alarm Count
+                
+                print(row[10].value,"rowrowrowrowrow")
                 critical = row[10].value  # adjust indices
                 major = row[11].value
+                
                 if critical > 0:
                     row[10].fill = red
                 if major > 0:
@@ -777,6 +780,8 @@ class Calculator:
                     row[10].fill = green
                 if major == 0:
                     row[11].fill = green
+                    
+                    
             wb.save(filename)
 
         

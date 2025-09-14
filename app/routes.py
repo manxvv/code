@@ -2,6 +2,7 @@ from flask import send_file,send_from_directory,Blueprint,url_for, request, json
 from app.database import mongo
 from passlib.hash import bcrypt
 import jwt
+import traceback
 from datetime import datetime, timedelta
 from app.utils import token_required
 from bson import ObjectId
@@ -240,7 +241,68 @@ def get_users():
 
 
 
+def db_update_migration(task,tno, file_path, taskId):
+    
+    print(task, file_path, taskId,"task, pre_filetask, pre_filetask, pre_file")
+    
+    read_df = []
+    sec_read_df = []
+    if("scripting_completed" != task):
+        read_df = pd.read_excel(file_path,sheet_name="NodeStatus")
+        sec_read_df = pd.read_excel(file_path,sheet_name="NodeStatus")
+        
+    else:
+        read_df = pd.read_excel(file_path,sheet_name="Site")
+        sec_read_df = pd.read_excel(file_path,sheet_name="AMF")
+    
+    if("node" in read_df.columns):
+        read_df["NodeId"] = read_df["node"]
+        sec_read_df["NodeId"] = sec_read_df["node"]
+    
+    print(read_df["NodeId"].unique(),"read_dfread_dfread_df")
+    
+    node_id_df = read_df["NodeId"].dropna().unique()
+    
+    for i in node_id_df:
+        
+        
+        final_status = {
+            "node_id":i,
+            "taskId":taskId,
+            "task":task,
+            "tno":tno
+        }
+        mongo.db.status_log_node.insert_one(final_status)
+    
+    
+    if("Unnamed: 3" in sec_read_df.columns):
+        
+        sec_read_df["ttmamf"] = sec_read_df["Unnamed: 3"]
+        
+    
+    if("termPointToAmfId" in sec_read_df.columns):
+        
+        sec_read_df["ttmamf"] = sec_read_df["termPointToAmfId"]
+        
+    
+    for i,one_data in sec_read_df.iterrows():
+        if pd.to_numeric(pd.Series(one_data["ttmamf"]), errors="coerce").notna().iloc[0]:
+            print(i, one_data["ttmamf"], "✅ number")
+            
+            
+            final_status = {
+                "node_id":one_data["NodeId"],
+                "taskId":taskId,
+                "task":"Migration Completed",
+                "tno":5
+            }
+            mongo.db.status_log_node.insert_one(final_status)
+        else:
+            print(i, one_data["ttmamf"], "❌ not number")
 
+        
+        
+    return 'db_update_migration'
 
 @api.route("/upload", methods=["POST"])
 @token_required
@@ -342,18 +404,29 @@ def upload_file():
             }
             mongo.db.site_id_status.update_one(
                 datafind,
-                {"$set": {"status": "Pre Check Completed"}}
+                {"$set": {
+                    "status": "Pre Check Completed",
+                    "statusCtr":2
+                }}
             )
+            if(len(postcheck_files) == 0):
+                db_update_migration("pre_check",2,pre_file,taskId)
         if(len(postcheck_files) > 0):
             clc.rearrangecol(post_file)
             clc.coloring_formatting(post_file)
+            clc.re_arrange_node_status(post_file)
             datafind = {
                 "task_id":taskId
             }
             mongo.db.site_id_status.update_one(
                 datafind,
-                {"$set": {"status": "Post Check Completed"}}
+                {"$set": {"status": "Post Check Completed",
+                    "statusCtr":3}}
             )
+            
+            db_update_migration("post_check",4,post_file,taskId)
+            
+        
         
         
         
@@ -396,11 +469,53 @@ def upload_file():
         }), 201
 
     except Exception as e:
-        
+        print(e,"eeeeeeeeeeeeeeeeeee")
+        print(traceback.print_exc())
         return jsonify({"message": "Please check the file again"}), 400
 
 
 
+@api.route("/dashboard", methods=["GET"])
+# @token_required
+def dashboard():
+    
+    aggr = [
+        {
+            '$group': {
+                '_id': '$status', 
+                'count': {
+                    '$sum': 1
+                }, 
+                'status': {
+                    '$first': '$status'
+                }
+            }
+        }
+    ]
+    
+    site_id_status_cursor = mongo.db.site_id_status.aggregate(aggr)
+    site_id_status_len_cursor = mongo.db.site_id_status.find()
+    
+    
+
+    counter = 0
+    for i in site_id_status_len_cursor:
+        counter += 1
+    
+    site_id_status_list = []
+    for f in site_id_status_cursor:
+        
+        print(f)
+        
+        
+        site_id_status_list.append(f)
+    
+    return jsonify({
+        "site_id_status":site_id_status_list,
+        "total_count":counter
+    }), 200
+    
+    
 @api.route("/uploadenm", methods=["POST"])
 @token_required
 def uploadenm_file():
@@ -588,7 +703,8 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
     
     task_file_doc={
         "task_id":task_id,
-        "status":"ENM Command Executed"
+        "status":"ENM Command Executed",
+        "statusCtr":1
     }
     
     
@@ -714,10 +830,15 @@ def uploadScripting_file():
     
 
     shutil.make_archive(nsa_op_folder, 'zip', nsa_op_folder)
-
+    
+    script_file = ""
     for i in list_dirr:
-        if("xlsx" in i):
+        if("Script_Status" in i):
             excel_file = i
+            
+        if("Script_Status" in i):
+            script_file = i
+        
             
     
     file_con = {
@@ -729,6 +850,21 @@ def uploadScripting_file():
         "taskId":taskId
     }
     script_entry_migration(taskId,file_con,os.path.join(nsa_op_folder,excel_file))
+    
+    
+    datafind = {
+        "task_id":taskId
+    }
+    mongo.db.site_id_status.update_one(
+        datafind,
+        {"$set": {"status": "Scripting Completed",
+            "statusCtr":4}}
+    )
+    
+    
+    
+    
+    db_update_migration("scripting_completed",3,os.path.join(nsa_op_folder,script_file),taskId)
     
     # with zipfile.ZipFile(nsa_op_folder+".zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
     #     for root, _, files in os.walk(nsa_op_folder):
@@ -971,38 +1107,67 @@ def migrationList():
     
     aggr = [
         {
-            '$addFields': {
-                'user_id_obj': {
-                    '$convert': {
-                        'input': '$user_id', 
-                        'to': 'objectId'
-                    }
+            '$lookup': {
+                'from': 'status_log_node', 
+                'let': {
+                    'node': '$nodes', 
+                    'task': '$task_id'
                 }, 
-                'uID': {
-                    '$convert': {
-                        'input': '$_id', 
-                        'to': 'string'
+                'pipeline': [
+                    {
+                        '$match': {
+                            '$expr': {
+                                '$and': [
+                                    {
+                                        '$eq': [
+                                            '$node_id', '$$node'
+                                        ]
+                                    }, {
+                                        '$eq': [
+                                            '$taskId', '$$task'
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }, {
+                        '$project': {
+                            '_id': 0, 
+                            'task': 1
+                        }
                     }
+                ], 
+                'as': 'statusList'
+            }
+        }, {
+            '$group': {
+                '_id': {
+                    'node_id': '$nodes', 
+                    'taskId': '$task_id'
+                }, 
+                'statuses': {
+                    '$addToSet': '$statusList.task'
+                }, 
+                'task_id': {
+                    '$first': '$task_id'
+                }, 
+                'enms': {
+                    '$first': '$enms'
+                }, 
+                'circle': {
+                    '$first': '$circle'
+                }, 
+                'site_id': {
+                    '$first': '$site_id'
+                }, 
+                'nodes': {
+                    '$first': '$nodes'
                 }
             }
         }, {
-            '$lookup': {
-                'from': 'users', 
-                'localField': 'user_id_obj', 
-                'foreignField': '_id', 
-                'as': 'userresult'
-            }
-        }, {
             '$unwind': {
-                'path': '$userresult', 
+                'path': '$statuses', 
                 'preserveNullAndEmptyArrays': True
-            }
-        }, {
-            '$project': {
-                'user_id_obj': 0, 
-                'userresult.hashed_password': 0, 
-                'userresult._id': 0, 
-                '_id': 0
             }
         }
     ]
