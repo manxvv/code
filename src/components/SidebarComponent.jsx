@@ -21,7 +21,7 @@ import { useSidebar } from "../components/ui/Sidebar";
 // Custom Logout Button Component
 const LogoutButton = ({ onClick, className }) => {
   const { open, animate } = useSidebar();
-  
+
   return (
     <button
       onClick={onClick}
@@ -54,6 +54,8 @@ export function SidebarDemo({ outlet }) {
 
   const role = useSelector((state) => state.auth.user.role)
 
+
+  let userEmail = JSON.parse(localStorage.getItem("authData"))["user"]["email"]
   const user = useSelector((state) => state.auth.user);
   const handleLogout = () => {
     dispatch(logout());
@@ -100,19 +102,42 @@ export function SidebarDemo({ outlet }) {
             <IconAlertTriangle className="h-5 w-5 flex-shrink-0" />
           ),
         },
-      ]
-      : []),
-
-    ...(role === "admin"
-      ? [
-            {
+        {
           label: "ENM Command",
           href: "enm-command",
           icon: (
             <IconUsers className="h-5 w-5 flex-shrink-0" />
           ),
         },
-        
+
+        {
+          label: "Check IN/OUT",
+          href: "check-in-out",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
+        {
+          label: "Scripting",
+          href: "scripting",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
+      ]
+      : []),
+
+    ...(role === "admin"
+      ? [
+
+        {
+          label: "ENM Command",
+          href: "enm-command",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
+
         {
           label: "Check IN/OUT",
           href: "check-in-out",
@@ -178,20 +203,25 @@ export function SidebarDemo({ outlet }) {
                     }}
                   />
                 ))}
-                
+
                 {/* Custom Logout Button */}
                 <LogoutButton onClick={() => setModalOpen(true)} />
               </div>
             </div>
             <div>
-           <div className="flex items-center gap-2 px-3 py-2 rounded-md text-white cursor-pointer">
-  <IconUserCircle size={18} />
-  <span>
-    {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
-  </span>
-</div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md text-white cursor-pointer">
+                <IconUserCircle size={18} />
+                <div className="flex flex-col">
+                  <span>
+                    {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User"}
+                  </span>
+                  <span>
+                    {userEmail}
+                  </span>
+                </div>
+              </div>
 
-            
+
             </div>
           </SidebarBody>
         </Sidebar>
@@ -242,8 +272,8 @@ export const Logo = () => {
       to="/"
       className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
     >
-      <img 
-        src="/download.png" 
+      <img
+        src="/download.png"
         alt="Company Logo"
         className="h-12 w-auto object-contain"
         onError={(e) => {

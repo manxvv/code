@@ -205,9 +205,9 @@ function CheckIn() {
         },
         {
             accessorKey: "userresult",
-            header: "USERNAME",
+            header: "EMAIL",
             cell: ({ row }) => {
-                return row.getValue("userresult") ? row.getValue("userresult")["full_name"] + " < " + row.getValue("userresult")["email"] + " > " : ""
+                return row.getValue("userresult") ? row.getValue("userresult")["email"] : ""
                 return row.getValue("userresult")
             },
         },

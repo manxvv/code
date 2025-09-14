@@ -16,6 +16,9 @@ function Scripting() {
   const { register, handleSubmit, watch } = useForm();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [commonisModalOpen, setCommonIsModalOpen] = useState(false);
+  const [commonisModalData, setCommonIsModalData] = useState(false);
+  const [commonisModalHead, setCommonIsModalHead] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -78,13 +81,13 @@ function Scripting() {
 
   const onSubmit = (data) => {
     const formData = new FormData();
-    formData.append("circle", data.circle);
-    formData.append("enm", data.enm);
+    // formData.append("circle", data.circle);
+    // formData.append("enm", data.enm);
     formData.append("taskId", taskId);
     formData.append("softwareRelease", data.softwareRelease);
 
     if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
-    if (data.siteList?.length) formData.append("siteList", data.siteList[0]);
+    // if (data.siteList?.length) formData.append("siteList", data.siteList[0]);
 
     uploadFileMutation(formData);
   };
@@ -132,13 +135,40 @@ function Scripting() {
     {
       accessorKey: "site_id",
       header: "Site Id",
-      cell: ({ row }) => row.getValue("site_id"),
+      cell: ({ row }) => {
+
+        row.getValue("site_id")
+
+
+        return <p className="cursor-pointer text-blue-600" onClick={() => {
+          setCommonIsModalOpen(true)
+
+          setCommonIsModalHead("View Sites")
+          setCommonIsModalData(<><ul>{row.getValue("site_id").split("/").map((oneVal) => {
+            return <li>{oneVal}</li>
+          })}</ul></>)
+        }}>View Sites</p>
+      },
     },
     {
       accessorKey: "nodes",
       header: "Node Id",
-      cell: ({ row }) => row.getValue("nodes"),
+      cell: ({ row }) => {
+
+        row.getValue("nodes")
+
+
+        return <p className="cursor-pointer text-blue-600" onClick={() => {
+          setCommonIsModalOpen(true)
+
+          setCommonIsModalHead("View Nodes")
+          setCommonIsModalData(<><ul>{row.getValue("nodes").split("/").map((oneVal) => {
+            return <li>{oneVal}</li>
+          })}</ul></>)
+        }}>View Nodes</p>
+      },
     },
+    
 
     {
       accessorKey: "nsa_op_folder",
@@ -235,6 +265,23 @@ function Scripting() {
         setGlobalFilter={setGlobalFilter}
       />
 
+
+      <Modal
+        isOpen={commonisModalOpen}
+        onClose={() => setCommonIsModalOpen(false)}
+        title={commonisModalHead}
+        size="lg"
+        showCloseButton
+        closeOnBackdrop
+        closeOnEscape
+      >
+        <div className="h-80 overflow-x-hidden">
+
+          {commonisModalData}
+        </div>
+
+      </Modal>
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -259,7 +306,7 @@ function Scripting() {
                       setTaskId(e.target.value)
                     }
                   })}
-                  autoComplete={false}  placeholder='Task Id' type='text' value={taskId} list='task_ids' onChange={(e) => {
+                  autoComplete={false} placeholder='Task Id' type='text' value={taskId} list='task_ids' onChange={(e) => {
                     setTaskId(e.target.value)
                   }}
                   className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700" />
@@ -290,7 +337,7 @@ function Scripting() {
 
                 {/* </select> */}
               </div>
-              <div className="flex flex-col">
+              {/* <div className="flex flex-col">
                 <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
                   Circle
                 </label>
@@ -305,10 +352,10 @@ function Scripting() {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               {/* ENM */}
-              <div className="flex flex-col">
+              {/* <div className="flex flex-col">
                 <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
                   ENM
                 </label>
@@ -323,7 +370,7 @@ function Scripting() {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               {/* Software Release */}
               <div className="flex flex-col">
@@ -344,7 +391,7 @@ function Scripting() {
               </div>
 
               {/* Site List */}
-              <div className="flex flex-col">
+              {/* <div className="flex flex-col">
                 <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
                   Site List
                 </label>
@@ -355,7 +402,7 @@ function Scripting() {
                   onChange={(e) => setValue("siteList", e.target.files[0])}
                   className="p-1.5 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
                 />
-              </div>
+              </div> */}
 
               {/* ENM Logs */}
               <div className="flex flex-col">
