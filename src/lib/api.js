@@ -21,7 +21,7 @@ const query = roles.map(r => `role=${encodeURIComponent(r)}`).join("&");
 };
 
 export const createUsers = async (data) => {
-  const response = await http.post(`${Urls.users}`,data);
+  const response = await http.post(`${Urls.register_users}`,data);
   return response.data;
 };
 
@@ -140,10 +140,24 @@ export const updateMemberHistory = async ({ queryKey }) => {
 };
 
 
+export const getuser_scripting_files = async () => {
+  const response = await http.get(`${Urls.user_scripting_files}`);
+  return response.data;
+};
+
+
 export const getUsers = async () => {
   const response = await http.get(`${Urls.users}`);
   return response.data;
 };
+
+
+
+export const getMigrationList = async () => {
+  const response = await http.get(`${Urls.migrationList}`);
+  return response.data;
+};
+
 
 export const analyzeData = async () => {
   const response = await http.get(`${Urls.analyze}`);

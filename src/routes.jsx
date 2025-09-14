@@ -15,6 +15,7 @@ import Scripting from './Pages/Scripting';
 import MigrationList from './MigrationList';
 import Admin from './components/Admin';
 import Enm from './Pages/Enm';
+import AdminUM from './components/AdminUM';
 
 
 function GuestOnly({ children }) {
@@ -124,7 +125,11 @@ const router = createBrowserRouter([
   element:<MigrationList/>
 },
 {
-  path:"admin",
+  path:"admin/users",
+  element:<AdminUM/>
+},
+{
+  path:"admin/circle-enm",
   element:<Admin/>
 },
 {

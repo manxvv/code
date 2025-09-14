@@ -1,10 +1,11 @@
 import { DataTableDemo } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
 import Urls from '@/config/urls';
-import { enms, getUsers, uploadPdf, Urlfiles } from '@/lib/api';
+import { enms, getUsers, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
 import React, { useState, useRef, useMemo } from 'react';
+import { FaArrowCircleDown, FaArrowCircleUp } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { Outlet } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -12,19 +13,28 @@ import Swal from 'sweetalert2';
 function CheckIn() {
     const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
+    const [a_name, set_a_name] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("precheck");
     const [uploadedFiles1, setUploadedFiles1] = useState([]);
     const [uploadedFiles2, setUploadedFiles2] = useState([]);
     const fileInputRef1 = useRef(null);
     const fileInputRef2 = useRef(null);
     const [error, setError] = useState(null);
+    const [taskId, setTaskId] = useState("");
     const [upload, setUpload] = useState(false);
 
+    const [showDiv, setShowDiv] = useState(false);
     const { data } = useQuery({
         queryKey: ["files"],
         queryFn: Urlfiles
     });
 
+
+
+    const { data: enms_list } = useQuery({
+        queryKey: ["enmfiles"],
+        queryFn: Urlenmmfiles
+    });
 
     const { data: enmData } = useQuery({
         queryKey: ["enms"],
@@ -44,6 +54,8 @@ function CheckIn() {
                     Swal.showLoading(); // shows loader
                 },
             });
+
+            formData.append("taskId", taskId)
 
             // return the promise so React Query waits
             return uploadPdf(formData);
@@ -95,6 +107,24 @@ function CheckIn() {
 
     const handleUpload = () => {
         console.log("Upload button clicked for:", selectedFilter, uploadedFiles1, uploadedFiles2);
+
+        if (enms_list) {
+            let enms_list_len = enms_list.filter((oneenm) => {
+
+                if (taskId == "") {
+                    return false
+                } else {
+                    return oneenm.task_id == taskId
+                }
+            }).length
+
+            if (enms_list_len == 0) {
+
+                setError("Please select valid Task Id");
+
+                return
+            }
+        }
         setError(null);
 
         const formData = new FormData();
@@ -144,15 +174,28 @@ function CheckIn() {
 
     const columns = [
         {
-            accessorKey: "circle",
-            header: "CIRCLE",
-            cell: ({ row }) => row.getValue("circle"),
+            accessorKey: "taskId",
+            header: "Task Id",
+            cell: ({ row }) => row.getValue("taskId"),
         },
+        
         {
-            accessorKey: "enm",
+            accessorKey: "taskIdresult",
             header: "ENM",
-            cell: ({ row }) => row.getValue("enm"),
+            cell: ({ row }) => {
+                return row.getValue("taskIdresult") && row.getValue("taskIdresult")["enms"]
+                return row.getValue("userresult")
+            },
         },
+        
+        {
+            accessorKey: "taskIdresult",
+            header: "CIRCLE",
+            cell: ({ row }) => {
+                return row.getValue("taskIdresult") && row.getValue("taskIdresult")["circle"]
+                return row.getValue("userresult")
+            },
+        },  
         {
             accessorKey: "activity_type",
             header: "ACTIVITY TYPE",
@@ -164,7 +207,7 @@ function CheckIn() {
             accessorKey: "userresult",
             header: "USERNAME",
             cell: ({ row }) => {
-                return row.getValue("userresult")["full_name"] + " < " + row.getValue("userresult")["email"] + " > "
+                return row.getValue("userresult") ? row.getValue("userresult")["full_name"] + " < " + row.getValue("userresult")["email"] + " > " : ""
                 return row.getValue("userresult")
             },
         },
@@ -291,13 +334,23 @@ function CheckIn() {
         return [...new Set(circles)];
     }, [enmData]);
 
+
+    console.log(enms_list, "enms_listenms_listenms_listenms_list")
+
     return (
         <div className="flex flex-1">
             <div className="p-4 md:p-8 bg-gray-50 dark:bg-neutral-900 flex flex-col gap-6 flex-1 w-full h-full">
                 <Outlet />
 
-                <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
+                <div className={`relative bg-white dark:bg-neutral-800 rounded-xl shadow-sm border overflow-hidden border-gray-200 dark:border-neutral-700 p-6 ${showDiv ? "" : " h-24 "}`}>
 
+
+                    <Button className={" absolute right-5 top-9"}
+                        onClick={() => {
+                            setShowDiv(prev => !prev)
+                        }}>
+                        {showDiv ? <FaArrowCircleUp /> : <FaArrowCircleDown />}
+                    </Button>
                     <div className="flex justify-center mb-6">
                         <div className="bg-gray-100 dark:bg-neutral-700 p-1.5 rounded-lg inline-flex">
                             <label className="flex items-center">
@@ -334,7 +387,38 @@ function CheckIn() {
                             </label>
                         </div>
                     </div>
+                    <div className='w-full flex items-center justify-center gap-2 flex-col mb-2'>
+                        <input autoComplete={false} placeholder='Task Id' type='text' value={taskId} list='task_ids' onChange={(e) => {
+                            setTaskId(e.target.value)
+                        }}
+                            className={`w-52  p-2 border-dashed border-2 hover:border-blue-400 active:border-blue-400 rounded-2xl `} />
 
+                        <datalist id='task_ids'>
+                            {/* <option>Task Id</option> */}
+
+                            {JSON.stringify(enms_list)}
+
+                            {
+                                enms_list && enms_list.map((one_enm) => {
+                                    return <option>{one_enm.task_id}</option>
+                                })
+                            }
+                        </datalist>
+
+                        {
+                            enms_list && enms_list.filter((oneenm) => {
+
+                                if (taskId == "") {
+                                    return false
+                                } else {
+                                    return oneenm.task_id == taskId
+                                }
+                            }).length == 0 && <p>Please select valid Task Id</p>
+                        }
+
+
+                        {/* </select> */}
+                    </div>
                     <input ref={fileInputRef1} type="file" accept=".txt" onChange={(e) => handleFileUpload(e, 1)} multiple className="hidden" />
                     <input ref={fileInputRef2} type="file" accept=".txt" onChange={(e) => handleFileUpload(e, 2)} multiple className="hidden" />
 
@@ -437,12 +521,40 @@ function CheckIn() {
                             ))}
                         </select>
                     </div>
+
+                    <div className="w-fit flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Activity Name:
+                        </label>
+                        <select
+
+                            onChange={(e) => {
+                                set_a_name(e.target.value)
+                            }}
+                            className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+                        >
+                            <option value="">Both</option>
+                            {[{ "acivity_name": "Pre Check" }, { "acivity_name": "Post Check" }]?.map((item) => (
+                                <option key={item.acivity_name} value={item.acivity_name}>{item.acivity_name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
 
 
                 <DataTableDemo
-                    data={data || []}
+                    data={data ? data.filter((itt) => {
+                        if (a_name == "") {
+                            return true
+                        } else {
+                            if (itt.activity_type == a_name) {
+                                return true
+                            } else {
+                                return false
+                            }
+                        }
+                    }) : []}
                     columns={columns}
                     globalFilter={globalFilter}
                     setGlobalFilter={setGlobalFilter}

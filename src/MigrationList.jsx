@@ -2,7 +2,7 @@ import { DataTableDemo } from '@/components/DataTable';
 import TabsHeader from '@/components/TabHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getUsers } from '@/lib/api';
+import { getMigrationList, getUsers } from '@/lib/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2 } from 'lucide-react';
 import React, { useState } from 'react'
@@ -13,8 +13,8 @@ function MigrationList() {
     const [globalFilter, setGlobalFilter] = useState("");
 
     const { data } = useQuery({
-        queryKey: ["users"],
-        queryFn: getUsers
+        queryKey: ["migrationList"],
+        queryFn: getMigrationList
     })
 
     let handleDelete
@@ -22,26 +22,37 @@ function MigrationList() {
         reset(userData);
         setEditingUserId(user?._id);
         setIsModalOpen(true);
-    }; const columns = [
+    }; 
+    
+    
+    
+    
+    
+    const columns = [
         {
-            accessorKey: "name",
+            accessorKey: "circle",
             header: "Circle",
-            cell: ({ row }) => row.getValue("name"),
+            cell: ({ row }) => row.getValue("circle"),
         },
         {
-            accessorKey: "email",
+            accessorKey: "enms",
             header: "ENM",
-            cell: ({ row }) => row.getValue("email"),
+            cell: ({ row }) => row.getValue("enms"),
         },
         {
-            accessorKey: "role",
+            accessorKey: "site_id",
             header: "Site Id",
-            cell: ({ row }) => row.getValue("role"),
+            cell: ({ row }) => row.getValue("site_id"),
         },
         {
-            accessorKey: "role",
+            accessorKey: "nodes",
             header: "Node Id",
-            cell: ({ row }) => row.getValue("role"),
+            cell: ({ row }) => row.getValue("nodes"),
+        },
+        {
+            accessorKey: "status",
+            header: "Billing Status",
+            cell: ({ row }) => row.getValue("status"),
         },
         {
             id: "actions",
@@ -76,6 +87,9 @@ function MigrationList() {
     ];
 
 
+    console.log(data,"datadatadatadatadatadatadatadata")
+
+
     return (
         <>
             <div className="flex flex-1">
@@ -97,7 +111,7 @@ function MigrationList() {
                     </div>
 
                     <DataTableDemo
-                        data={[]}
+                        data={data || []}
                         columns={columns}
                         globalFilter={globalFilter}
                         setGlobalFilter={setGlobalFilter}

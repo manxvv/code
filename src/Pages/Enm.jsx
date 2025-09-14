@@ -5,24 +5,34 @@ import { enms, getUsers, uploadenm, uploadPdf, Urlenmmfiles, Urlfiles } from '@/
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
 import React, { useState, useRef, useMemo } from 'react';
+import { FaArrowCircleDown, FaArrowCircleUp, FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { Outlet } from 'react-router-dom';
 import Swal from 'sweetalert2'
 
 function Enm() {
+
+
+    let userEmail = JSON.parse(localStorage.getItem("authData"))["user"]["email"]
     const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("precheck");
     const [uploadedFiles1, setUploadedFiles1] = useState([]);
+    const [showDiv, setShowDiv] = useState(false);
     const [uploadedFiles2, setUploadedFiles2] = useState([]);
     const fileInputRef1 = useRef(null);
     const fileInputRef2 = useRef(null);
     const [error, setError] = useState(null);
+    const [userDetails, setUserDetails] = useState(userEmail);
 
     const { data } = useQuery({
         queryKey: ["files"],
         queryFn: Urlenmmfiles
     });
+
+
+
+
 
 
     const { data: enmData } = useQuery({
@@ -40,6 +50,7 @@ function Enm() {
             setUploadedFiles2([]);
             setError(null);
             Swal.fire("", "Successful", "success");
+            setShowDiv(false)
         },
         onError: (error) => {
             console.error("File upload failed:", error?.response?.data?.error);
@@ -109,6 +120,11 @@ function Enm() {
 
     const columns = [
         {
+            accessorKey: "task_id",
+            header: "Task Id",
+            cell: ({ row }) => row.getValue("task_id"),
+        },
+        {
             accessorKey: "circle",
             header: "CIRCLE",
             cell: ({ row }) => row.getValue("circle"),
@@ -119,10 +135,16 @@ function Enm() {
             cell: ({ row }) => row.getValue("enms"),
         },
         {
+            accessorKey: "datetime_stamp",
+            header: "CREATED TIME",
+            cell: ({ row }) => row.getValue("datetime_stamp"),
+        },
+
+        {
             accessorKey: "userresult",
-            header: "USERNAME",
+            header: "EMAIL",
             cell: ({ row }) => {
-                return row.getValue("userresult")["full_name"] + " < " + row.getValue("userresult")["email"] + " > "
+                return row.getValue("userresult") ? row.getValue("userresult")["email"] : ""
                 return row.getValue("userresult")
             },
         },
@@ -254,9 +276,18 @@ function Enm() {
             <div className="p-4 md:p-8 bg-gray-50 dark:bg-neutral-900 flex flex-col gap-6 flex-1 w-full h-full">
                 <Outlet />
 
-                <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
+                <div className={` relative bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 overflow-hidden ${showDiv ? "" : " h-20 "}`}>
 
-                    <div className="flex justify-center mb-6">
+
+
+                    <Button className={" absolute right-5  top-[26px]"}
+                        onClick={() => {
+                            setShowDiv(prev => !prev)
+                        }}>
+                        {showDiv ? <FaArrowCircleUp /> : <FaArrowCircleDown />}
+                    </Button>
+                    <div className="flex h-10 justify-center mb-6">
+
                         <div className="bg-gray-100 dark:bg-neutral-700 p-1.5 rounded-lg inline-flex">
                             <label className="flex items-center">
                                 <input
@@ -272,6 +303,7 @@ function Enm() {
                                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                                     }`}>
                                     ENM Command
+
                                 </div>
                             </label>
                             {/* <label className="flex items-center">
@@ -348,13 +380,13 @@ function Enm() {
                                 )}
                             </Button>
 
-                            <Button
+                            {/* <Button
                                 onClick={handleGenerate}
                                 className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-lg shadow-sm transition-all duration-200"
                             >
                                 <FileText className="h-4 w-4 mr-2" />
                                 Generate Command
-                            </Button>
+                            </Button> */}
                         </div>
 
                         {error && (
@@ -367,6 +399,8 @@ function Enm() {
 
                 <div className="flex w-full flex-col md:flex-row justify-end gap-4">
                     {/* First Select Box */}
+
+
                     <div className="w-fit flex items-center gap-2">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Select Circle:
@@ -395,12 +429,48 @@ function Enm() {
                             ))}
                         </select>
                     </div>
+
+                    <div className="w-fit flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Select User:
+                        </label>
+                        <select
+                            onChange={(e) => {
+                                setUserDetails(e.target.value)
+                            }}
+                            className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+                        >
+
+
+                            <option value={userEmail}>My Sites</option>
+
+                            {
+                                [...new Set(data?.filter(oneUser => oneUser?.userresult?.email != userEmail).map(oneUser => oneUser?.userresult?.email))].map(email => (
+                                    <option key={email} value={email}>
+                                        {email}
+                                    </option>
+                                ))
+                            }
+                            <option value="">All Sites</option>
+
+                        </select>
+                    </div>
                 </div>
 
 
 
                 <DataTableDemo
-                    data={data || []}
+                    data={data?.filter(oneUser => {
+                        if(userDetails==""){
+                            return true
+                        }else{
+                            if(oneUser?.userresult?.email == userDetails){
+                                return true
+                            }else{
+                                return false
+                            }
+                        }
+                    }) || []}
                     columns={columns}
                     globalFilter={globalFilter}
                     setGlobalFilter={setGlobalFilter}

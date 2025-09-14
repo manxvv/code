@@ -72,9 +72,11 @@ export function SidebarDemo({ outlet }) {
         return "Scripting";
       case "/app/migration-list":
         return "Migration List";
-      case "/app/admin":
-        return "Admin";
-             case "/app/enm-command":
+      case "/app/admin/users":
+        return "User Management";
+      case "/app/admin/circle-enm":
+        return "Circle - ENM";
+      case "/app/enm-command":
         return "ENM Command";
       default:
         return "DataYog";
@@ -133,8 +135,15 @@ export function SidebarDemo({ outlet }) {
           ),
         },
         {
-          label: "Admin",
-          href: "admin",
+          label: "User Management",
+          href: "admin/users",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
+        {
+          label: "Circle - ENM",
+          href: "admin/circle-enm",
           icon: (
             <IconUsers className="h-5 w-5 flex-shrink-0" />
           ),
@@ -154,7 +163,7 @@ export function SidebarDemo({ outlet }) {
       >
         <Sidebar open={open} setOpen={setOpen} animate={false}>
           <SidebarBody className="justify-between gap-10">
-            <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex items-center flex-col flex-1 overflow-y-auto overflow-x-hidden">
               <>
                 <Logo />
               </>
