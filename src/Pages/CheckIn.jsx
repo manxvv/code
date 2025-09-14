@@ -74,7 +74,7 @@ function CheckIn() {
         },
         onError: (error) => {
             console.error("File upload failed:", error);
-            setError(error.message || "Something went wrong during file upload");
+            setError(error?.response?.data?.message || "Something went wrong during file upload");
             Swal.close(); // close loader if error happens
         },
     });

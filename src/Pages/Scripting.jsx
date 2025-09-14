@@ -74,7 +74,7 @@ function Scripting() {
     onError: (err) => {
       Swal.close();
       setUploading(false);
-      setError(err?.message || "Something went wrong during file upload");
+      setError(err?.response?.data?.message || "Something went wrong during file upload");
       console.error("File upload failed:", err);
     },
   });
