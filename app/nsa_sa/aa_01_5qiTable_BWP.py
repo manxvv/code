@@ -100,5 +100,5 @@ class aa_01_5qiTable_BWP(Script):
                 'attributes': {'xc:operation': 'update'}, 'nRCellDUId': cell,
                 'sNSSAIList': {'sd': '1', 'sst': '1'},
                 'bWPRef': ['GNBDUFunction=1,BWP=Init_DL_100', 'GNBDUFunction=1,BWP=Init_UL_100'],
-                'bWPSetRef': 'GNBDUFunction=1,BWPSet=100'
+                'bWPSetRef' :  'GNBDUFunction=1,BWPSet=100'
             })
