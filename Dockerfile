@@ -3,12 +3,12 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy requirements from code folder
-COPY code/requirements.txt .
+COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of your app
-COPY code/ .
+COPY . .
 
 EXPOSE 5000
 

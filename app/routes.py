@@ -254,7 +254,8 @@ def db_update_migration(task,tno, file_path, taskId):
         sec_read_df = pd.read_excel(file_path,sheet_name="NodeStatus")
         
     else:
-        read_df = pd.read_excel(file_path,sheet_name="Site")
+        read_df_all = pd.read_excel(file_path,sheet_name="Site")
+        read_df = read_df_all[read_df_all["log"] == True]
         sec_read_df = pd.read_excel(file_path,sheet_name="AMF")
     
     if("node" in read_df.columns):
