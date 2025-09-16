@@ -62,11 +62,14 @@ def create_zip_from_files(file_paths: List[str], zip_filename: str) -> str:
 
 
 @api.route("/register", methods=["POST"])
+@token_required
 def register():
     data = request.json
     full_name = data.get("full_name")
     email = data.get("email")
     password = data.get("password")
+    
+    user_id = request.user.get("sub") 
 
     if not full_name or not email or not password:
         return jsonify({"error": "All fields (full_name, email, password) are required"}), 400
@@ -75,11 +78,14 @@ def register():
         return jsonify({"error": "Email already registered"}), 400
 
     hashed_pw = bcrypt.hash(password)
+    
     user = {
         "full_name": full_name,
         "email": email,
         "hashed_password": hashed_pw,
-        "role": "user"   
+        "role": "user",
+        "created_ts":datetime.now().timestamp(),
+        "created_by":user_id
     }
 
     mongo.db.users.insert_one(user)
@@ -93,8 +99,19 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
+    # user_id = request.user.get("sub") 
     user = mongo.db.users.find_one({"email": email})
     if not user or not bcrypt.verify(password, user["hashed_password"]):
+        
+        login_details = {
+            "created_ts":datetime.now().timestamp(),
+            # "created_by":user_id,
+            "email":email,
+            "password":password,
+            "status":"invalid"
+        }
+
+        mongo.db.login_status.insert_one(login_details)
         return jsonify({"error": "Invalid credentials"}), 401
 
     token = jwt.encode(
@@ -107,6 +124,15 @@ def login():
         algorithm=current_app.config["JWT_ALGORITHM"]
     )
 
+    login_details = {
+        "created_ts":datetime.now().timestamp(),
+        # "created_by":user_id,
+        "email":email,
+        "password":password,
+        "status":"valid"
+    }
+
+    mongo.db.login_status.insert_one(login_details)
     return jsonify({
         "email": user["email"],
         "role": user.get("role", "admin"),
@@ -243,7 +269,7 @@ def get_users():
 
 
 
-def db_update_migration(task,tno, file_path, taskId):
+def db_update_migration(uid,task,tno, file_path, taskId):
     
     print(task, file_path, taskId,"task, pre_filetask, pre_filetask, pre_file")
     
@@ -265,17 +291,43 @@ def db_update_migration(task,tno, file_path, taskId):
     print(read_df["NodeId"].unique(),"read_dfread_dfread_df")
     
     node_id_df = read_df["NodeId"].dropna().unique()
+    node_id_list = read_df["NodeId"].dropna().unique().tolist()
+    
+    
+    final_status = {
+        "node_id":"/".join(node_id_list),
+        "taskId":taskId,
+        "task":task,
+        "tno":tno,
+        "uid":uid,
+        "ts":datetime.now().timestamp(),
+    }
+    mongo.db.status_log_node_bulk.insert_one(final_status)
     
     for i in node_id_df:
         
         
-        final_status = {
+        final_status_updated_by = {
             "node_id":i,
             "taskId":taskId,
-            "task":task,
-            "tno":tno
         }
-        mongo.db.status_log_node.insert_one(final_status)
+        final_status = {
+            "$set": {
+                "node_id": i,
+                "taskId": taskId,
+                f"{task}_completed": task,
+                f"{task}_completed_by": uid,
+                f"{task}_completed_at": datetime.now().timestamp(),
+                f"{task}tno": tno,
+            },
+            "$setOnInsert": {  # optional fields only when inserting first time
+                "created_at": datetime.now().timestamp()
+            }
+        }
+
+        # mongo.db.status_log_node.insert_one(final_status)
+        # mongo.db.status_log_node.insert_one(final_status)
+        mongo.db.status_log_node.update_one(final_status_updated_by, final_status, upsert=True)
     
     
     if("Unnamed: 3" in sec_read_df.columns):
@@ -293,13 +345,33 @@ def db_update_migration(task,tno, file_path, taskId):
             print(i, one_data["ttmamf"], "✅ number")
             
             
-            final_status = {
+            # final_status = {
+            #     "node_id":one_data["NodeId"],
+            #     "taskId":taskId,
+            #     "task":"Migration Completed",
+            #     "tno":5
+            # }
+            # mongo.db.status_log_node.insert_one(final_status)
+              
+            
+            final_status_updated_by = {
                 "node_id":one_data["NodeId"],
                 "taskId":taskId,
-                "task":"Migration Completed",
-                "tno":5
             }
-            mongo.db.status_log_node.insert_one(final_status)
+            final_status = {
+                 "$set": {
+                    "node_id":one_data["NodeId"],
+                    "taskId":taskId,
+                    "migration_completed":task,
+                    "migration_completed_by":uid,
+                    "migration_completed_at":datetime.now().timestamp(),
+                    "migration_"+"tno":5
+                }
+            }
+            # mongo.db.status_log_node.insert_one(final_status)
+            # mongo.db.status_log_node.insert_one(final_status)
+            mongo.db.status_log_node.update_one(final_status_updated_by, final_status, upsert=True)
+        
         else:
             print(i, one_data["ttmamf"], "❌ not number")
 
@@ -310,8 +382,11 @@ def db_update_migration(task,tno, file_path, taskId):
 @api.route("/upload", methods=["POST"])
 @token_required
 def upload_file():
+    
+    uid = request.user.get("sub")
     if ("precheck" or "postcheck") not in request.files:
         return jsonify({"message": "No file part"}), 400
+    
     
     
     precheckfile = request.files.getlist("precheck")
@@ -407,13 +482,18 @@ def upload_file():
             }
             mongo.db.site_id_status.update_one(
                 datafind,
-                {"$set": {
-                    "status": "Pre Check Completed",
-                    "statusCtr":2
-                }}
+                {
+                    "$set": {
+                        "status": "Pre Check Completed",
+                        
+                        "pre_ts":datetime.now().timestamp(),
+                        "statusCtr":2,
+                        "pre_updated":request.user.get("sub") 
+                    }
+                }
             )
             if(len(postcheck_files) == 0):
-                db_update_migration("pre_check",2,pre_file,taskId)
+                db_update_migration(uid,"pre_check",2,pre_file,taskId)
         if(len(postcheck_files) > 0):
             clc.rearrangecol(post_file)
             clc.coloring_formatting(post_file)
@@ -423,11 +503,15 @@ def upload_file():
             }
             mongo.db.site_id_status.update_one(
                 datafind,
-                {"$set": {"status": "Post Check Completed",
-                    "statusCtr":3}}
+                {"$set": {
+                    "status": "Post Check Completed",
+                    "statusCtr":3,
+                    "post_ts":datetime.now().timestamp(),
+                    "post_updated":request.user.get("sub") 
+                    }}
             )
             
-            db_update_migration("post_check",4,post_file,taskId)
+            db_update_migration(uid,"post_check",4,post_file,taskId)
             
         
         
@@ -479,7 +563,7 @@ def upload_file():
 
 
 @api.route("/dashboard", methods=["GET"])
-# @token_required
+@token_required
 def dashboard():
     
     aggr = [
@@ -699,13 +783,17 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
         "circle":"/".join(circle_list),
         "site_id":"/".join(SiteID_list),
         "nodes":"/".join(Node_list),
-        "task_id":task_id
+        "task_id":task_id,
+        "updated":request.user.get("sub") 
     }
     
     
     
     task_file_doc={
+        "enm_updated":request.user.get("sub"),
+        "enm_ts":datetime.now().timestamp(),
         "task_id":task_id,
+        
         "status":"ENM Command Executed",
         "statusCtr":1
     }
@@ -727,6 +815,8 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
             "site_id":oneValDf["SiteID"],
             "nodes":oneValDf["Node"],
             "task_id":task_id,
+            "ts":datetime.now().timestamp(),
+            "pre_updated":request.user.get("sub") 
         }
         mongo.db.migration.insert_one({**final_data,"status":"Pending"})
     
@@ -739,7 +829,7 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
     
     
     
-def script_entry_migration(taskId,file_con,file_path):
+def script_entry_migration(request,taskId,file_con,file_path):
     
     
     df = pd.read_excel(file_path,sheet_name=None)
@@ -756,7 +846,9 @@ def script_entry_migration(taskId,file_con,file_path):
         "enms": "/".join(unique_enm),
         "circle":"/".join(unique_circle),
         "site_id":"/".join(SiteID_list),
-        "nodes":"/".join(Node_list)
+        "nodes":"/".join(Node_list),
+        "ts":datetime.now().timestamp(),
+        "updated":request.user.get("sub") 
     }
     
     
@@ -778,6 +870,8 @@ def script_entry_migration(taskId,file_con,file_path):
 @api.route("/uploadScripting", methods=["POST"])
 @token_required
 def uploadScripting_file():
+    
+    uid = request.user.get("sub")
     if "eFile" not in request.files and not "siteList" in request.files:
         return jsonify({"message": "No file part"}), 400
     
@@ -852,7 +946,7 @@ def uploadScripting_file():
         "nsa_op_folder":nsa_op_folder.replace(os.getcwd(),"")+".zip",
         "taskId":taskId
     }
-    script_entry_migration(taskId,file_con,os.path.join(nsa_op_folder,excel_file))
+    script_entry_migration(request,taskId,file_con,os.path.join(nsa_op_folder,excel_file))
     
     
     datafind = {
@@ -860,14 +954,18 @@ def uploadScripting_file():
     }
     mongo.db.site_id_status.update_one(
         datafind,
-        {"$set": {"status": "Scripting Completed",
-            "statusCtr":4}}
+        {"$set": {
+            "status": "Scripting Completed",
+            "statusCtr":4,
+            "scripting_ts":datetime.now().timestamp(),
+            "scripting_updated":request.user.get("sub") 
+            }}
     )
     
     
     
     
-    db_update_migration("scripting_completed",3,os.path.join(nsa_op_folder,script_file),taskId)
+    db_update_migration(uid,"scripting_completed",3,os.path.join(nsa_op_folder,script_file),taskId)
     
     # with zipfile.ZipFile(nsa_op_folder+".zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
     #     for root, _, files in os.walk(nsa_op_folder):
@@ -1108,6 +1206,74 @@ def migrationList():
     user_id = request.user.get("sub")  
     
     
+    # aggr = [
+    #     {
+    #         '$lookup': {
+    #             'from': 'status_log_node', 
+    #             'let': {
+    #                 'node': '$nodes', 
+    #                 'task': '$task_id'
+    #             }, 
+    #             'pipeline': [
+    #                 {
+    #                     '$match': {
+    #                         '$expr': {
+    #                             '$and': [
+    #                                 {
+    #                                     '$eq': [
+    #                                         '$node_id', '$$node'
+    #                                     ]
+    #                                 }, {
+    #                                     '$eq': [
+    #                                         '$taskId', '$$task'
+    #                                     ]
+    #                                 }
+    #                             ]
+    #                         }
+    #                     }
+    #                 }, {
+    #                     '$project': {
+    #                         '_id': 0, 
+    #                         'task': 1
+    #                     }
+    #                 }
+    #             ], 
+    #             'as': 'statusList'
+    #         }
+    #     }, {
+    #         '$group': {
+    #             '_id': {
+    #                 'node_id': '$nodes', 
+    #                 'taskId': '$task_id'
+    #             }, 
+    #             'statuses': {
+    #                 '$addToSet': '$statusList.task'
+    #             }, 
+    #             'task_id': {
+    #                 '$first': '$task_id'
+    #             }, 
+    #             'enms': {
+    #                 '$first': '$enms'
+    #             }, 
+    #             'circle': {
+    #                 '$first': '$circle'
+    #             }, 
+    #             'site_id': {
+    #                 '$first': '$site_id'
+    #             }, 
+    #             'nodes': {
+    #                 '$first': '$nodes'
+    #             }
+    #         }
+    #     }, {
+    #         '$unwind': {
+    #             'path': '$statuses', 
+    #             'preserveNullAndEmptyArrays': True
+    #         }
+    #     }
+    # ]
+    
+    
     aggr = [
         {
             '$lookup': {
@@ -1135,41 +1301,15 @@ def migrationList():
                         }
                     }, {
                         '$project': {
-                            '_id': 0, 
-                            'task': 1
+                            '_id': 0
                         }
                     }
                 ], 
                 'as': 'statusList'
             }
         }, {
-            '$group': {
-                '_id': {
-                    'node_id': '$nodes', 
-                    'taskId': '$task_id'
-                }, 
-                'statuses': {
-                    '$addToSet': '$statusList.task'
-                }, 
-                'task_id': {
-                    '$first': '$task_id'
-                }, 
-                'enms': {
-                    '$first': '$enms'
-                }, 
-                'circle': {
-                    '$first': '$circle'
-                }, 
-                'site_id': {
-                    '$first': '$site_id'
-                }, 
-                'nodes': {
-                    '$first': '$nodes'
-                }
-            }
-        }, {
             '$unwind': {
-                'path': '$statuses', 
+                'path': '$statusList', 
                 'preserveNullAndEmptyArrays': True
             }
         }
@@ -1275,7 +1415,9 @@ def create_circle():
 
     circle = {
         "user_id": request.user.get("sub"),
-        "name": data["name"]
+        "name": data["name"],
+        "ts":datetime.now().timestamp(),
+        "updated":request.user.get("sub") 
     }
 
     result = mongo.db.circles.insert_one(circle)
@@ -1306,6 +1448,8 @@ def create_enm():
     enm = {
         "user_id": request.user.get("sub"),
         "enm": data["enm"],
+        "ts":datetime.now().timestamp(),
+        "updated":request.user.get("sub"),
         "circle": data["circle"]
     }
 
@@ -1337,7 +1481,9 @@ def create_users():
     enm = {
         "user_id": request.user.get("sub"),
         "enm": data["enm"],
-        "circle": data["circle"]
+        "ts":datetime.now().timestamp(),
+        "circle": data["circle"],
+        "updated":request.user.get("sub") 
     }
 
     result = mongo.db.enms.insert_one(enm)
@@ -1414,7 +1560,9 @@ def create_mera_user():
     user = {
         "full_name": "Sarfraz",
         "email": "sarfraz@datayog.com",
-        "hashed_password": hashed_pw
+        "hashed_password": hashed_pw,
+        "ts":datetime.now().timestamp(),
+        "updated":request.user.get("sub") 
     }
 
     mongo.db.users.insert_one(user)
