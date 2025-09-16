@@ -362,7 +362,7 @@ def db_update_migration(uid,task,tno, file_path, taskId):
                  "$set": {
                     "node_id":one_data["NodeId"],
                     "taskId":taskId,
-                    "migration_completed":task,
+                    "migration_completed":"completed",
                     "migration_completed_by":uid,
                     "migration_completed_at":datetime.now().timestamp(),
                     "migration_"+"tno":5
@@ -569,18 +569,78 @@ def dashboard():
     aggr = [
         {
             '$group': {
-                '_id': '$status', 
-                'count': {
-                    '$sum': 1
+                '_id': {
+                    'node_id': '$node_id', 
+                    'taskId': '$taskId'
                 }, 
-                'status': {
-                    '$first': '$status'
+                'pre_check_completed': {
+                    '$sum': {
+                        '$cond': [
+                            {
+                                '$ifNull': [
+                                    '$pre_check_completed', False
+                                ]
+                            }, 1, 0
+                        ]
+                    }
+                }, 
+                'post_check_completed': {
+                    '$sum': {
+                        '$cond': [
+                            {
+                                '$ifNull': [
+                                    '$post_check_completed', False
+                                ]
+                            }, 1, 0
+                        ]
+                    }
+                }, 
+                'scripting_completed_completed': {
+                    '$sum': {
+                        '$cond': [
+                            {
+                                '$ifNull': [
+                                    '$scripting_completed_completed', False
+                                ]
+                            }, 1, 0
+                        ]
+                    }
+                }, 
+                'migration_completed': {
+                    '$sum': {
+                        '$cond': [
+                            {
+                                '$ifNull': [
+                                    '$migration_completed', False
+                                ]
+                            }, 1, 0
+                        ]
+                    }
+                }
+            }
+        }, {
+            '$group': {
+                '_id': '', 
+                'migration_completed': {
+                    '$sum': '$migration_completed'
+                }, 
+                'scripting_completed_completed': {
+                    '$sum': '$scripting_completed_completed'
+                }, 
+                'post_check_completed': {
+                    '$sum': '$scripting_completed_completed'
+                }, 
+                'pre_check_completed': {
+                    '$sum': '$scripting_completed_completed'
+                }, 
+                'total': {
+                    '$sum': 1
                 }
             }
         }
     ]
     
-    site_id_status_cursor = mongo.db.site_id_status.aggregate(aggr)
+    site_id_status_cursor = mongo.db.status_log_node.aggregate(aggr)
     site_id_status_len_cursor = mongo.db.site_id_status.find()
     
     
@@ -597,9 +657,10 @@ def dashboard():
         
         site_id_status_list.append(f)
     
+    final = site_id_status_list[0] if len(site_id_status_list) else {}
     return jsonify({
-        "site_id_status":site_id_status_list,
-        "total_count":counter
+        "site_id_status":final,
+        "total_count":final["total"] if "total" in final else 0
     }), 200
     
     
