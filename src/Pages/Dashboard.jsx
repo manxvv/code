@@ -107,27 +107,27 @@ const Dashboard = () => {
 
 
   let list = [{
-    "value": "ENM Command Executed",
+    "value": "total",
     "userValue": "Total Sites - ENM Commands",
     "bgcolor": "bg-[#9606f8]",
     "textcolor": "text-[#ffffff]"
   }, {
-    "value": "Pre Check Completed",
+    "value": "pre_check_completed",
     "userValue": "Total Sites - Pre Check",
     "bgcolor": "bg-[#f14919]",
     "textcolor": "text-[#ffffff]"
   }, {
-    "value": "Post Check Completed",
+    "value": "post_check_completed",
     "userValue": "Total Sites - Post Check",
     "bgcolor": "bg-[#26c885]",
     "textcolor": "text-[#ffffff]"
   }, {
-    "value": "Post Check Completed",
+    "value": "scripting_completed_completed",
     "userValue": "Total Sites - Scripting Done",
     "bgcolor": "bg-[#26c885]",
     "textcolor": "text-[#ffffff]"
   }, {
-    "value": "Post Check Completed",
+    "value": "migration_completed",
     "userValue": "Total Sites - Migration Done",
     "bgcolor": "bg-[#26c885]",
     "textcolor": "text-[#ffffff]"
@@ -182,7 +182,7 @@ const Dashboard = () => {
               return <><div className={` ${oneValueOfBoard.bgcolor} dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700`}>
                 <div className={`text-xl dark:text-gray-400 mb-1 font-bold ${oneValueOfBoard.textcolor}`}>{oneValueOfBoard.userValue || "N/A"}</div>
                 <div className={`text-2xl font-medium ${oneValueOfBoard.textcolor}`}>
-                  {data && data.site_id_status.find((onelist) => onelist.status == oneValueOfBoard.value)?.["count"] || "0"}
+                  {data && data && data["site_id_status"][oneValueOfBoard["value"]] || 0}
                   {/* {oneValueOfBoard.count} */}
                 </div>
               </div>
