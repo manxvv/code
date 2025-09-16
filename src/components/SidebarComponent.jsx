@@ -95,13 +95,13 @@ export function SidebarDemo({ outlet }) {
     },
     ...(role === "user"
       ? [
-        {
-          label: "Hazard Detector",
-          href: "hazard-detector",
-          icon: (
-            <IconAlertTriangle className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
+        // {
+        //   label: "Hazard Detector",
+        //   href: "hazard-detector",
+        //   icon: (
+        //     <IconAlertTriangle className="h-5 w-5 flex-shrink-0" />
+        //   ),
+        // },
         {
           label: "ENM Command",
           href: "enm-command",

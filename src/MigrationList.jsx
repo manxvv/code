@@ -55,31 +55,36 @@ function MigrationList() {
             cell: ({ row }) => row.getValue("nodes"),
         },
         {
-            accessorKey: "statuses",
+            accessorKey: "statusList",
             header: "Pre Check Status",
             cell: ({ row }) => {
-                return row ? row.getValue("statuses").indexOf("pre_check") != -1 ? "Completed" : "N/A" : "N/A"
+                return row.getValue("statusList")?row.getValue("statusList")["pre_check_completed"] ? "Completed" : "N/A" : "N/A"
+
+                // return row ? row.getValue("statuses").indexOf("pre_check") != -1 ? "Completed" : "N/A" : "N/A"
             },
         },
         {
             accessorKey: "status",
             header: "Scripting Status",
             cell: ({ row }) => {
-                return row ? row.getValue("statuses").indexOf("scripting_completed") != -1 ? "Completed" : "N/A" : "N/A"
+                return row.getValue("statusList")?row.getValue("statusList")["scripting_completed_completed"] ? "Completed" : "N/A" : "N/A"
+                // return row ? row.getValue("statuses").indexOf("scripting_completed") != -1 ? "Completed" : "N/A" : "N/A"
             },
         },
         {
             accessorKey: "status",
             header: "Post Check Status",
             cell: ({ row }) => {
-                return row ? row.getValue("statuses").indexOf("post_check") != -1 ? "Completed" : "N/A" : "N/A"
+                return row.getValue("statusList")?row.getValue("statusList")["post_check_completed"] ? "Completed" : "N/A" : "N/A"
+                // return row ? row.getValue("statuses").indexOf("post_check") != -1 ? "Completed" : "N/A" : "N/A"
             },
         },
         {
             accessorKey: "status",
             header: "Migration Status",
             cell: ({ row }) => {
-                return row ? row.getValue("statuses").indexOf("Migration Completed") != -1 ? "Completed" : "N/A" : "N/A"
+                return row.getValue("statusList")?row.getValue("statusList")["migration_completed"] ? "Completed" : "N/A" : "N/A"
+                // return row ? row.getValue("statuses").indexOf("Migration Completed") != -1 ? "Completed" : "N/A" : "N/A"
             },
         }
 
