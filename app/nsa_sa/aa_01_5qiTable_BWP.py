@@ -29,7 +29,7 @@ class aa_01_5qiTable_BWP(Script):
                         else: self.custom_log.log.exception(F'{self.node}--{mo_5qi}--{para} ---- Parameter not found:')
                     tmp_dict |= {'attributes': {'xc:operation': 'update'}}
                     if mo_type == 'DU' and tmp_dict['dU5qiId'] == '1':
-                        if self.site.get_fdn_parameter(fdn=mo_5qi, para='srHandlingRef') == 'GNBDUFunction=1,UeCC=1,SrHandling=5QI_5':
+                        if "srHandlingRef" in tmp_dict and self.site.get_fdn_parameter(fdn=mo_5qi, para='srHandlingRef') == 'GNBDUFunction=1,UeCC=1,SrHandling=5QI_5':
                             del tmp_dict['srHandlingRef']
                 else:
                     tmp_dict |= {'attributes': {'xc:operation': 'create'}}
