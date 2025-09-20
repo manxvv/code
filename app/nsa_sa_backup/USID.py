@@ -2,6 +2,7 @@ import copy
 import os
 import json
 import re
+from datetime import datetime
 import pandas as pd
 from pandas import ExcelWriter
 import numpy as np
@@ -53,7 +54,7 @@ dump_list = [
 
 
 class USID:
-    def __init__(self, *, nsa_sa_path: str, base_dir: str, custom_log: Custom_Log, para_file: str, site_file: str, circle: str, enm: str):
+    def __init__(self, *,nsa_sa_path:str, base_dir: str, custom_log: Custom_Log, para_file: str, site_file: str, circle: str, enm: str):
         self.base_dir = base_dir
         self.custom_log = custom_log
         self.circle = circle
@@ -61,8 +62,10 @@ class USID:
         self.log_mos = ';'.join([F'{_}.<w>' if '(' not in _ else _ for _ in dump_list])
 
         # DB Process
-        self.db = self.db_data(nsa_sa_path=nsa_sa_path)
+        self.db = self.db_data(nsa_sa_path)
         # Site List Data
+        
+        print("site_filesite_file",site_file,"site_filesite_file")
         self.df_site = self.site_data(site_file=site_file)
         self.nodes = list(self.df_site.node.unique())
         # Log Data Process
@@ -88,7 +91,7 @@ class USID:
         # self.df_site = pd.concat([self.df_site, pd.DataFrame(tmp_list)], axis=1).reset_index(drop=True, inplace=False)
 
         self.df_gpl = pd.DataFrame([], columns=['node', 'mo', 'parameter', 'value', 'gpl_value', 'flag', 'remark'])
-        self.gpl_list = []
+        self.para_list = []
         # self.save_different_dataframe()
 
 
@@ -114,7 +117,7 @@ class USID:
             elif value.lower() in ['true', 'false']: return value.lower()
         return value
 
-    def db_data(self, *, nsa_sa_path):
+    def db_data(self,nsa_sa_path):
         db_dict = {
             'TermPointToAmf': ['circle', 'termPointToAmfId', 'ipv6Address1', 'ipv6Address2', 'ipv4Address1', 'ipv4Address2',
                                'administrativeState', 'defaultAmf', 'pwsRestartHandling'],
@@ -124,14 +127,12 @@ class USID:
                                    'trStSaEUtranFreqRelProfileRef', 'ueMCEUtranFreqRelProfileRef', 'UeMCEUtranFreqRelProfileUeCfg_blindRwrAllowed',
                                    'UeMCEUtranFreqRelProfileUeCfg_connModeAllowedPCell', 'UeMCEUtranFreqRelProfileUeCfg_connModePrioPCell'],
             'DU5qi': ['circle', 'dU5qiId', 'aqmMode', 'dscp', 'estimatedE2ERTT', 'logicalChannelGroupId', 'packetDelayBudget',
-                      'packetDelayBudgetOffset', 'priorityLevel', 'profile5qi', 'rlcSNLength',
-                      'tReassemblyDl', 'tReassemblyUl'], # 'puschRepRef', 'srHandlingRef',
+                      'packetDelayBudgetOffset', 'priorityLevel', 'profile5qi', 'puschRepRef', 'rlcSNLength', 'srHandlingRef',
+                      'tReassemblyDl', 'tReassemblyUl'],
             'CUCP5qi': ['circle', 'cUCP5qiId', 'pdcpSnSize', 'profile5qi', 'rlcMode', 'tPdcpDiscard', 'tReorderingDl', 'tReorderingUl'],
             'CUUP5qi': ['circle', 'cUUP5qiId', 'aqmMode', 'counterActiveMode', 'dcDlPdcpAggrPrioCg', 'dcDlPdcpAggrTimeDiffCg',
-                        'dcDlPdcpAggrTimeDiffProhibit', 'dcDlPdcpAggrTimeDiffThresh', 'dscp', 'estimatedE2ERTT',
-                        'packetDelayBudget', 'packetDelayBudgetOffset', 'profile5qi', 'tOooUlDelivery'], # 'drbRef',
-
-
+                        'dcDlPdcpAggrTimeDiffProhibit', 'dcDlPdcpAggrTimeDiffThresh', 'drbRef', 'dscp', 'estimatedE2ERTT', 'l4sCfgRef',
+                        'packetDelayBudget', 'packetDelayBudgetOffset', 'profile5qi', 'tOooUlDelivery'],
             'MOC': ['circle', 'mo', 'parameter', 'value', 'flag'],
         }
 
@@ -142,20 +143,21 @@ class USID:
                 df = df[db_dict[sheet]]
                 df = df.replace('[^a-zA-Z0-9.,-_/+()[]{}]', '', regex=True)
                 df = df.replace({np.nan: None, '': None}, inplace=False).dropna()
+                # df.replace({np.nan: None, '': None}, inplace=True)
                 df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
                 df = df.loc[(df.circle.isin(['Airtel', self.circle]))]
                 df.drop(['circle'], axis=1, inplace=True)
                 if sheet == 'MOC':
                     df['value'] = df['value'].apply(self.parse_string_to_json)
-                    df['flag'] = df.flag.str.lower()
-                    df = df.loc[(df.flag.str.lower().isin(['true']))]
                     df = df.groupby(['mo', 'parameter'], sort=False, as_index=False).tail(1)
                 df.reset_index(inplace=True, drop=True)
                 db[sheet] = df.copy()
+                # print(df)
             except Exception as e:
                 self.custom_log.log.info("message")
                 self.custom_log.log.exception(e)
                 self.custom_log.log.exception(F'sheet {sheet} has missing columns!!!')
+                print(f'sheet {sheet} has missing columns!!!'+e)
                 return None
         return db
 
@@ -177,7 +179,7 @@ class USID:
             'CXC4012406', 'CXC4012510', 'CXC4012562', 'CXC4012593', 'CXC4012638', 'CXC4012590', 'CXC4012218'
         ]
         tmp_list = []
-        description_dict = {'circle': '', 'enm': '', 'node': 'description'}
+        description_dict = {'circle': 'description', 'enm': 'description', 'description': 'description'}
         for node in self.sites:
             tmp_dict = {'circle': self.circle, 'enm': self.enm, 'node': node}
             for r in featureStateId:
@@ -189,6 +191,7 @@ class USID:
                 elif description_dict[r] is None: description_dict[r] = self.sites[node].get_fdn_parameter(fdn=fdn, para="description")
             tmp_list.append(copy.deepcopy(tmp_dict))
         tmp_list = [copy.deepcopy(description_dict)] + tmp_list
+        print(tmp_list)
         df = pd.DataFrame(tmp_list)
         return df
 
@@ -204,7 +207,7 @@ class USID:
                     'cellid': site.get_fdn_parameter(fdn=r, para='cellLocalId'),
                     'tac': site.get_fdn_parameter(fdn=r, para='nRTAC'),
                     'cell': r.split('=')[-1],
-                    'CU': None,  'sib2': None, 'sib4': None, 'sib5': None, 'nr_intra_rel': None, 'nr_inter_rel': None,
+                    'CU': None,  'nr_intra_rel': None, 'nr_inter_rel': None,
                     'ssbFrequency': site.get_fdn_parameter(fdn=r, para='ssbFrequency'),
                     'ssbSubCarrierSpacing': site.get_fdn_parameter(fdn=r, para='ssbSubCarrierSpacing'),
                     'ssbPeriodicity': site.get_fdn_parameter(fdn=r, para='ssbPeriodicity'),
@@ -220,9 +223,6 @@ class USID:
                         inter_rel = [_ for _ in relations if site.get_fdn_parameter(fdn=s, para='nRFrequencyRef') != freq]
                         tmp_dict |= {
                             'CU': s.split('=')[-1],
-                            'sib2': len(intra_rel) > 0,
-                            'sib4': len(inter_rel) > 0,
-                            'sib5': len([_ for _ in site.fdns if re.match(F'{s},EUtranFreqRelation=([^,]*)$', _)]) > 0,
                             'intra_rel': intra_rel,
                             'inter_rel': inter_rel,
                             'transmitSib2': site.get_fdn_parameter(fdn=s, para='transmitSib2'),
@@ -269,6 +269,9 @@ class USID:
                 }
                 tmp_list.append(copy.deepcopy(tmp_dict))
         df_cell = pd.DataFrame(tmp_list)
+        type_order = ['NR', 'FDD', 'TDD']
+        df_cell['type'] = pd.Categorical(df_cell['type'], categories=type_order, ordered=True)
+        df_cell = df_cell.sort_values(by='type').reset_index(drop=True)
         return df_cell
 
     def process_df_site_with_logs_data(self) -> pd.DataFrame:
@@ -277,7 +280,7 @@ class USID:
             node = r.__getattribute__('node')
             site = self.sites[node]
             tmp_dict = {}
-            if not hasattr(site, 'fdns') or len(site.fdns) < 1: tmp_dict |= {'log': False}
+            if len(site.fdns) < 1: tmp_dict |= {'log': False}
             else:
                 tmp_dict |= {
                     'log': True if len(site.fdns) > 0 else False,
@@ -308,14 +311,16 @@ class USID:
                 if (tmp_dict['DU_gNBIdLength'] == tmp_dict['CUCP_gNBIdLength'] == tmp_dict['CUUP_gNBIdLength']):
                     tmp_dict['gNBIdLength'] = tmp_dict['DU_gNBIdLength']
                     del tmp_dict['DU_gNBIdLength'], tmp_dict['CUCP_gNBIdLength'], tmp_dict['CUUP_gNBIdLength']
-            tmp_list.append(tmp_dict)
+                tmp_list.append(tmp_dict)
 
 
         new_df = pd.DataFrame(tmp_list)
         return new_df
 
+
     def save_different_dataframe(self, *, current_time: str) -> None:
-        data = {'Site': self.df_site, 'Cell': self.df_cell, 'AMF': self.df_amf, 'Feature': self.df_feature, 'GPL': self.df_gpl}
+        data = {'Site': self.df_site, 'Cell': self.df_cell, 'AMF': self.df_amf, 'GPL': self.df_gpl,
+                'Feature': self.df_feature}
         with ExcelWriter(os.path.join(self.base_dir, F'Script_Status_{current_time}.xlsx')) as writer:
             for key in data:
                 df = data.get(key).copy()

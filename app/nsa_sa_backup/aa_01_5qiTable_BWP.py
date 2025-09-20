@@ -25,12 +25,11 @@ class aa_01_5qiTable_BWP(Script):
                 tmp_dict = {_: r.__getattribute__(_) for _ in tmp_list}
                 if self.site.fdn_exists(fdn=mo_5qi):
                     for para in ['logicalChannelGroupId', 'profile5qi']:
-                        if para in tmp_dict.keys(): del tmp_dict[para]
-                        else: self.custom_log.log.exception(F'{self.node}--{mo_5qi}--{para} ---- Parameter not found:')
+                        if para in tmp_dict.keys():
+                            del tmp_dict[para]
+                        else:
+                            "Parameter not found:"
                     tmp_dict |= {'attributes': {'xc:operation': 'update'}}
-                    if mo_type == 'DU' and tmp_dict['dU5qiId'] == '1':
-                        if self.site.get_fdn_parameter(fdn=mo_5qi, para='srHandlingRef') == 'GNBDUFunction=1,UeCC=1,SrHandling=5QI_5':
-                            del tmp_dict['srHandlingRef']
                 else:
                     tmp_dict |= {'attributes': {'xc:operation': 'create'}}
                 self.mo_dict['5qi'][F'GNB{mo_type}Function'][F'{mo_type}5qiTable'][F'{mo_type}5qi'].append(copy.deepcopy(tmp_dict))
@@ -50,17 +49,17 @@ class aa_01_5qiTable_BWP(Script):
             'GNBDUFunction': {
                 'gNBDUFunctionId': '1',
                 'BWP': [
-                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'Init_DL_100', 'bwpContext': 'DOWNLINK',
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'Init_DL_100', 'bwpContext': '0 (DOWNLINK)',
                      'numberOfRBs': '273', 'isInitialBwp': 'true', },
-                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'Init_UL_100', 'bwpContext': 'UPLINK',
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'Init_UL_100', 'bwpContext': '1 (UPLINK)',
                      'numberOfRBs': '273', 'isInitialBwp': 'true', },
-                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'DenseSS_DL_100', 'bwpContext': 'DOWNLINK',
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'DenseSS_DL_100', 'bwpContext': '0 (DOWNLINK)',
                      'numberOfRBs': '273', 'isInitialBwp': 'false', },
-                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'DenseSS_UL_100', 'bwpContext': 'UPLINK',
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'DenseSS_UL_100', 'bwpContext': '1 (UPLINK)',
                      'numberOfRBs': '273', 'isInitialBwp': 'false', },
-                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'SparseSS_DL_100', 'bwpContext': 'DOWNLINK',
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'SparseSS_DL_100', 'bwpContext': '0 (DOWNLINK)',
                      'numberOfRBs': '273', 'isInitialBwp': 'false', },
-                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'SparseSS_UL_100', 'bwpContext': 'UPLINK',
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': 'SparseSS_UL_100', 'bwpContext': '1 (UPLINK)',
                      'numberOfRBs': '273', 'isInitialBwp': 'false', },
                 ],
                 'BWPSet': {
@@ -91,17 +90,15 @@ class aa_01_5qiTable_BWP(Script):
                               'bWPUlRef': 'GNBDUFunction=1,BWP=SparseSS_UL_100', 'dynPowerOptRef': 'GNBDUFunction=1,BWPSet=100,DynPowerOpt=VoNR'}]
                          },
                     ],
-
                 },
                 'NRCellDU': [],
             },
         }
-        # Need to move to Next Sctipt
         # NRCellDU
         for cell in self.site.du_cell:
             self.mo_dict['GNBDUFunction_BWP']['GNBDUFunction']['NRCellDU'].append({
                 'attributes': {'xc:operation': 'update'}, 'nRCellDUId': cell,
-                'sNSSAIList': [{'sd': '1', 'sst': '1'}],
-                # 'bWPRef': ['GNBDUFunction=1,BWP=Init_DL_100', 'GNBDUFunction=1,BWP=Init_UL_100'],
-                # 'bWPSetRef': 'GNBDUFunction=1,BWPSet=100'
+                'sNSSAIList': {'sd': '1', 'sst': '1'},
+                'bWPRef': ['GNBDUFunction=1,BWP=Init_DL_100', 'GNBDUFunction=1,BWP=Init_UL_100'],
+                'bWPSetRef': 'GNBDUFunction=1,BWPSet=100'
             })

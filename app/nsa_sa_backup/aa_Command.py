@@ -4,7 +4,6 @@ import os
 from Script import Script
 from datetime import datetime
 
-
 class aa_Command(Script):
     def create_rpc_msg(self): pass
     def special_formate_scripts(self):
@@ -51,7 +50,9 @@ class aa_Command(Script):
             F'5. Load ---  04_Parameter using Bulk import',
             F'      Run Below commands on CLI terminal',
             F'      ',
-            F'      cmedit set {all_nodes} GNBCUCPFunction,NRCellCU,EUtranCellRelation isHoAllowed=true --force',
+            F'      cmedit set {all_nodes} GNBDUFunction,NRCellCU transmitSib2=true --force',
+            F'      cmedit set {all_nodes} GNBDUFunction,NRCellCU transmitSib4=true --force',
+            F'      cmedit set {all_nodes} GNBDUFunction,NRCellCU transmitSib5=true --force',
             F'      ',
             F'      ',
             F'6. Load ---  05_UnLock_NR (If you have NR cells unlocked during pre-check)',

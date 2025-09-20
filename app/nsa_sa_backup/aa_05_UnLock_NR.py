@@ -6,7 +6,6 @@ from Script import Script
 class aa_05_UnLock_NR(Script):
     def create_rpc_msg(self):
         if self.node not in self.usid.nr_node: return
-        self.validate_existing_mo_parameter = False
         self.mo_dict['DU'] = {'managedElementId': self.node, 'GNBDUFunction': {'gNBDUFunctionId': '1', 'NRCellDU': [], 'NRSectorCarrier': []}}
         for aa in ['NRCellDU', 'NRSectorCarrier']:
             for r in sorted([_ for _ in self.site.fdns if re.match(F".*,{aa}=([^,]*)$", _)]):

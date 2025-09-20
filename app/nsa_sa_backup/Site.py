@@ -90,9 +90,19 @@ class Site:
                     xn_ip, xn_sctp, type_int = x2_ip, x2_sctp, x2_type_interface
                 else: type_int = 'NotFound'
         else:
+            
+            print(tn_dict["GNBCUCPFunction"]["EndpointResource"])
             tn_dict['GNBCUCPFunction']['EndpointResource'] |= {'attributes': {'xc:operation': 'create'}}
         if xn_ip and re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_ip):
             xn_ip = re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_ip).group(1)
         if xn_sctp and re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_sctp):
             xn_sctp = re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_sctp).group(1)
         return tn_dict, xn_ip, xn_sctp, type_int
+
+
+
+# for _ in self.fdns:
+#     if re.match('(.*,ManagedElement=[^,]*),.*', _):
+#         self.me = re.match('(.*,ManagedElement=[^,]*),.*', _).group(1)
+#         print(re.match('(.*,ManagedElement=[^,]*),.*', _).group(1))
+#         break
