@@ -26,7 +26,7 @@ import sys
 path_nsa_sa = os.path.join(os.path.join(os.getcwd(),"app"),"nsa_sa")
 print(sys.path)
 sys.path.append(path_nsa_sa)
-from app.nsa_sa_backup.script_runner import scripting_nsa_sa
+from app.nsa_sa.script_runner import scripting_nsa_sa
 
 cal = Calculator()
 
