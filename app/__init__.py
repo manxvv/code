@@ -19,7 +19,12 @@ def create_app():
     )
 
     # Config
-    app.config["MONGO_URI"] = os.getenv("MONGO_URI")
+    mongo_uri = (
+        f"mongodb://{os.getenv('MONGO_USER')}:{os.getenv('MONGO_PASSWORD')}"
+        f"@{os.getenv('MONGO_HOST')}:{os.getenv('MONGO_PORT')}/"
+        f"{os.getenv('MONGO_DB')}?authSource={os.getenv('MONGO_AUTH_DB')}"
+    )
+    app.config["MONGO_URI"] = mongo_uri
     app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
     app.config["JWT_ALGORITHM"] = os.getenv("JWT_ALGORITHM", "HS256")
 

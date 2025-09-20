@@ -141,7 +141,7 @@ def login():
 
 @api.route("/", methods=["GET"])
 def user111():
-    return {"message": "Hello from Flask!"}
+    return {"message": "Hello from Flask!"+"------------"+os.getenv("APP_NAME")+"-----------"+os.getenv("MONGO_DB")}
 
 
 @api.route("/users", methods=["GET"])
