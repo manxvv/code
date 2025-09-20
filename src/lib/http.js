@@ -10,7 +10,7 @@ console.log(window.location.host,"dsadasdas")
 
 let all_urls={
   "vedang.dataplus.live":"https://api.vedang.dataplus.live",
-  "dataplus.mpulsenet.com":"https://api.mpulsenet.dataplus.live/"
+  "dataplus.mpulsenet.com":"https://api.mpulsenet.dataplus.live"
 }
 
 const http = axios.create({
