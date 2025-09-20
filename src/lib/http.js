@@ -4,6 +4,9 @@ import { store } from "@/app/store";
 import { useNavigate } from "react-router-dom";
 import { login, logout, setAuthToke } from "@/features/auth/authSlice";
 
+
+console.log(window.location.host,"dsadasdas")
+
 const http = axios.create({
   baseURL: Urls.baseURL,
   withCredentials: true
