@@ -6,5 +6,5 @@ services:
       context: .    # path to your React app folder
       dockerfile: Dockerfile # optional if name is Dockerfile
     ports:
-      - "5176:80"            # host:container (nginx serves on 80)
+      - "5175:80"            # host:container (nginx serves on 80)
     restart: unless-stopped
