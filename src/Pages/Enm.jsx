@@ -187,9 +187,9 @@ function Enm() {
 
 
 
-        let filename_name = url.split("/").pop()
+        let filename_name = filename.split("/").pop()
 
-        let filename_new = filename.split("\\").pop()
+        let filename_new = filename_name.split("\\").pop()
 
 
         const blob = await response.blob();
