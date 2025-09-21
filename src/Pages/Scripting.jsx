@@ -10,6 +10,7 @@ import { Edit, Trash2, Download } from "lucide-react";
 import { enms, getuser_scripting_files, getUsers, uploadScripting, Urlenmmfiles } from "@/lib/api";
 import Urls from "@/config/urls";
 import { useSelector } from "react-redux";
+import { final_url } from "@/lib/http";
 
 function Scripting() {
   const queryClient = useQueryClient();
@@ -186,7 +187,7 @@ function Scripting() {
         return (
           <Button
             onClick={() =>
-              downloadFile(Urls.downloadbaseURL + "/" + file.nsa_op_folder, token)
+              downloadFile(final_url + "/" + file.nsa_op_folder, token)
             }
           >
             Download

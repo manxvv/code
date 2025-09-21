@@ -10,8 +10,12 @@ console.log(window.location.host,"dsadasdas")
 
 let all_urls={
   "vedang.dataplus.live":"https://api.vedang.dataplus.live",
-  "dataplus.mpulsenet.com":"https://api.mpulsenet.dataplus.live"
+  "dataplus.mpulsenet.com":"https://api.mpulsenet.dataplus.live",
+  "localhost:5174":"http://localhost:5000"
 }
+
+export const final_url = all_urls[window.location.host]
+
 
 const http = axios.create({
   baseURL: all_urls[window.location.host],

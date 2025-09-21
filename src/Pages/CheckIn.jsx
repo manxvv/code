@@ -2,6 +2,7 @@ import { DataTableDemo } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
 import Urls from '@/config/urls';
 import { enms, getUsers, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
+import { final_url } from '@/lib/http';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
 import React, { useState, useRef, useMemo } from 'react';
@@ -226,7 +227,7 @@ function CheckIn() {
                 return (
                     <Button
                         onClick={() =>
-                            downloadFile(Urls.downloadbaseURL + "/" + file.path, token)
+                            downloadFile(final_url + "/" + file.path, token)
                         }
                     >
                         Download
