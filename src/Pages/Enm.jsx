@@ -161,7 +161,7 @@ function Enm() {
                 return (
                     <Button
                         onClick={() =>
-                            downloadFile(final_url + "/enm_downloads/" + file.uID, token, file.original_filename)
+                            downloadFile(final_url + "/enm_downloads/" + file.uID, token, file.enm_file_name)
                         }
                     >
                         Download
@@ -189,7 +189,7 @@ function Enm() {
 
         let filename_name = url.split("/").pop()
 
-        let filename_new = filename_name.split("\\").pop()
+        let filename_new = filename.split("\\").pop()
 
 
         const blob = await response.blob();
