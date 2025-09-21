@@ -1108,6 +1108,10 @@ def get_user_files():
                 'preserveNullAndEmptyArrays': True
             }
         }, {
+            '$sort': {
+                '_id': -1
+            }
+        },{
             '$project': {
                 'user_id_obj': 0, 
                 'userresult.hashed_password': 0, 
@@ -1235,6 +1239,10 @@ def get_user_scripting_files():
             '$unwind': {
                 'path': '$userresult', 
                 'preserveNullAndEmptyArrays': True
+            }
+        },{
+            '$sort': {
+                '_id': -1
             }
         }, {
             '$project': {
@@ -1372,6 +1380,10 @@ def migrationList():
             '$unwind': {
                 'path': '$statusList', 
                 'preserveNullAndEmptyArrays': True
+            }
+        },{
+            '$sort': {
+                '_id': -1
             }
         }
     ]
