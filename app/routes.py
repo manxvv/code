@@ -1457,6 +1457,14 @@ def enm_download_file(file_id):
     for enmfilei in enm_listt["enm_file_name"].split(","):
         
         enm_zip_file.append(os.path.join(os.getcwd(),enmfilei))
+        
+    if(len(enm_zip_file) == 1):
+        print(enm_zip_file)
+        
+        return send_file(
+            enm_zip_file[0],
+            as_attachment=True
+        )
     
 
     zip_path = create_zip_from_files(enm_zip_file, os.path.join("downloads","enm_output.zip"))
