@@ -601,9 +601,12 @@ class Calculator:
 
         
         
-        print(self.alarm_data,sites_data,"summary_dfsummary_df")
+        print(self.alarm_data,"sites_datasites_data",sites_data,"summary_dfsummary_df")
         
-        self.alarm_data = self.alarm_data[self.alarm_data["NodeName"].isin(sites_data["Node"])]
+        
+        if("NodeName" in self.alarm_data.columns):
+            self.alarm_data = self.alarm_data[self.alarm_data["NodeName"].isin(sites_data["Node"])]
+        
         
         
         if("NodeId" in syncStatus_data.columns):
