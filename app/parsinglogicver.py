@@ -1104,83 +1104,196 @@ class Calculator:
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
 
     
+    # def txt_to_csv(self, file_name, p_type):
+        
+        
+    #     final_file = os.path.join("downloads",p_type+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx")
+        
+    #     # print(file_name)
+    #     with open(os.path.join(os.getcwd(),file_name)) as file:
+    #         file_data = file.read()
+    #         raw_text = ""
+    #         raw_text_list = []
+    #         fdn = False
+    #         all_d = []
+    #         file_d_list = {}
+    #         mo_name = ""
+            
+            
+    #         for j, line in enumerate(file_data.splitlines(), start=1):
+                
+                
+    #             # print(all_d,"dashndkjashdkjsakdkjasdsadaskdnsa")
+    #             print(line,all_d,"linelinelinelinelineall_dall_dall_dall_dall_dall_d")
+    #             if("FDN" in line): 
+    #                 if(mo_name not in file_d_list):
+    #                     file_d_list[mo_name] = ", ".join(all_d).replace("FDN :","")
+    #                 else:
+    #                     file_d_list[mo_name] = file_d_list[mo_name] + "\n" + ", ".join(all_d).replace("FDN :","")
+                    
+    #                 all_d = []
+    #                 all_d = line.split(",")
+    #                 mo_name = all_d[-1].split("=")[0]
+    #                 fdn = True
+    #                 file_change = line
+                
+    #             else:
+    #                 if(len(line.strip()) > 0):
+                        
+    #                     lcl_val = []
+    #                     if("{" in line):
+    #                         # print(line,"Dasjndkjasndkja")
+    #                         val_self = self.str_to_json(line)
+    #                         for oneHeadValkey,oneHeadValVal in val_self.items():
+    #                             for koneHeadValkey,voneHeadValVal in oneHeadValVal.items():
+    #                                 lcl_val.append(oneHeadValkey+"_"+koneHeadValkey+" : "+voneHeadValVal)
+                                    
+    #                         line_val = ", ".join(lcl_val)
+    #                         all_d.append(", "+line_val)
+                            
+    #                     if("[" in line):
+    #                         line_val = line.replace(",","_spcheckcomma_")
+    #                         line_val = line_val.replace("=","_spcheckequal_")
+    #                         all_d.append(line_val)
+    #                     else:
+    #                         all_d.append(line)
+                    
+                
+    #             if(len(line.strip()) == 0 and fdn):
+    #                 fdn = False
+                
+                
+                
+                
+                
+                
+                
+    #             if(fdn):
+    #                 raw_text = raw_text+"\n"+line
+                    
+                    
+    #             else:
+    #                 raw_text_list.append(raw_text)
+    #                 raw_text = ""
+                
+
+                
+            
+    #         with pd.ExcelWriter(final_file) as writer:
+                
+                
+    #             for key, values in file_d_list.items():
+    #                 if(key != "" and len(values.strip()) > 0):
+    #                     data = {}
+                        
+                        
+    #                     rows = []
+                        
+    #                     # print(values)
+    #                     for line in values.split("\n"):
+    #                         parsed = {}
+    #                         for part in line.split(","):
+    #                             if "=" in part:
+    #                                 k, v = part.split("=", 1)
+    #                                 parsed[k.strip()] = v.strip()
+    #                             elif ":" in part:
+    #                                 # print(part,"partpartpartpartpartpartpart")
+                                    
+                                    
+                                    
+    #                                 k, v = part.split(":", 1)
+    #                                 parsed[k.strip()] = v.strip().replace("_spcheckcomma_",", ").replace("_spcheckequal_","=")
+    #                         rows.append(parsed)
+
+    #                     df = pd.DataFrame(rows)
+                        
+                        
+    #                     df.to_excel(writer, sheet_name=key, index=False)  
+    #                     if("post" in file_name and key == "TermPointToAmf"):
+    #                         print(df,len(rows),"keykeykeykey",key,"final_filefinal_filefinal_filefinal_filefinal_filefinal_file")
+        
+                
+                
+    #     if("post" in file_name):
+    #         cedledmcl
+    #         print(final_file,"final_filefinal_filefinal_filefinal_filefinal_filefinal_file")
+    #     return final_file
+    
+    
+    
     def txt_to_csv(self, file_name, p_type):
-        
-        
-        final_file = os.path.join("downloads",p_type+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx")
-        
-        # print(file_name)
-        with open(os.path.join(os.getcwd(),file_name)) as file:
+        # create output Excel path
+        final_file = os.path.join(
+            "downloads",
+            p_type + datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
+        )
+
+        with open(os.path.join(os.getcwd(), file_name)) as file:
             file_data = file.read()
+
             raw_text = ""
             raw_text_list = []
             fdn = False
             all_d = []
             file_d_list = {}
             mo_name = ""
-            
-            
+
             for j, line in enumerate(file_data.splitlines(), start=1):
-                
-                
-                # print(all_d,"dashndkjashdkjsakdkjasdsadaskdnsa")
-                # print(", ".join(all_d),"all_dall_dall_dall_dall_dall_d")
-                if("FDN" in line): 
-                    if(mo_name not in file_d_list):
-                        file_d_list[mo_name] = ", ".join(all_d).replace("FDN :","")
-                    else:
-                        file_d_list[mo_name] = file_d_list[mo_name] + "\n" + ", ".join(all_d).replace("FDN :","")
-                    
-                    all_d = []
+
+                if "FDN" in line:
+                    # flush previous block (if any)
+                    if all_d and mo_name:
+                        if mo_name not in file_d_list:
+                            file_d_list[mo_name] = ", ".join(all_d).replace("FDN :", "")
+                        else:
+                            file_d_list[mo_name] += "\n" + ", ".join(all_d).replace("FDN :", "")
+
+                    # start new block
                     all_d = line.split(",")
                     mo_name = all_d[-1].split("=")[0]
                     fdn = True
-                    file_change = line
-                
+
                 else:
-                    if(len(line.strip()) > 0):
-                        
+                    if len(line.strip()) > 0:
                         lcl_val = []
-                        if("{" in line):
-                            # print(line,"Dasjndkjasndkja")
+                        if "{" in line:
                             val_self = self.str_to_json(line)
-                            for oneHeadValkey,oneHeadValVal in val_self.items():
-                                for koneHeadValkey,voneHeadValVal in oneHeadValVal.items():
-                                    lcl_val.append(oneHeadValkey+"_"+koneHeadValkey+" : "+voneHeadValVal)
-                                    
+                            for oneHeadValkey, oneHeadValVal in val_self.items():
+                                for koneHeadValkey, voneHeadValVal in oneHeadValVal.items():
+                                    lcl_val.append(
+                                        oneHeadValkey + "_" + koneHeadValkey + " : " + voneHeadValVal
+                                    )
                             line_val = ", ".join(lcl_val)
-                            all_d.append(", "+line_val)
-                            
-                        if("[" in line):
-                            line_val = line.replace(",","_spcheckcomma_")
-                            line_val = line_val.replace("=","_spcheckequal_")
+                            all_d.append(", " + line_val)
+
+                        if "[" in line:
+                            line_val = line.replace(",", "_spcheckcomma_")
+                            line_val = line_val.replace("=", "_spcheckequal_")
                             all_d.append(line_val)
                         else:
                             all_d.append(line)
-                    
-                
-                if(len(line.strip()) == 0 and fdn):
-                    fdn = False
-                
-                raw_text_list.append(raw_text)
-                raw_text = ""
-                if(fdn):
-                    raw_text = raw_text+"\n"+line
-                
 
-                
-            
+                if len(line.strip()) == 0 and fdn:
+                    fdn = False
+
+                if fdn:
+                    raw_text = raw_text + "\n" + line
+                else:
+                    raw_text_list.append(raw_text)
+                    raw_text = ""
+
+            # 🔴 flush the final block at end of file
+            if all_d and mo_name:
+                if mo_name not in file_d_list:
+                    file_d_list[mo_name] = ", ".join(all_d).replace("FDN :", "")
+                else:
+                    file_d_list[mo_name] += "\n" + ", ".join(all_d).replace("FDN :", "")
+
+            # write Excel
             with pd.ExcelWriter(final_file) as writer:
-                
-                
                 for key, values in file_d_list.items():
-                    if(key != "" and len(values.strip()) > 0):
-                        data = {}
-                        
-                        
+                    if key and len(values.strip()) > 0:
                         rows = []
-                        
-                        # print(values)
                         for line in values.split("\n"):
                             parsed = {}
                             for part in line.split(","):
@@ -1188,21 +1301,22 @@ class Calculator:
                                     k, v = part.split("=", 1)
                                     parsed[k.strip()] = v.strip()
                                 elif ":" in part:
-                                    # print(part,"partpartpartpartpartpartpart")
-                                    
-                                    
-                                    
                                     k, v = part.split(":", 1)
-                                    parsed[k.strip()] = v.strip().replace("_spcheckcomma_",", ").replace("_spcheckequal_","=")
+                                    parsed[k.strip()] = v.strip().replace(
+                                        "_spcheckcomma_", ", "
+                                    ).replace("_spcheckequal_", "=")
                             rows.append(parsed)
 
                         df = pd.DataFrame(rows)
-                        df.to_excel(writer, sheet_name=key, index=False)  
-                        
-        
-        # print(final_file)
+                        df.to_excel(writer, sheet_name=key, index=False)
+                        if "post" in file_name and key == "TermPointToAmf":
+                            print(df, len(rows), "keykeykeykey", key, "final_filefinal_file")
+                            
+        if "post" in file_name:
+            print(final_file, "final_filefinal_filefinal_file")
+
         return final_file
-    
+
     
     
         
@@ -1232,7 +1346,7 @@ class Calculator:
                     self.coloring_formatting(file_parsed)
                     
                     self.remove_extra_col(file_parsed)
-                    # print("FDN in filedat")
+                    # print("FDNX in filedat")
                     
                 
                 if("Total number of alarms fetched for the given query" in file_data):
