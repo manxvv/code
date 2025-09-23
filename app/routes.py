@@ -23,10 +23,8 @@ import zipfile
 from typing import List
 import sys
 
-path_nsa_sa = os.path.join(os.path.join(os.getcwd(),"app"),"nsa_sa")
-print(sys.path)
-sys.path.append(path_nsa_sa)
 from app.nsa_sa.script_runner import scripting_nsa_sa
+from app.gpl_audit.audit_test_runner import run_gpl_audit
 
 cal = Calculator()
 
@@ -53,12 +51,50 @@ def create_zip_from_files(file_paths: List[str], zip_filename: str) -> str:
                     arcname = os.path.basename(file_path)  # just filename inside zip
                     zipf.write(file_path, arcname)
 
-        return os.path.abspath(zip_filename)
+        return zip_filename
 
     finally:
         # 3. Clean up
         shutil.rmtree(temp_dir)
 
+
+
+def create_zip_from_folder(folder_path: str, zip_filename: str) -> str:
+    """
+    Creates a zip file from a folder (including all subfolders and files).
+    
+    Args:
+        folder_path (str): Path of the folder to zip.
+        zip_filename (str): Path of the output zip file.
+        
+    Returns:
+        str: Path of the created zip file.
+    """
+    # Ensure folder exists
+    if not os.path.exists(folder_path):
+        raise FileNotFoundError(f"Folder does not exist: {folder_path}")
+
+    # Create a temporary directory (optional, can copy if needed)
+    temp_dir = tempfile.mkdtemp()
+    
+    try:
+        # Copy entire folder structure into temp dir (optional)
+        temp_folder_path = os.path.join(temp_dir, os.path.basename(folder_path))
+        shutil.copytree(folder_path, temp_folder_path)
+        
+        # Create zip
+        with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(temp_folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Create relative path inside zip
+                    arcname = os.path.relpath(file_path, start=temp_folder_path)
+                    zipf.write(file_path, arcname)
+        
+        return zip_filename
+    finally:
+        # Clean up temp folder
+        shutil.rmtree(temp_dir)
 
 
 @api.route("/register", methods=["POST"])
@@ -1451,6 +1487,20 @@ def download_file_nsa_sa(file_id):
         final_file,
         as_attachment=True
     )
+    
+
+@api.route("/downloads/gpl_audit/<file_id>", methods=["GET"])
+@token_required
+def download_file_gpl_audit(file_id):
+    
+    final_file = os.path.join(os.getcwd(),"downloads","gpl_audit",file_id)
+    content_type = mimetypes.guess_type(final_file)
+    
+    print(content_type,"content_typecontent_type")
+    return send_file(
+        final_file,
+        as_attachment=True
+    )
 
 @api.route("/enm_downloads/<file_id>", methods=["GET"])
 # @token_required
@@ -1663,3 +1713,203 @@ def check_conn():
     except Exception as e:
         print("❌ Connection failed:", e)
         return "❌ Connection failed:" + str(e)
+
+
+
+@api.route("/run_gpl_audit", methods=["POST"])
+@token_required
+def run_gpl_audit_api():
+    
+    uid = request.user.get("sub")
+    if "Efile" not in request.files and not "siteList" in request.files:
+        return jsonify({"message": "No file part"}), 400
+    
+    eFile = request.files.getlist("Efile")
+    if not eFile:
+        return jsonify({"message": "No selected eFile file"}), 400
+
+
+    siteList = request.files.get("siteList")
+    circle_name = request.form.get("circle")
+    if not siteList:
+        return jsonify({"message": "No selected siteList file"}), 400
+
+
+    print(siteList,eFile)
+
+    siteList_original_filename = secure_filename(siteList.filename)
+    siteList_unique_filename = f"{uuid.uuid4().hex}_{siteList_original_filename}"
+    
+        
+    siteList_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"gpl_audit_site"), siteList_unique_filename)
+    siteList.save(siteList_file_path)
+    
+    
+    
+    
+    
+    eFile_original_filename_list = []
+    enmFile_list = []
+    for oneefile in eFile:    
+        eFile_original_filename = secure_filename(oneefile.filename)
+        eFile_unique_filename = f"{uuid.uuid4().hex}_{eFile_original_filename}"
+        oneefile_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"gpl_audit_enm"), eFile_unique_filename)
+        
+        eFile_original_filename_list.append({
+            "eFile_original_filename":eFile_original_filename,
+            "eFile_unique_filename":eFile_unique_filename,
+            "efile_file_path":oneefile_file_path
+        })
+        
+        
+        enmFile_list.append(oneefile_file_path)
+        
+    
+        
+        
+        oneefile.save(oneefile_file_path)
+        
+    
+    
+    print(eFile_original_filename_list,siteList_file_path)
+        
+        
+    one_last_data = mongo.db.audit_files.find_one(sort=[('_id', -1)])
+
+    aud_task_id = "AUD000001"
+
+    if(one_last_data):
+        last_task = one_last_data["aud_task_id"].replace("AUD","")
+        
+        new_id = int(last_task)+1
+        
+        
+        str_new_id = len(str(new_id))
+        
+        aud_task_id = "AUD"+(6-str_new_id)*"0"+str(new_id)
+        
+        
+    print(aud_task_id)
+        
+        
+        
+
+
+        
+        
+        
+        
+        
+    
+    
+    curr_dir = os.getcwd()
+    
+    print(enmFile_list,siteList_file_path)
+    
+    final_file_path = run_gpl_audit(curr_dir,circle_name,enmFile_list,siteList_file_path,aud_task_id)
+    
+    
+    final_file_path_list = []
+    
+    for fill in os.path.join(os.getcwd(),final_file_path):
+        final_file_path_list.append(fill)
+    
+    
+    shutil.copy(siteList_file_path, final_file_path)
+    
+    for filll in enmFile_list:
+        
+        shutil.copy(filll, final_file_path)
+        
+    
+    zip_path = create_zip_from_folder(final_file_path, final_file_path+".zip")
+    
+    print(final_file_path,"final_file_pathfinal_file_path")
+    
+    
+    
+    audit_data = {
+        "zip_path":zip_path,
+        "output_folder":final_file_path,
+        "aud_task_id":aud_task_id,
+        "enmFile_list":enmFile_list,
+        "siteList_file_path":siteList_file_path,
+        "eFile_original_filename_list":eFile_original_filename_list,
+        "siteList_original_filename":siteList_original_filename,
+        "siteList_unique_filename":siteList_unique_filename,
+        "circle":circle_name
+    }
+    
+    
+    
+    mongo.db.audit_files.insert_one(audit_data)
+    
+    
+    
+    
+    return jsonify({"message": "Audit Completed successfully"}), 201
+    
+    
+
+@api.route("/gpl_audit_files", methods=["GET"])
+@token_required
+def get_gpl_audit_files():
+    user_id = request.user.get("sub")  
+    
+    
+    aggr = [
+        {
+            '$addFields': {
+                'user_id_obj': {
+                    '$convert': {
+                        'input': '$user_id', 
+                        'to': 'objectId'
+                    }
+                }, 
+                'uID': {
+                    '$convert': {
+                        'input': '$_id', 
+                        'to': 'string'
+                    }
+                }
+            }
+        }, {
+            '$lookup': {
+                'from': 'users', 
+                'localField': 'user_id_obj', 
+                'foreignField': '_id', 
+                'as': 'userresult'
+            }
+        }, {
+            '$unwind': {
+                'path': '$userresult', 
+                'preserveNullAndEmptyArrays': True
+            }
+        },{
+            '$sort': {
+                '_id': -1
+            }
+        }, {
+            '$project': {
+                'user_id_obj': 0, 
+                'userresult.hashed_password': 0, 
+                'userresult._id': 0, 
+                '_id': 0
+            }
+        }
+    ]
+
+    # files_cursor = mongo.db.files.find({"user_id": user_id})
+    files_cursor = mongo.db.audit_files.aggregate(aggr)
+    
+    
+    
+    files_list = []
+    for f in files_cursor:
+        
+        print(f)
+        
+        
+        files_list.append(f)
+    
+    return jsonify(files_list), 200

@@ -26,6 +26,11 @@ def create_app():
     )
     app.config["MONGO_URI"] = mongo_uri
     app.config["MONGO_URI"] = os.getenv("MONGO_URI")
+    
+    if(os.getenv("mongo_full")=="true"):
+        app.config["MONGO_URI"] = mongo_uri
+    else:
+        app.config["MONGO_URI"] = os.getenv("MONGO_URI")
     app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
     app.config["JWT_ALGORITHM"] = os.getenv("JWT_ALGORITHM", "HS256")
 

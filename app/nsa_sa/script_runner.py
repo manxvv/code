@@ -1,10 +1,15 @@
 import os
 import importlib
 from datetime import datetime
-from USID import USID
-from custom_log import Custom_Log
+
 import uuid
 import shutil
+import sys
+path_nsa_sa = os.path.join(os.path.join(os.getcwd(),"app"),"nsa_sa")
+sys.path.append(path_nsa_sa)
+print(sys.path,"sys.pathsys.pathsys.path script_runner")
+from USID import USID
+from custom_log import Custom_Log
 
 def scripting_nsa_sa(siteList_original_filename,eFile_original_filename,nsa_sa_path,circle,enm,site_file,para_file,curr_dir):
     
