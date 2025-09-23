@@ -1837,7 +1837,10 @@ def run_gpl_audit_api():
         "eFile_original_filename_list":eFile_original_filename_list,
         "siteList_original_filename":siteList_original_filename,
         "siteList_unique_filename":siteList_unique_filename,
-        "circle":circle_name
+        "circle":circle_name,
+        "tss":datetime.now().timestamp(),
+        "user_id": request.user.get("sub"),
+        "updated":request.user.get("sub") 
     }
     
     
