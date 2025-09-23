@@ -18,7 +18,7 @@ function SignUp() {
   const signUpMutation = useMutation({
     mutationFn: (data) => http.post(Urls.signup, data),
     onSuccess: (data) => {
-      navigate("/auth/login");
+      // navigate("/auth/login");
     },
     onError: (error) => {
       console.error("Signup failed:", error);

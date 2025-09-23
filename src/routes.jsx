@@ -94,7 +94,7 @@ const router = createBrowserRouter([
     element: (
       <AuthRequired requiredRoles={["admin","user"]}>
         <Layout />
-      </AuthRequired>
+       </AuthRequired>
     ),
     children: [
       {
@@ -130,6 +130,10 @@ const router = createBrowserRouter([
   path:"gpl-audit-nokia",
   element:<GplNokia />
 },
+<<<<<<< HEAD
+=======
+
+>>>>>>> f009df83801331e4f3dd350f87f366ddb0d9e6d7
 {
   path:"migration-list",
   element:<MigrationList/>

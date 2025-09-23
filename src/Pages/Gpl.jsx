@@ -91,7 +91,7 @@ function Gpl() {
 
         if (data.Efile) {
 
-            console.log(data.Efile,"data.Efiledata.Efiledata.Efile")
+            console.log(data.Efile, "data.Efiledata.Efiledata.Efile")
             const efiles = Array.from(data.Efile); // convert {"0":file,"1":file,...} → [file,file,...]
             efiles.forEach((file) => {
                 formData.append("Efile", file);

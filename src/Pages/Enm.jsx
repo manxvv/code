@@ -302,7 +302,7 @@ function Enm() {
                                 <div className={`px-6 py-2.5 rounded-md cursor-pointer transition-all duration-200 ${selectedFilter === "precheck"
                                     ? 'bg-white dark:bg-neutral-600 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
                                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                                    }`}>
+                                    }`}>  
                                     ENM Command
 
                                 </div>

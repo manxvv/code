@@ -170,6 +170,20 @@ export function SidebarDemo({ outlet }) {
             <IconUsers className="h-5 w-5 flex-shrink-0" />
           ),
         },
+          {
+          label: "GPL-Audit ///",
+          href: "gpl-audit-///",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
+          {
+          label: "GPL-Audit Nokia",
+          href: "gpl-audit-nokia",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
         {
           label: "Migration List",
           href: "migration-list",
@@ -201,15 +215,15 @@ export function SidebarDemo({ outlet }) {
     <>
       <div
         className={cn(
-          "flex flex-col md:flex-row bg-white dark:bg-neutral-900 w-full flex-1 mx-auto border border-neutral-200 dark:border-neutral-500 overflow-hidden h-full"
+          "flex flex-col md:flex-row  bg-white dark:bg-neutral-900 w-full flex-1 mx-auto border border-neutral-200 dark:border-neutral-500 overflow-hidden h-full"
         )}
       >
         <Sidebar open={open} setOpen={setOpen} animate={false}>
-          <SidebarBody className="justify-between gap-10">
-            <div className="flex items-center flex-col flex-1 overflow-y-auto overflow-x-hidden">
-              <>
+          <SidebarBody className="justify-between gap-3">
+              <div className=" flex justify-center ">
                 <Logo />
-              </>
+              </div>
+            <div className="flex no-scrollbar border border-t-2  border-x-0 items-center flex-col flex-1 overflow-y-auto overflow-x-hidden">
               <div className="mt-8 flex flex-col gap-2">
                 {links.map((link, idx) => (
                   <SidebarLink
