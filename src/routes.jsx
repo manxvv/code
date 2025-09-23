@@ -22,8 +22,8 @@ import Gpl from './Pages/Gpl';
 
 function GuestOnly({ children }) {
   const authenticated = useSelector((state) => state.auth.isAuthenticated);
-  console.log(authenticated,"time");
-  
+  console.log(authenticated, "time");
+
   const hasStoredAuth = () => {
     try {
       const authData = localStorage.getItem('authData');
@@ -32,8 +32,8 @@ function GuestOnly({ children }) {
       return false;
     }
   };
-  
-  return (authenticated || hasStoredAuth()) ? 
+
+  return (authenticated || hasStoredAuth()) ?
     <Navigate to="/app/dashboard" replace /> : children;
 }
 
@@ -44,14 +44,14 @@ function AuthRequired({ requiredRoles = [], children }) {
   if (requiredRoles.length) {
     rolePermitted = requiredRoles.includes(user?.role);
   }
-  console.log(rolePermitted,"sdsd",authenticated);
+  console.log(rolePermitted, "sdsd", authenticated);
   return authenticated && rolePermitted ? children : <Navigate to="/auth/login" />;
 }
 
 
 
 const router = createBrowserRouter([
-    {
+  {
     path: "/",
     element: <Navigate to="/auth/login" replace />,
   },
@@ -59,7 +59,7 @@ const router = createBrowserRouter([
     path: '/auth/login',
     element: (
       // <GuestOnly>
-        <LoginForm />
+      <LoginForm />
       //  </GuestOnly>
     ),
   },
@@ -67,12 +67,12 @@ const router = createBrowserRouter([
     path: '/auth/signup',
     element: (
       // <GuestOnly>
-        <SignUp />
+      <SignUp />
       //  </GuestOnly>
     ),
   },
 
-  
+
   {
     path: '/model',
     element: <ModelView />,
@@ -92,9 +92,9 @@ const router = createBrowserRouter([
   {
     path: '/app/',
     element: (
-      <AuthRequired requiredRoles={["admin","user"]}>
+      <AuthRequired requiredRoles={["admin", "user"]}>
         <Layout />
-       </AuthRequired>
+      </AuthRequired>
     ),
     children: [
       {
@@ -105,51 +105,47 @@ const router = createBrowserRouter([
         path: 'dashboard',
         element: <Dashboard />,
       },
-    {
+      {
         path: 'hazard-detector',
         element: <PredictionModel />,
       },
-{
-  path:"users",
-  element:<Users/>
-},
+      {
+        path: "users",
+        element: <Users />
+      },
 
-{
-  path:"check-in-out",
-  element:<CheckIn/>
-},
-{
-  path:"scripting",
-  element:<Scripting/>
-},
-{
-  path:"gpl-audit-///",
-  element:<Gpl />
-},
-{
-  path:"gpl-audit-nokia",
-  element:<GplNokia />
-},
-<<<<<<< HEAD
-=======
-
->>>>>>> f009df83801331e4f3dd350f87f366ddb0d9e6d7
-{
-  path:"migration-list",
-  element:<MigrationList/>
-},
-{
-  path:"admin/users",
-  element:<AdminUM/>
-},
-{
-  path:"admin/circle-enm",
-  element:<Admin/>
-},
-{
-  path:"enm-command",
-  element:<Enm/>
-},
+      {
+        path: "check-in-out",
+        element: <CheckIn />
+      },
+      {
+        path: "scripting",
+        element: <Scripting />
+      },
+      {
+        path: "gpl-audit-///",
+        element: <Gpl />
+      },
+      {
+        path: "gpl-audit-nokia",
+        element: <GplNokia />
+      },
+      {
+        path: "migration-list",
+        element: <MigrationList />
+      },
+      {
+        path: "admin/users",
+        element: <AdminUM />
+      },
+      {
+        path: "admin/circle-enm",
+        element: <Admin />
+      },
+      {
+        path: "enm-command",
+        element: <Enm />
+      },
 
     ],
   },

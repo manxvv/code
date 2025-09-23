@@ -156,20 +156,7 @@ export function SidebarDemo({ outlet }) {
           icon: (
             <IconUsers className="h-5 w-5 flex-shrink-0" />
           ),
-        }, {
-          label: "GPL-Audit ///",
-          href: "gpl-audit-///",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-        {
-          label: "GPL-Audit Nokia",
-          href: "gpl-audit-nokia",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
+        }, 
           {
           label: "GPL-Audit ///",
           href: "gpl-audit-///",
