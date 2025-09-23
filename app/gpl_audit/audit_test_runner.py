@@ -37,15 +37,7 @@ def run_gpl_audit(curr_dir,circle,enmFile_list,siteList_file_path,task_id):
         os.makedirs(base_dir)
     # base_dir = os.path.join(file_path, site_name)
     log_file = os.path.join(base_dir,  F'{folder_name}.log')
-    # para_file = os.path.join(base_dir, F'pre_dump_{circle}.txt')
-    # para_file = [
-    #     r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap2_09232025.txt',
-    #     r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap4_09232025.txt',
-    #     r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap7_09232025.txt',
-    #     r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap9_09232025.txt'
-    # ]
-    
-    
+
     para_file = []
     
     for one_enmFile in enmFile_list:
@@ -55,7 +47,6 @@ def run_gpl_audit(curr_dir,circle,enmFile_list,siteList_file_path,task_id):
     
     print(site_file)
     print(para_file)
-    # site_file = os.path.join(base_dir, 'site_list.xlsx')
 
     custom_log = Custom_Log(log_file=log_file)
     audit_usid = AuditUSID(nsa_sa_path=nsa_sa_path, base_dir=base_dir, custom_log=custom_log,
