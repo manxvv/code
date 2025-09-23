@@ -65,6 +65,11 @@ export const uploadPdf = async (data) => {
 
 
 
+export const uploadgplauditScripting = async (data) => {
+  const response = await http.post(`${Urls.gplaudituploadScripting}`, data);
+  return response.data;
+};
+
 
 
 
@@ -148,6 +153,15 @@ export const getuser_scripting_files = async () => {
   const response = await http.get(`${Urls.user_scripting_files}`);
   return response.data;
 };
+
+
+
+export const gpl_audit_files_get = async () => {
+  const response = await http.get(`${Urls.get_gpl_audit_files}`);
+  return response.data;
+};
+
+
 
 
 export const getUsers = async () => {

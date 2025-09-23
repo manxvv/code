@@ -80,6 +80,11 @@ export function SidebarDemo({ outlet }) {
         return "Circle - ENM";
       case "/app/enm-command":
         return "ENM Command";
+
+      case "/app/gpl-audit-///":
+        return "GPL Audit ///";
+      case "/app/gpl-audit-nokia":
+        return "GPL Audit Nokia";
       default:
         return "DataYog";
     }
@@ -151,6 +156,19 @@ export function SidebarDemo({ outlet }) {
           icon: (
             <IconUsers className="h-5 w-5 flex-shrink-0" />
           ),
+        }, {
+          label: "GPL-Audit ///",
+          href: "gpl-audit-///",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
+        {
+          label: "GPL-Audit Nokia",
+          href: "gpl-audit-nokia",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
         },
         {
           label: "Migration List",
@@ -208,7 +226,7 @@ export function SidebarDemo({ outlet }) {
                 <LogoutButton onClick={() => setModalOpen(true)} />
               </div>
             </div>
-            <div>
+            {/* <div>
               <div className="flex items-center gap-2 px-3 py-2 rounded-md text-white cursor-pointer">
                 <IconUserCircle size={18} />
                 <div className="flex flex-col">
@@ -222,7 +240,7 @@ export function SidebarDemo({ outlet }) {
               </div>
 
 
-            </div>
+            </div> */}
           </SidebarBody>
         </Sidebar>
 

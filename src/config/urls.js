@@ -16,6 +16,8 @@ const Urls = {
     users:'/users',
     register_users:'/register',
     user_scripting_files:'/user-scripting-files',
+    get_gpl_audit_files:'/gpl_audit_files',
+    
     migrationList:'/migrationList',
     setpassword: '/setuppassword/stepOne',
     verify:"/api/verify-email",
@@ -34,8 +36,9 @@ const Urls = {
     urlfiles:"/user-files",
     urlenmfiles:"/user-enm-files",
     upload:"/upload",
-    uploadScripting:"/uploadScripting",
     uploadenm:"/uploadenm",
+    uploadScripting:"/uploadScripting",
+    gplaudituploadScripting:"/run_gpl_audit",
     emns:"/enms",
     circles:"/circles"
     
