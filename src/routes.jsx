@@ -16,6 +16,8 @@ import MigrationList from './MigrationList';
 import Admin from './components/Admin';
 import Enm from './Pages/Enm';
 import AdminUM from './components/AdminUM';
+import Gpl from './Pages/Gpl';
+import GplNokia from './Pages/GplNokia';
 
 
 function GuestOnly({ children }) {
@@ -92,7 +94,7 @@ const router = createBrowserRouter([
     element: (
       <AuthRequired requiredRoles={["admin","user"]}>
         <Layout />
-      </AuthRequired>
+       </AuthRequired>
     ),
     children: [
       {
@@ -120,6 +122,15 @@ const router = createBrowserRouter([
   path:"scripting",
   element:<Scripting/>
 },
+{
+  path:"gpl-audit-///",
+  element:<Gpl />
+},
+{
+  path:"gpl-audit-nokia",
+  element:<GplNokia />
+},
+
 {
   path:"migration-list",
   element:<MigrationList/>

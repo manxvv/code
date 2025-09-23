@@ -1,8 +1,8 @@
 const Urls = {
     // baseURL: "",
     // baseURL: "https://cautionapi.mpulsenet.com",
-    // baseURL: "http://127.0.0.1:5000",
-    // downloadbaseURL: "http://127.0.0.1:5000",
+    baseURL: "http://127.0.0.1:5000",
+    downloadbaseURL: "http://127.0.0.1:5000",
     // baseURL: "https://api.mpulsenet.dataplus.live",
     // downloadbaseURL: "https://api.mpulsenet.dataplus.live",
     baseURL: "https://api.vedang.dataplus.live",
