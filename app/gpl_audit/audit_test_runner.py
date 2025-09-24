@@ -5,7 +5,6 @@ import pandas as pd
 import sys
 path_nsa_sa = os.path.join(os.path.join(os.getcwd(),"app"),"gpl_audit")
 sys.path.append(path_nsa_sa)
-print(sys.path,"sys.pathsys.pathsys.path audit_script_runner")
 from AuditUSID import AuditUSID
 from custom_log import Custom_Log
 

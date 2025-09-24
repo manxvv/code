@@ -29,7 +29,6 @@ class Site:
         if len(self.fdd_cell + self.tdd_cell) > 0:
             for ldn in sorted([_ for _ in self.fdns if re.match(F".*ENodeBFunction=1,EUtranCell.DD=([^,]*)$", _)]):
                 self.mos[ldn]['mappingInfo.mappingInfoSIB24'] = self.mos[ldn].get('mappingInfo', {}).get('mappingInfoSIB24', 'N/F')
-                print(self.mos[ldn]['mappingInfo.mappingInfoSIB24'])
 
     def fdn_exists(self, *, fdn: str) -> bool: return fdn in self.fdns
 

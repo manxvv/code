@@ -6,13 +6,15 @@ import re
 
 class aa_01_NR_Parameter(Audit):
     def create_rpc_msg(self):
-        # self.tech = 'NR'
+        self.tech = 'NR'
         if self.node not in self.audit_usid.nr_node: return
         skip_moc_list = ['NRCellDU', 'NRCellCU', 'EUtranFreqRelation', 'NRFreqRelation',
                          'NRCellRelation', 'NRCellRelation']
         df_tmp = self.audit_usid.db['MOC'].copy(deep=True)
+        # print(len(df_tmp.index))
         df_tmp = df_tmp.loc[(df_tmp.tech == self.tech)]
-
+        # print(len(self.audit_usid.db['MOC'].index))
+        # print(len(df_tmp.index))
         for r in df_tmp.loc[((~df_tmp.mo.isin(skip_moc_list)) & (df_tmp.mo.str.contains('=')))].itertuples():
             self.add_mo_para_to_para_list(
                 ldn=r.__getattribute__('mo'),

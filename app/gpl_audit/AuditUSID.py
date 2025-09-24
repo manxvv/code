@@ -135,10 +135,12 @@ class AuditUSID:
 
         db = {_: pd.DataFrame([], columns=db_dict[_]) for _ in db_dict.keys()}
         for sheet in db_dict.keys():
+            print(os.path.join(nsa_sa_path, '../gpl_audit/GPL.xlsx'))
             df = pd.read_excel(os.path.join(nsa_sa_path, '../gpl_audit/GPL.xlsx'), sheet_name=sheet, dtype='str')
             df = df[db_dict[sheet]]
             df = df.replace('[^a-zA-Z0-9.,-_/+()[]{}]', '', regex=True)
-            df = df.replace({np.nan: None, '': None}, inplace=False).dropna()
+            # df = df.replace({np.nan: None, '': None}, inplace=False).dropna()
+            df = df.replace({np.nan: None, '': None}, inplace=False)
             df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
             df = df.loc[(df.circle.isin(['Airtel', self.circle]))]
             df.drop(['circle'], axis=1, inplace=True)
@@ -149,6 +151,7 @@ class AuditUSID:
                 df = df.groupby(['mo', 'parameter'], sort=False, as_index=False).tail(1)
             df.reset_index(inplace=True, drop=True)
             db[sheet] = df.copy()
+            print(len(df))
         return db
 
     def get_amf_table(self) -> pd.DataFrame:

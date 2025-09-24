@@ -6,19 +6,19 @@ from AuditUSID import AuditUSID
 from custom_log import Custom_Log
 
 current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
-site_name = 'Audit_09_23_2025'
+site_name = 'Audit_09_24_2025'
 circle = 'AP'
-nsa_sa_path = r'/Users/aj_mac/Documents/Atel/code/app/gpl_audit'
+nsa_sa_path = r'/Users/aj_mac/Documents/Atel/server/code/app/gpl_audit'
 file_path = r'/Users/aj_mac/Documents/Atel/Inputs'
 base_dir = os.path.join(file_path, site_name)
 # base_dir = os.path.join(file_path, site_name)
 log_file = os.path.join(base_dir,  F'{site_name}_{current_time}.log')
 para_file = os.path.join(base_dir, F'pre_dump_{circle}.txt')
 para_file = [
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap2_09232025.txt',
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap4_09232025.txt',
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap7_09232025.txt',
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_23_2025/pre_dump_AP_enmap9_09232025.txt'
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/1.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/2.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/3.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/4.txt'
 ]
 
 site_file = os.path.join(base_dir, 'site_list.xlsx')
@@ -31,7 +31,6 @@ modules = ['aa_01_NR_Parameter', 'aa_02_LTE_Parameter']
 print(base_dir)
 for node in audit_usid.nodes:
     for module in modules:
-        print(F'{node} --- {module}')
         self = getattr(importlib.import_module(F'{module}'), module)(audit_usid=audit_usid, node=node)
         self.run()
 
@@ -40,4 +39,3 @@ audit_usid.save_logic_dataframe(current_time=current_time)
 audit_usid.save_audit_dataframe(current_time=current_time)
 print('OK')
 print(base_dir)
-# print(F'cmedit get {usid.log_mos} --dynamic')
