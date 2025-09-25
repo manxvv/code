@@ -11,10 +11,8 @@ class aa_01_NR_Parameter(Audit):
         skip_moc_list = ['NRCellDU', 'NRCellCU', 'EUtranFreqRelation', 'NRFreqRelation',
                          'NRCellRelation', 'NRCellRelation']
         df_tmp = self.audit_usid.db['MOC'].copy(deep=True)
-        # print(len(df_tmp.index))
         df_tmp = df_tmp.loc[(df_tmp.tech == self.tech)]
-        # print(len(self.audit_usid.db['MOC'].index))
-        # print(len(df_tmp.index))
+
         for r in df_tmp.loc[((~df_tmp.mo.isin(skip_moc_list)) & (df_tmp.mo.str.contains('=')))].itertuples():
             self.add_mo_para_to_para_list(
                 ldn=r.__getattribute__('mo'),
@@ -37,11 +35,11 @@ class aa_01_NR_Parameter(Audit):
             remark_dict = {'Sib2': None, 'Sib4': None, 'Sib5': None, }
             if len(self.audit_usid.df_cell.loc[(self.audit_usid.df_cell.CU == cell)].index) > 0:
                 if self.audit_usid.df_cell.loc[(self.audit_usid.df_cell.CU == cell), 'sib2'].iloc[0] is False:
-                    remark_dict['Sib2'] = 'Intra Freq Relations Doesnot Exist'
+                    remark_dict['Sib2'] = 'NR-NR Intra Freq Relations Doesnot Exist'
                 if self.audit_usid.df_cell.loc[(self.audit_usid.df_cell.CU == cell), 'sib4'].iloc[0] is False:
-                    remark_dict['Sib4'] = 'Intra Freq Relations Doesnot Exist'
+                    remark_dict['Sib4'] = 'NR-NR Inter Freq Relations Doesnot Exist'
                 if self.audit_usid.df_cell.loc[(self.audit_usid.df_cell.CU == cell), 'sib5'].iloc[0] is False:
-                    remark_dict['Sib5'] = 'Intra Freq Relations Doesnot Exist'
+                    remark_dict['Sib5'] = 'NR-LTE Freq Relations Doesnot Exist'
             else:
                 remark_dict = {
                     'Sib2': 'Wrong Cell Configuration(localcellid)',
@@ -66,23 +64,16 @@ class aa_01_NR_Parameter(Audit):
                     )
         para_type = 'LMS'
         # NRCellCU,NRFreqRelation,ueMCNrFreqRelProfileRef,mcpcPCellNrFreqRelProfileRef
-        for ldn in sorted([_ for _ in self.site.fdns if re.match(F".*GNBCUCPFunction=1,NRCellCU=[^,]*,NRFreqRelation=([^,]*)$", _)]):
-            for r in df_tmp.loc[(df_tmp.mo.isin(['NRFreqRelation']))].itertuples():
-                self.add_mo_para_to_para_list(
-                    ldn=ldn,
-                    para=r.__getattribute__('parameter'),
-                    gpl=r.__getattribute__('value'),
-                    para_type=r.__getattribute__('para_type')
-                )
         # NRCellCU,NRCellRelation,isHoAllowed
-        for ldn in sorted([_ for _ in self.site.fdns if re.match(F".*GNBCUCPFunction=1,NRCellCU=[^,]*,NRCellRelation=([^,]*)$", _)]):
-            for r in df_tmp.loc[(df_tmp.mo.isin(['NRCellRelation']))].itertuples():
-                self.add_mo_para_to_para_list(
-                    ldn=ldn,
-                    para=r.__getattribute__('parameter'),
-                    gpl=r.__getattribute__('value'),
-                    para_type=r.__getattribute__('para_type')
-                )
+        for moc in ['NRFreqRelation', 'NRCellRelation']:
+            for ldn in sorted([_ for _ in self.site.fdns if re.match(F".*GNBCUCPFunction=1,NRCellCU=[^,]*,{moc}=([^,]*)$", _)]):
+                for r in df_tmp.loc[(df_tmp.mo.isin([moc]))].itertuples():
+                    self.add_mo_para_to_para_list(
+                        ldn=ldn,
+                        para=r.__getattribute__('parameter'),
+                        gpl=r.__getattribute__('value'),
+                        para_type=r.__getattribute__('para_type')
+                    )
         # UeMCEUtranFreqRelProfile, EUtranFreqRelation
         tmp_list = ['UeMCEUtranFreqRelProfileUeCfg_blindRwrAllowed', 'UeMCEUtranFreqRelProfileUeCfg_connModeAllowedPCell',
                     'UeMCEUtranFreqRelProfileUeCfg_connModePrioPCell']
@@ -97,7 +88,8 @@ class aa_01_NR_Parameter(Audit):
             for para in tmp_dict.keys():
                 self.add_mo_para_to_para_list(ldn=ldn, para=para, gpl=tmp_dict.get(para), para_type=para_type)
             tmp_dict = {mo_para.split('_')[-1]: r.__getattribute__(mo_para) for mo_para in tmp_list2}
-            for ldn in sorted([_ for _ in self.site.fdns if re.match(F".*GNBCUCPFunction=1,NRCellCU=[^,]*,EUtranFreqRelation=([^,]*)$", _)]):
+            id = r.__getattribute__('eUtranFreqRelationId')
+            for ldn in sorted([_ for _ in self.site.fdns if re.match(F".*GNBCUCPFunction=1,NRCellCU=([^,]*),EUtranFreqRelation={id}$", _)]):
                 for para in tmp_dict.keys():
                     self.add_mo_para_to_para_list(ldn=ldn, para=para, gpl=tmp_dict.get(para), para_type=para_type)
         # NRCellCU,EUtranCellRelation,isHoAllowed

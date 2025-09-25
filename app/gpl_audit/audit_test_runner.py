@@ -3,34 +3,32 @@ import importlib
 from datetime import datetime
 import pandas as pd
 import sys
-path_nsa_sa = os.path.join(os.path.join(os.getcwd(),"app"),"gpl_audit")
+path_nsa_sa = os.path.join(os.path.join(os.getcwd(), "app"), "gpl_audit")
 sys.path.append(path_nsa_sa)
 from AuditUSID import AuditUSID
 from custom_log import Custom_Log
 
 
-def run_gpl_audit(curr_dir,circle,enmFile_list,siteList_file_path,task_id):
+def run_gpl_audit(curr_dir, circle, enmFile_list, siteList_file_path, task_id):
     current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
-    site_name = 'Audit_09_23_2025'
     folder_name = task_id+"_"+circle+"_"+current_time
-    nsa_sa_path = os.path.join(curr_dir,"app","gpl_audit")
-    file_path = os.path.join(curr_dir,"downloads")
-    base_dir = os.path.join(file_path, "gpl_audit",folder_name)
+    nsa_sa_path = os.path.join(curr_dir, "app", "gpl_audit")
+    file_path = os.path.join(curr_dir, "downloads")
+    base_dir = os.path.join(file_path, "gpl_audit", folder_name)
     
     if not os.path.exists(base_dir):
         os.makedirs(base_dir)
     log_file = os.path.join(base_dir,  F'{folder_name}.log')
     para_file = []
     for one_enmFile in enmFile_list:
-        para_file.append(os.path.join(curr_dir,one_enmFile))
-    site_file = os.path.join(curr_dir,siteList_file_path)
+        para_file.append(os.path.join(curr_dir, one_enmFile))
+    site_file = os.path.join(curr_dir, siteList_file_path)
     custom_log = Custom_Log(log_file=log_file)
     audit_usid = AuditUSID(nsa_sa_path=nsa_sa_path, base_dir=base_dir, custom_log=custom_log,
-                        para_file=para_file, site_file=site_file, circle=circle)
+                           para_file=para_file, site_file=site_file, circle=circle)
     modules = ['aa_01_NR_Parameter', 'aa_02_LTE_Parameter']
     audit_usid.df_gpl = pd.DataFrame(audit_usid.gpl_list)
-
-    for node in audit_usid.nodes:
+    for node in list(audit_usid.df_site.node.unique()):
         for module in modules:
             self = getattr(importlib.import_module(F'{module}'), module)(audit_usid=audit_usid, node=node)
             self.run()

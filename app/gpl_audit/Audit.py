@@ -83,10 +83,10 @@ class Audit:
         self.me = self.site.me
         self.s_dict = {'cli': [], 'cmedit': []}
         sc_name = '_'.join([self.node, self.audit_usid.circle, *self.__class__.__name__.split('_')[1:], '.txt'])
-        self.relative_path = {
-            'cli': ['Nodes', self.node, 'bulk_' + sc_name],
-            'cmedit': ['Nodes', self.node, 'cli_' + sc_name]
-        }
+        # self.relative_path = {
+        #     'cli': ['Nodes', self.node, 'bulk_' + sc_name],
+        #     'cmedit': ['Nodes', self.node, 'cli_' + sc_name]
+        # }
 
     def create_rpc_msg(self): pass
 

@@ -29,7 +29,7 @@ audit_usid = AuditUSID(nsa_sa_path=nsa_sa_path, base_dir=base_dir, custom_log=cu
 modules = ['aa_01_NR_Parameter', 'aa_02_LTE_Parameter']
 # , 'aa_01_LTE_Parameter'
 print(base_dir)
-for node in audit_usid.nodes:
+for node in list(audit_usid.df_site.node.unique()):
     for module in modules:
         self = getattr(importlib.import_module(F'{module}'), module)(audit_usid=audit_usid, node=node)
         self.run()
@@ -39,3 +39,7 @@ audit_usid.save_logic_dataframe(current_time=current_time)
 audit_usid.save_audit_dataframe(current_time=current_time)
 print('OK')
 print(base_dir)
+#
+# git stash
+# git pull
+# pm2 logs 0

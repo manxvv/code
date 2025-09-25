@@ -21,7 +21,7 @@ class aa_02_LTE_Parameter(Audit):
                 para_type=r.__getattribute__('para_type')
             )
         # For all Other MOs
-        for r in df_tmp.loc[(df_tmp.mo.str.contains('='))].itertuples():
+        for r in df_tmp.loc[(~(df_tmp.mo.str.contains('=')))].itertuples():
             for ldn in sorted([_ for _ in self.site.fdns if
                                re.match(F".*ENodeBFunction=1.*,{r.__getattribute__('mo')}=([^,]*)$", _)]):
                 self.add_mo_para_to_para_list(

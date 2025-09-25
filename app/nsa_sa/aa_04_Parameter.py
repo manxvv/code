@@ -114,8 +114,6 @@ class aa_04_Parameter(Script):
                 'gNBCUCPFunctionId': '1', 'NRCellCU': {'nRCellCUId': cell, 'EUtranCellRelation': copy.deepcopy(tmp_list)}
             }}
 
-
-
     def lte_parameter_update(self):
         if self.node not in self.usid.lte_node: return
         self.mo_dict['lte'] = {
@@ -151,7 +149,7 @@ class aa_04_Parameter(Script):
                 'UeMeasControl': {
                     'ueMeasControlId': '1',
                     'waitForStartNRMeas': '6000', 'waitForResumeNRMeas': '6000', 'nrB1MobilityTimerLessTtt': '600', 'sMeasure': '0',
-                    'nrB1MeasEnabled': 'false', 'nrB1MeasAtEndcEnabled': 'true',
+                    'nrB1MeasEnabled': 'true', 'nrB1MeasAtEndcEnabled': 'true',
                     'ReportConfigB1NR': {'attributes': {'xc:operation': 'update'}, 'reportConfigB1NRId': '1', 'triggerQuantityB1NR': 'SS_RSRP',
                                          'b1ThresholdRsrp': '-107', 'hysteresisB1': '2', 'timeToTriggerB1': '640'}
                 },

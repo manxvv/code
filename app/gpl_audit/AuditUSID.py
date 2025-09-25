@@ -54,17 +54,17 @@ dump_list = [
 
 class AuditUSID:
     def __init__(self, *, nsa_sa_path: str, base_dir: str, custom_log: Custom_Log,
-                 para_file: str, site_file: str, circle: str):
+                 para_file: list, site_file: str, circle: str):
         self.base_dir = base_dir
         self.custom_log = custom_log
         self.circle = circle
-        self.log_mos = ';'.join([F'{_}.<w>' if '(' not in _ else _ for _ in dump_list])
+        # self.log_mos = ';'.join([F'{_}.<w>' if '(' not in _ else _ for _ in dump_list])
 
         # DB Process
         self.db = self.db_data(nsa_sa_path=nsa_sa_path)
         # Site List Data
         self.df_site = self.site_data(site_file=site_file)
-        self.nodes = list(self.df_site.node.unique())
+        # self.nodes = list(self.df_site.node.unique())
         # Log Data Process
         self.sites = {}
         mos_dict = parse_dynamic_data_to_dict(para_file=para_file)
@@ -76,7 +76,7 @@ class AuditUSID:
             if len(self.sites[node].du_cell) > 0 or len(self.sites[node].cu_cell) > 0: self.nr_node += [node]
             if len(self.sites[node].fdd_cell) > 0 or len(self.sites[node].tdd_cell) > 0: self.lte_node += [node]
         # Site List Data Process
-        self.df_site = self.site_data(site_file=site_file)
+        # self.df_site = self.site_data(site_file=site_file)
         self.df_amf = self.get_amf_table()
         self.df_feature = self.get_feature_table()
         self.df_site = pd.concat([self.df_site, self.process_df_site_with_logs_data()], axis=1)
@@ -92,11 +92,9 @@ class AuditUSID:
 
 
     def site_data(self, *, site_file: str) -> pd.DataFrame:
-        if site_file is None:
-            df = pd.DataFrame([], columns=['circle', 'ENM', 'SiteID', 'Node'])
-        df = pd.read_excel(site_file, sheet_name='Node', usecols=["circle", "ENM", "SiteID", "Node"], dtype='str')
-        df = df[['circle', 'ENM', 'SiteID', 'Node']]
+        df = pd.read_excel(site_file, sheet_name='Node', dtype='str')
         df.columns = df.columns.str.lower()
+        df = df[['circle', 'enm', 'siteid', 'node']]
         df = df.replace({np.nan: None, '': None}, inplace=False).dropna()
         df = df.drop_duplicates(subset="node", keep="first")
         df.reset_index(inplace=True, drop=True)
@@ -151,7 +149,6 @@ class AuditUSID:
                 df = df.groupby(['mo', 'parameter'], sort=False, as_index=False).tail(1)
             df.reset_index(inplace=True, drop=True)
             db[sheet] = df.copy()
-            print(len(df))
         return db
 
     def get_amf_table(self) -> pd.DataFrame:
@@ -170,6 +167,7 @@ class AuditUSID:
             'CXC4012607', 'CXC4012475', 'CXC4012548', 'CXC4012724', 'CXC4012680', 'CXC4012688', 'CXC4012601', 'CXC4012330',
             'CXC4012406', 'CXC4012510', 'CXC4012562', 'CXC4012593', 'CXC4012638', 'CXC4012590', 'CXC4012218'
         ]
+        lte_feature = []
         tmp_list = []
         description_dict = {'circle': '', 'node': 'description'}
         for node in self.sites:
@@ -198,15 +196,18 @@ class AuditUSID:
                     'cellid': site.get_fdn_parameter(fdn=r, para='cellLocalId'),
                     'tac': site.get_fdn_parameter(fdn=r, para='nRTAC'),
                     'cell': r.split('=')[-1],
-                    'CU': None,  'sib2': None, 'sib4': None, 'sib5': None, 'nr_intra_rel': None, 'nr_inter_rel': None,
+                    'CU': None, 'remark': None,
+                    'sib2': None, 'sib4': None, 'sib5': None, 'nr_intra_rel': None, 'nr_inter_rel': None,
                     'ssbFrequency': site.get_fdn_parameter(fdn=r, para='ssbFrequency'),
                     'ssbSubCarrierSpacing': site.get_fdn_parameter(fdn=r, para='ssbSubCarrierSpacing'),
                     'ssbPeriodicity': site.get_fdn_parameter(fdn=r, para='ssbPeriodicity'),
                     'ssbOffset': site.get_fdn_parameter(fdn=r, para='ssbOffset'),
                     'ssbDuration': site.get_fdn_parameter(fdn=r, para='ssbDuration'),
                 }
+                cu_flag = False
                 for s in sorted([_ for _ in site.fdns if re.match(".*GNBCUCPFunction=[^,]*,NRCellCU=([^,]*)$", _)]):
                     if site.get_fdn_parameter(fdn=r, para='cellLocalId') == site.get_fdn_parameter(fdn=s, para='cellLocalId'):
+                        cu_flag = True
                         tmp_cu_cell_list.append(s.split('=')[-1])
                         freq = site.get_fdn_parameter(fdn=s, para='nRFrequencyRef')
                         relations = [_ for _ in site.fdns if re.match(F'{s},NRFreqRelation=([^,]*)$', _)]
@@ -223,6 +224,8 @@ class AuditUSID:
                             'transmitSib4': site.get_fdn_parameter(fdn=s, para='transmitSib4'),
                             'transmitSib5': site.get_fdn_parameter(fdn=s, para='transmitSib5'),
                         }
+                if not cu_flag:
+                    tmp_dict |= {'remark': 'Conf Error (CU Cell Not Found)'}
                 tmp_list.append(copy.deepcopy(tmp_dict))
             for s in sorted([_ for _ in site.fdns if re.match(".*GNBDUFunction=[^,]*,NRCellCU=([^,]*)$", _)]):
                 if s.split('=')[-1] not in tmp_cu_cell_list:
@@ -232,7 +235,12 @@ class AuditUSID:
                     inter_rel = [_ for _ in relations if site.get_fdn_parameter(fdn=s, para='nRFrequencyRef') != freq]
                     tmp_dict = {
                         'circle': self.circle, 'type': 'NR', 'node': node,
-                        'cell': None, 'CU': s.split('=')[-1], 'nr_intra_rel': None, 'nr_inter_rel': None,
+                        'cell': None, 'CU': s.split('=')[-1],
+                        'remark': 'Conf Error (DU Cell Not Found)',
+                        'sib2': len(intra_rel) > 0,
+                        'sib4': len(inter_rel) > 0,
+                        'sib5': len([_ for _ in site.fdns if re.match(F'{s},EUtranFreqRelation=([^,]*)$', _)]) > 0,
+                        'nr_intra_rel': None, 'nr_inter_rel': None,
                         'cellid': site.get_fdn_parameter(fdn=s, para='cellLocalId'),
                         'intra_rel': intra_rel,
                         'inter_rel': inter_rel,
@@ -277,10 +285,10 @@ class AuditUSID:
                     'log': True if len(site.fdns) > 0 else False,
                     'syncstatus': site.get_fdn_parameter(fdn=F'NetworkElement={node},CmFunction=1', para='syncStatus'),
                     'nr': True if node in self.nr_node else False,
+                    'lte': True if node in self.lte_node else False,
                     'amf': len(self.df_amf.loc[(self.df_amf.node == node)].index),
                     'gNBId': None,
                     'gNBIdLength': None,
-                    'lte': True if node in self.lte_node else False,
                     'eNBId': site.get_fdn_parameter(fdn='ENodeBFunction=1', para='eNBId'),
                     'xn_status': site.type_int,
                     'xn_localipzddress': site.xn_ip,
