@@ -12,7 +12,6 @@ class aa_01_NR_Parameter(Audit):
                          'NRCellRelation', 'NRCellRelation']
         df_tmp = self.audit_usid.db['MOC'].copy(deep=True)
         df_tmp = df_tmp.loc[(df_tmp.tech == self.tech)]
-
         for r in df_tmp.loc[((~df_tmp.mo.isin(skip_moc_list)) & (df_tmp.mo.str.contains('=')))].itertuples():
             self.add_mo_para_to_para_list(
                 ldn=r.__getattribute__('mo'),
@@ -101,18 +100,3 @@ class aa_01_NR_Parameter(Audit):
                     gpl=r.__getattribute__('value'),
                     para_type=r.__getattribute__('para_type')
                 )
-
-    @staticmethod
-    def create_mo_dict_from_mo(*, mo: str, para_dict: dict) -> dict:
-        mo_dict = {}
-        current_level = mo_dict
-        my_list = mo.split(',')
-        for index, t in enumerate(my_list):
-            moc = [_.strip() for _ in t.split('=')]
-            if moc[0] not in current_level:
-                current_level[moc[0]] = {moc[0][0].lower() + moc[0][1:] + 'Id': moc[1]}
-                if index == len(my_list) - 1:
-                    current_level[moc[0]] |= {'attributes': {'xc:operation': 'update'}}
-                    current_level[moc[0]] |= para_dict
-            current_level = current_level[moc[0]]
-        return mo_dict

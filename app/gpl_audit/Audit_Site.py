@@ -1,6 +1,6 @@
+import sys
 import copy
 import re
-import sys
 from custom_log import Custom_Log
 
 

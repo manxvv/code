@@ -121,7 +121,7 @@ class aa_04_Parameter(Script):
             'SystemFunctions': {'systemFunctionsId': '1', 'Lm': {'lmId': '1', 'FeatureState': []}},
             'ENodeBFunction': {
                 'eNodeBFunctionId': '1',
-                'UePolicyOptimization': {'attributes': {'xc:operation': 'update'}, 'uePolicyOptimizationId': '1', 'zzzTemporary1': '1'},
+                'UePolicyOptimization': {'attributes': {'xc:operation': 'update'}, 'uePolicyOptimizationId': '1', 'zzzTemporary1': '3'},
                 'AnrFunction': {'anrFunctionId': '1', 'AnrFunctionNR': {
                     'attributes': {'xc:operation': 'update'}, 'anrFunctionNRId': '1', 'anrStateNR': 'ACTIVATED', 'gNodebIdLength': '26'}},
                 'EUtranCellFDD': [], 'EUtranCellTDD': [],
@@ -182,7 +182,7 @@ class aa_04_Parameter(Script):
                 'UeMeasControl': {
                     'ueMeasControlId': '1',
                     'waitForStartNRMeas': '6000', 'waitForResumeNRMeas': '6000', 'nrB1MobilityTimerLessTtt': '600', 'sMeasure': '0',
-                    'nrB1MeasEnabled': 'false', 'nrB1MeasAtEndcEnabled': 'true',
+                    'nrB1MeasEnabled': 'true', 'nrB1MeasAtEndcEnabled': 'true',
                     'ReportConfigB1NR': {'attributes': {'xc:operation': 'update'}, 'reportConfigB1NRId': '1', 'triggerQuantityB1NR': 'SS_RSRP',
                                          'b1ThresholdRsrp': '-107', 'hysteresisB1': '2', 'timeToTriggerB1': '640'}
                 },

@@ -2,6 +2,7 @@ import copy
 import os
 import json
 import re
+from datetime import datetime
 import pandas as pd
 from pandas import ExcelWriter
 import numpy as np
@@ -81,12 +82,13 @@ class AuditUSID:
         self.df_feature = self.get_feature_table()
         self.df_site = pd.concat([self.df_site, self.process_df_site_with_logs_data()], axis=1)
         self.df_cell = self.get_cell_table()
-
         self.df_site.reset_index(drop=True, inplace=True)
+        self.df_gpl = pd.DataFrame([])
         # self.df_site = pd.concat([self.df_site, pd.DataFrame(tmp_list)], axis=1).reset_index(drop=True, inplace=False)
 
         self.df_gpl = pd.DataFrame([], columns=['node', 'mo', 'parameter', 'value', 'gpl_value', 'flag', 'remark'])
         self.gpl_list = []
+        self.gpl_completed_mo_para = []
 
         # self.save_different_dataframe()
 
@@ -313,6 +315,25 @@ class AuditUSID:
             tmp_list.append(tmp_dict)
         new_df = pd.DataFrame(tmp_list)
         return new_df
+
+    def highlight_even_row(*, row) -> list:
+        return ['background-color: #D2D3D3; ' if _ % 2 == 1 else 'background-color: #FFFFFF' for _ in range(len(row))]
+
+    def save_site_cell_table(self):
+        current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
+        self.audit_file = pd.ExcelWriter(os.path.join(
+            self.base_dir, F'Logic_{self.audit_usid.circle}_{current_time}.xlsx'), engine='openpyxl')
+        df_style = self.df_site.style.apply(lambda x: self.highlight_even_row(row=x))
+        df_style.to_excel(excel_writer=self.audit_file, sheet_name='Site', index=False)
+        self.audit_file.sheets['Site'].auto_filter.ref = self.audit_file.sheets['Site'].calculate_dimension()
+        self.audit_file.sheets['Site'].auto_filter.enable = True
+
+        df_style = self.df_cell.style.apply(lambda x: self.highlight_even_row(row=x))
+        df_style.to_excel(excel_writer=self.audit_file, sheet_name='Cell', index=False)
+        self.audit_file.sheets['Cell'].auto_filter.ref = self.audit_file.sheets['Cell'].calculate_dimension()
+        self.audit_file.sheets['Cell'].auto_filter.enable = True
+        self.audit_file.close()
+
 
     def save_logic_dataframe(self, *, current_time: str):
         data = {'Site': self.df_site, 'Cell': self.df_cell, 'AMF': self.df_amf, 'Feature': self.df_feature}

@@ -6,7 +6,7 @@ from AuditUSID import AuditUSID
 from custom_log import Custom_Log
 
 current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
-site_name = 'Audit_09_24_2025'
+site_name = 'Audit_09_25_2025'
 circle = 'AP'
 nsa_sa_path = r'/Users/aj_mac/Documents/Atel/server/code/app/gpl_audit'
 file_path = r'/Users/aj_mac/Documents/Atel/Inputs'
@@ -15,10 +15,14 @@ base_dir = os.path.join(file_path, site_name)
 log_file = os.path.join(base_dir,  F'{site_name}_{current_time}.log')
 para_file = os.path.join(base_dir, F'pre_dump_{circle}.txt')
 para_file = [
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/1.txt',
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/2.txt',
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/3.txt',
-    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_24_2025/4.txt'
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_25_2025/enmap1.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_25_2025/enmap2.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_25_2025/enmap3.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_25_2025/enmap5.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_25_2025/enmap6.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_25_2025/enmap7.txt',
+    r'/Users/aj_mac/Documents/Atel/Inputs/Audit_09_25_2025/enmap9.txt',
+
 ]
 
 site_file = os.path.join(base_dir, 'site_list.xlsx')
