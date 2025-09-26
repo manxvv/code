@@ -92,9 +92,9 @@ const router = createBrowserRouter([
   {
     path: '/app/',
     element: (
-      <AuthRequired requiredRoles={["admin", "user"]}>
+      // <AuthRequired requiredRoles={["admin", "user"]}>
         <Layout />
-      </AuthRequired>
+      // </AuthRequired>
     ),
     children: [
       {

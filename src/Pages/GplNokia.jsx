@@ -17,6 +17,8 @@ function GplNokia() {
   const { register, handleSubmit, watch } = useForm();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModal2Open, setIsModal2Open] = useState(false);
+
   const [commonisModalOpen, setCommonIsModalOpen] = useState(false);
   const [commonisModalData, setCommonIsModalData] = useState(false);
   const [commonisModalHead, setCommonIsModalHead] = useState(false);
@@ -253,7 +255,7 @@ function GplNokia() {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-end gap-4 items-center mb-4">
         <Input
           placeholder="Search..."
           value={globalFilter}
@@ -261,6 +263,8 @@ function GplNokia() {
           className="max-w-xs"
         />
         <Button onClick={() => setIsModalOpen(true)}>New Audit</Button>
+        <Button onClick={() => setIsModal2Open(true)}>Upload Setting</Button>
+
       </div>
 
       <DataTableDemo
@@ -285,6 +289,66 @@ function GplNokia() {
           {commonisModalData}
         </div>
 
+      </Modal>
+
+      
+      <Modal
+        isOpen={isModal2Open}
+        onClose={() => setIsModal2Open(false)}
+        title="Upload Settings"
+        size="lg"
+        showCloseButton
+        closeOnBackdrop
+        closeOnEscape
+      >
+        <div className="max-h-[70vh] overflow-y-auto p-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <div className="flex flex-col">
+                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
+                  Circle
+                </label>
+                <select
+                  {...register("circle")}
+                  className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
+                >
+                  <option value="">Select</option>
+                  {filteredCircles.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+
+              <div className="flex flex-col">
+                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
+                  Upload Settings
+                </label>
+                <input
+                  type="file"
+                  {...register("Ufile")}
+                  accept=".txt"
+                  onChange={(e) => setValue("Ufile", e.target.files[0])}
+                  className="p-1 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
+                />
+              </div>
+
+
+            </div>
+
+            <div className="pt-6 flex justify-end">
+              <button
+                type="submit"
+                className="bg-orange-500 text-white font-bold px-8 py-2.5 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 w-full"
+              >
+                Submit
+              </button>
+            </div>
+          </form>
+        </div>
       </Modal>
 
       <Modal
@@ -409,7 +473,7 @@ function GplNokia() {
               </div> */}
 
               {/* ENM Logs */}
-                                          <div className="flex flex-col">
+                                          {/* <div className="flex flex-col">
                 <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
                   Site List
                 </label>
@@ -420,7 +484,7 @@ function GplNokia() {
                   onChange={(e) => setValue("Efile", e.target.files[0])}
                   className="p-1.5 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
                 />
-              </div>
+              </div> */}
               <div className="flex flex-col">
                 <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
                   ENM Dump
@@ -430,7 +494,7 @@ function GplNokia() {
                   {...register("Efile")}
                   accept=".txt"
                   onChange={(e) => setValue("Efile", e.target.files[0])}
-                  className="p-1.5 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
+                  className="p-1 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
                 />
               </div>
 

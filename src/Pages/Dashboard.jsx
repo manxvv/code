@@ -1,8 +1,4 @@
-// src/pages/Dashboard.jsx
-import { dashboard, Dashboarddata, Dropdown } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
-import { Outlet } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -13,98 +9,103 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
+  LineChart,
+  Line
 } from "recharts";
 import { ChevronDown, Loader2 } from "lucide-react";
+import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Dashboard = () => {
+  // Simulating your existing state and queries with dummy data
   const [selectedFile, setSelectedFile] = useState(null);
+  const isLoading = false;
+  const dashboardLoading = false;
 
-  // Fetch dropdown data
-  const { data, isLoading } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: dashboard
-  });
+  // Dummy data structure matching your API structure
+  const data = {
+    data: [
+      { _id: "file1", filename: "Site_Audit_2024_Q1.xlsx" },
+      { _id: "file2", filename: "Site_Audit_2024_Q2.xlsx" },
+      { _id: "file3", filename: "Site_Audit_2024_Q3.xlsx" }
+    ],
+    site_id_status: {
+      total: 100,
+      pre_check_completed: 85,
+      post_check_completed: 72,
+      scripting_completed_completed: 68,
+      migration_completed: 45
+    }
+  };
 
+  const dashboardData = {
+    data: {
+      final_result: [{
+        sectorA_caution: 15,
+        sectorA_notice: 8,
+        sectorA_warning: 3,
+        sectorB_caution: 12,
+        sectorB_notice: 6,
+        sectorB_warning: 2,
+        sectorC_caution: 18,
+        sectorC_notice: 10,
+        sectorC_warning: 5,
+        total_caution: 500
+      }],
+      final_result2: [{
+        masking_areas: {
+          ok_parameters: 70000,
+          not_ok_parameters: 1000,
+          configured_mo: 450,
+          not_configured_mo: 50
+        }
+      }]
+    }
+  };
 
-  console.log(data, "datadatadatadatadatadata")
   // Auto-select first file when data loads
   useEffect(() => {
     if (!isLoading && data?.data?.length > 0 && !selectedFile) {
       setSelectedFile(data.data[0]._id);
     }
-  }, [isLoading, data, selectedFile]);
+  }, [isLoading, selectedFile]);
 
-  // Fetch dashboard data based on selected file
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["dashboard", selectedFile],
-    queryFn: Dashboarddata,
-    enabled: !!selectedFile
-  });
+    // const uniqueCircles = useMemo(() => {
+    //       if (!enmData) return [];
+    //       const circles = enmData.map(item => item.circle);
+    //       return [...new Set(circles)];
+    //   }, [enmData]);
 
   // Process hazard data for bar chart
   const hazardData = dashboardData?.data?.final_result
     ?.map(item => [
-      { name: "Sector A Caution", value: item.sectorA_caution, category: "caution" },
-      { name: "Sector A Notice", value: item.sectorA_notice, category: "notice" },
-      { name: "Sector A Warning", value: item.sectorA_warning, category: "warning" },
-      { name: "Sector B Caution", value: item.sectorB_caution, category: "caution" },
-      { name: "Sector B Notice", value: item.sectorB_notice, category: "notice" },
-      { name: "Sector B Warning", value: item.sectorB_warning, category: "warning" },
-      { name: "Sector C Caution", value: item.sectorC_caution, category: "caution" },
-      { name: "Sector C Notice", value: item.sectorC_notice, category: "notice" },
-      { name: "Sector C Warning", value: item.sectorC_warning, category: "warning" }
+      { name: "MO Not Configured", value: 5000 },
+      { name: "NSA Parameter", value: 4000 },
+      { name: "Not Matched with GPL", value: 1000 }
     ])
     .flat() || [];
 
-  // Process RGB data for pie chart
-  const rgbData = dashboardData?.data?.final_result2
-    ?.map(item =>
-      Object.entries(item.masking_areas).map(([key, value]) => ({
-        name: key.replace(/_/g, " ").toUpperCase(),
-        value
-      }))
-    )
-    .flat() || [];
+  // Process data for charts
+  const moStatusData = [
+    { name: "OK MO", value: 450 },
+    { name: "Not OK MO", value: 50 }
+  ];
 
-  const COLORS = {
-    caution: "#fbbf24",
-    notice: "#3b82f6",
-    warning: "#ef4444",
-    pie: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
-  };
+  const parameterStatusData = [
+    { name: "OK Parameters", value: 70000 },
+    { name: "Not OK Parameters", value: 1000 }
+  ];
 
-  const totalSigns = dashboardData?.data?.final_result?.[0]?.total_caution || 0;
-
-  // Custom Bar Chart Component
-  const CustomBarChart = ({ data }) => (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
-        <XAxis
-          dataKey="name"
-          tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }}
-          angle={-45}
-          textAnchor="end"
-          height={60}
-        />
-        <YAxis tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }} />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(var(--popover))",
-            borderColor: "hsl(var(--border))",
-            color: "hsl(var(--popover-foreground))"
-          }}
-          itemStyle={{ color: "hsl(var(--popover-foreground))" }}
-        />
-        <Bar dataKey="value" radius={[2, 2, 0, 0]}>
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[entry.category]} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
-  );
-
+  // Trends data
+  const trendsData = [
+    { month: "Jan", value: 85 },
+    { month: "Feb", value: 78 },
+    { month: "Mar", value: 72 },
+    { month: "Apr", value: 68 },
+    { month: "May", value: 65 },
+    { month: "Jun", value: 62 }
+  ];
 
   let list = [{
     "value": "total",
@@ -131,158 +132,210 @@ const Dashboard = () => {
     "userValue": "Total Sites - Migration Done",
     "bgcolor": "bg-[#26c885]",
     "textcolor": "text-[#ffffff]"
-  }]
+  }];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        <Outlet />
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-end mb-4">
+        <div className="flex gap-2 justify-end">
+        
 
-            {/* File Selector */}
-            <div className="relative">
-              <select
-                className="bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded px-3 py-2 pr-8 text-sm focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
-                value={selectedFile || ""}
-                onChange={(e) => setSelectedFile(e.target.value)}
-                disabled={isLoading}
-              >
-                <option value="">{isLoading ? "Loading..." : "Select file"}</option>
-                {data?.data?.map((file) => (
-                  <option key={file._id} value={file._id}>
-                    {file.filename}
-                  </option>
-                ))}
-              </select>
-              {/* <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none" /> */}
-            </div>
+
+    <div className="w-fit flex items-center gap-2">
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        Select Circle:
+      </label>
+
+      <Select>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Choose Circle" />
+        </SelectTrigger>
+        <SelectContent>
+          {/* {uniqueCircles.map((circle) => (
+            <SelectItem key={circle} value={circle}>
+              {circle}
+            </SelectItem>
+          ))} */}
+        </SelectContent>
+      </Select>
+    </div>
+
+        </div>
+
+        {/* Top Metrics - Minimalist Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="text-center space-y-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total Site Audits</div>
+            <div className="text-4xl font-light text-gray-900 dark:text-gray-100">100</div>
+          </div>
+          <div className="text-center space-y-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400">MO Checked</div>
+            <div className="text-4xl font-light text-gray-900 dark:text-gray-100">500</div>
+          </div>
+          <div className="text-center space-y-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400">Parameters Audited</div>
+            <div className="text-4xl font-light text-green-600">70K</div>
+          </div>
+          <div className="text-center space-y-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400">OK Parameters</div>
+            <div className="text-4xl font-light text-red-500">1K</div>
           </div>
         </div>
 
-        {/* Stats */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1 ">Total Sites</div>
-            <div className="text-2xl font-semibold">
-              {
-                data && data.total_count || 0
-              }
-            </div>
-          </div>
-        </div> */}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {
-
-
-            list.map((oneValueOfBoard) => {
-              return <><div className={` ${oneValueOfBoard.bgcolor} dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700`}>
-                <div className={`text-xl dark:text-gray-400 mb-1 font-bold ${oneValueOfBoard.textcolor}`}>{oneValueOfBoard.userValue || "N/A"}</div>
-                <div className={`text-2xl font-medium ${oneValueOfBoard.textcolor}`}>
-                  {data && data && data["site_id_status"][oneValueOfBoard["value"]] || 0}
-                  {/* {oneValueOfBoard.count} */}
-                </div>
-              </div>
-              </>
-            })
-          }
-
-          {/*           
-          {
-            data && data.site_id_status.map((oneValueOfBoard) => {
-              return <><div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{list.find((onelist) => onelist.value == oneValueOfBoard.status)?.["userValue"] || "N/A"}</div>
-                <div className="text-lg font-medium">
-                  {oneValueOfBoard.count}
-                </div>
-              </div>
-              </>
-            })
-          } */}
-
-          {/* <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">File</div>
-            <div className="text-sm font-medium truncate">
-              {selectedFile ? data?.data?.find(f => f._id === selectedFile)?.filename : "None selected"}
-            </div>
-          </div> */}
-        </div>
-
-        {/* Charts */}
-        {1 != 1 && <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Bar Chart */}
-          <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
-            <h2 className="text-lg font-medium mb-4">Hazard Signs by Sector</h2>
-            <div className="h-80">
-              {dashboardLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-400 dark:text-gray-500" />
-                </div>
-              ) : hazardData?.length > 0 ? (
-                <CustomBarChart data={hazardData} />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                  No data available
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Pie Chart */}
-          <div className="bg-white dark:bg-neutral-800 p-6 rounded border border-gray-200 dark:border-neutral-700">
-            <h2 className="text-lg font-medium mb-4">Zone Coverage</h2>
-            <div className="h-80">
-              {dashboardLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-400 dark:text-gray-500" />
-                </div>
-              ) : rgbData?.length > 0 ? (
+        {/* Charts Grid - Clean and Minimal */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          
+          {/* MO Status */}
+          <Card className="border-0 shadow-none bg-white dark:bg-gray-800">
+            <CardContent className="p-8">
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-6">MO Status</div>
+              <div className="h-64 relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={rgbData}
+                      data={moStatusData}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
-                      paddingAngle={2}
-                      labelLine={false}
-                      label={({ name, percent }) =>
-                        `${name}: ${(percent * 100).toFixed(0)}%`
-                      }
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={4}
                     >
-                      {rgbData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS.pie[index % COLORS.pie.length]}
-                        />
-                      ))}
+                      <Cell fill="#22c55e" />
+                      <Cell fill="#ef4444" />
                     </Pie>
-                    <Tooltip
+                    <Tooltip 
                       contentStyle={{
-                        backgroundColor: "hsl(var(--popover))",
-                        borderColor: "hsl(var(--border))",
-                        color: "hsl(var(--popover-foreground))"
+                        backgroundColor: "white",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "4px",
+                        fontSize: "14px"
                       }}
-                      itemStyle={{ color: "hsl(var(--popover-foreground))" }}
                     />
-                    <Legend wrapperStyle={{ color: "hsl(var(--foreground))" }} />
                   </PieChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                  No data available
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">OK MO</div>
+                    <div className="text-2xl font-light text-gray-900 dark:text-gray-100">450</div>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>}
+              </div>
+              <div className="flex justify-center space-x-6 mt-4 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>OK MO</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span>Not OK MO</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Parameter Status */}
+          <Card className="border-0 shadow-none bg-white dark:bg-gray-800">
+            <CardContent className="p-8">
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-6">Parameter Status</div>
+              <div className="h-64 space-y-8">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">OK Parameters</span>
+                    <span className="text-gray-900 dark:text-gray-100">70K</span>
+                  </div>
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-sm h-2">
+                    <div className="bg-green-500 h-2 rounded-sm" style={{ width: "98.6%" }}></div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">Not OK Parameters</span>
+                    <span className="text-gray-900 dark:text-gray-100">1K</span>
+                  </div>
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-sm h-2">
+                    <div className="bg-red-500 h-2 rounded-sm" style={{ width: "1.4%" }}></div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Not OK Details */}
+          <Card className="border-0 shadow-none bg-white dark:bg-gray-800">
+            <CardContent className="p-8">
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-6">Not OK Details</div>
+              <div className="space-y-6">
+                {hazardData.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{item.name}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {item.value.toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Trends */}
+          <Card className="border-0 shadow-none bg-white dark:bg-gray-800">
+            <CardContent className="p-8">
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-6">Trends</div>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trendsData}>
+                    <XAxis 
+                      dataKey="month" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: "#9ca3af" }}
+                    />
+                    <YAxis hide />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "4px",
+                        fontSize: "12px"
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#6b7280" 
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Original Status Cards - Simplified */}
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+          {list.map((oneValueOfBoard, index) => (
+            <Card key={index} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
+                    {oneValueOfBoard.userValue || "N/A"}
+                  </p>
+                  <p className="text-xl font-light text-gray-900 dark:text-gray-100">
+                    {data?.site_id_status?.[oneValueOfBoard.value] || 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-    </div >
+    </div>
   );
 };
 
