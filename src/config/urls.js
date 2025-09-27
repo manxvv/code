@@ -5,7 +5,7 @@ const Urls = {
     downloadbaseURL: "http://127.0.0.1:5000",
     // baseURL: "https://api.mpulsenet.dataplus.live",
     // downloadbaseURL: "https://api.mpulsenet.dataplus.live",
-    baseURL: "https://api.vedang.dataplus.live",
+    // baseURL: "https://api.vedang.dataplus.live",
     downloadbaseURL: "https://api.vedang.dataplus.live",
     signin: "/login",
     signup: "/register",
