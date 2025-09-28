@@ -28,7 +28,7 @@ function LoginForm() {
       }));
 
       dispatch(login({ user: { email, role }, access_token }));
-      navigate('/app/dashboard');
+      navigate('/app/e-dashboard');
     },
   });
 
