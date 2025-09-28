@@ -16,12 +16,20 @@ import {
 import { ChevronDown, Loader2 } from "lucide-react";
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { dashboard } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
-const Dashboard = () => {
+const EDashboard = () => {
   // Simulating your existing state and queries with dummy data
   const [selectedFile, setSelectedFile] = useState(null);
-  const isLoading = false;
+  // const isLoading = false;
   const dashboardLoading = false;
+
+
+  const { data_real, isLoading } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: dashboard
+  });
 
   // Dummy data structure matching your API structure
   const data = {
@@ -38,6 +46,9 @@ const Dashboard = () => {
       migration_completed: 45
     }
   };
+
+
+  console.log(data_real,"data_realdata_realdata_real")
 
   const dashboardData = {
     data: {
@@ -71,11 +82,11 @@ const Dashboard = () => {
     }
   }, [isLoading, selectedFile]);
 
-    // const uniqueCircles = useMemo(() => {
-    //       if (!enmData) return [];
-    //       const circles = enmData.map(item => item.circle);
-    //       return [...new Set(circles)];
-    //   }, [enmData]);
+  // const uniqueCircles = useMemo(() => {
+  //       if (!enmData) return [];
+  //       const circles = enmData.map(item => item.circle);
+  //       return [...new Set(circles)];
+  //   }, [enmData]);
 
   // Process hazard data for bar chart
   const hazardData = dashboardData?.data?.final_result
@@ -125,45 +136,64 @@ const Dashboard = () => {
   }, {
     "value": "scripting_completed_completed",
     "userValue": "Total Sites - Scripting Done",
-    "bgcolor": "bg-[#26c885]",
+    "bgcolor": "bg-[#26bec8]",
     "textcolor": "text-[#ffffff]"
   }, {
     "value": "migration_completed",
     "userValue": "Total Sites - Migration Done",
-    "bgcolor": "bg-[#26c885]",
+    "bgcolor": "bg-[#f32cad]",
     "textcolor": "text-[#ffffff]"
   }];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto p-8 space-y-8">
-        
+
         {/* Header */}
         <div className="flex gap-2 justify-end">
-        
 
 
-    <div className="w-fit flex items-center gap-2">
-      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-        Select Circle:
-      </label>
 
-      <Select>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Choose Circle" />
-        </SelectTrigger>
-        <SelectContent>
-          {/* {uniqueCircles.map((circle) => (
+          <div className="w-fit flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Circle:
+            </label>
+
+            <Select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Choose Circle" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* {uniqueCircles.map((circle) => (
             <SelectItem key={circle} value={circle}>
               {circle}
             </SelectItem>
           ))} */}
-        </SelectContent>
-      </Select>
-    </div>
+              </SelectContent>
+            </Select>
+          </div>
 
         </div>
 
+
+
+        {/* Original Status Cards - Simplified */}
+        <div className="grid grid-cols-1 md:grid-cols-5 xl:grid-cols-5 gap-4">
+          {list.map((oneValueOfBoard, index) => (
+            <Card key={index} className={`border text-white border-gray-200 dark:border-gray-700 ${oneValueOfBoard.bgcolor} dark:${oneValueOfBoard.bgcolor}`}>
+              <CardContent className="p-4">
+                <div className="">
+                  <p className="text-xl text-black dark:text-white leading-tight">
+                    {oneValueOfBoard.userValue || "N/A"}
+                  </p>
+                  <p className="text-2xl  font-bold text-black dark:text-white">
+                    {data?.site_id_status?.[oneValueOfBoard.value] || 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
         {/* Top Metrics - Minimalist Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="text-center space-y-1">
@@ -186,7 +216,7 @@ const Dashboard = () => {
 
         {/* Charts Grid - Clean and Minimal */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          
+
           {/* MO Status */}
           <Card className="border-0 shadow-none bg-white dark:bg-gray-800">
             <CardContent className="p-8">
@@ -207,7 +237,7 @@ const Dashboard = () => {
                       <Cell fill="#22c55e" />
                       <Cell fill="#ef4444" />
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: "white",
                         border: "1px solid #e5e7eb",
@@ -288,14 +318,14 @@ const Dashboard = () => {
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trendsData}>
-                    <XAxis 
-                      dataKey="month" 
+                    <XAxis
+                      dataKey="month"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 12, fill: "#9ca3af" }}
                     />
                     <YAxis hide />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: "white",
                         border: "1px solid #e5e7eb",
@@ -303,10 +333,10 @@ const Dashboard = () => {
                         fontSize: "12px"
                       }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#6b7280" 
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#6b7280"
                       strokeWidth={2}
                       dot={false}
                     />
@@ -316,27 +346,9 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Original Status Cards - Simplified */}
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
-          {list.map((oneValueOfBoard, index) => (
-            <Card key={index} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                    {oneValueOfBoard.userValue || "N/A"}
-                  </p>
-                  <p className="text-xl font-light text-gray-900 dark:text-gray-100">
-                    {data?.site_id_status?.[oneValueOfBoard.value] || 0}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default EDashboard;

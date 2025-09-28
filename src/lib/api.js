@@ -78,6 +78,12 @@ export const uploadScripting = async (data) => {
   return response.data;
 };
 
+
+export const uploadSettingNokia = async (data) => {
+  const response = await http.post(`${Urls.gplauditNokiaSetting}`, data);
+  return response.data;
+};
+
 export const uploadenm = async (data) => {
 
   const response = await http.post(`${Urls.uploadenm}`, data);

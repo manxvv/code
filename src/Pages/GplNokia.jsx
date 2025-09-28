@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import Modal from "@/components/Modal";
 import { DataTableDemo } from "@/components/DataTable";
 import { Edit, Trash2, Download } from "lucide-react";
-import { enms, getuser_scripting_files, getUsers, uploadScripting, Urlenmmfiles } from "@/lib/api";
+import { enms, getuser_scripting_files, getUsers, uploadScripting, uploadSettingNokia, Urlenmmfiles } from "@/lib/api";
 import Urls from "@/config/urls";
 import { useSelector } from "react-redux";
 import { final_url } from "@/lib/http";
@@ -64,7 +64,7 @@ function GplNokia() {
         didOpen: () => Swal.showLoading(),
       });
 
-      return uploadScripting(formData);
+      return uploadSettingNokia(formData);
     },
     onSuccess: (res) => {
       Swal.close();
@@ -83,13 +83,12 @@ function GplNokia() {
   });
 
   const onSubmit = (data) => {
-    const formData = new FormData();
-    // formData.append("circle", data.circle);
-    // formData.append("enm", data.enm);
-    formData.append("taskId", taskId);
-    formData.append("softwareRelease", data.softwareRelease);
 
-    if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
+    console.log(data,"datadatasettings")
+    const formData = new FormData();
+    formData.append("circle", data.circle);
+    if (data.Ufile?.length) formData.append("settings", data.Ufile[0]);
+    if (data.Efile?.length) formData.append("enm_file", data.Efile[0]);
     // if (data.siteList?.length) formData.append("siteList", data.siteList[0]);
 
     uploadFileMutation(formData);
@@ -135,11 +134,11 @@ function GplNokia() {
       header: "Circle",
       cell: ({ row }) => row.getValue("circle"),
     },
-    {
-      accessorKey: "enms",
-      header: "ENM",
-      cell: ({ row }) => row.getValue("enms"),
-    },
+    // {
+    //   accessorKey: "enms",
+    //   header: "ENM",
+    //   cell: ({ row }) => row.getValue("enms"),
+    // },
     {
       accessorKey: "site_id",
       header: "Site Id",

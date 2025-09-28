@@ -3,7 +3,7 @@ import Layout from './layout';
 import LoginForm from './Pages/Login';
 import SignUp from './Pages/SignUp';
 import ForgotPassword from './Pages/ForgotPassword';
-import Dashboard from "./Pages/Dashboard"
+import Dashboard from "./Pages/NDashboard"
 import SetPassword from './Pages/SetPassword';
 import { useSelector } from 'react-redux';
 import Otp from './Pages/Otp';
@@ -18,6 +18,8 @@ import Enm from './Pages/Enm';
 import AdminUM from './components/AdminUM';
 import GplNokia from './Pages/GplNokia';
 import Gpl from './Pages/Gpl';
+import EDashboard from './Pages/EDashboard';
+import NDashboard from './Pages/NDashboard';
 
 
 function GuestOnly({ children }) {
@@ -102,8 +104,12 @@ const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
-        path: 'dashboard',
-        element: <Dashboard />,
+        path: 'e-dashboard',
+        element: <EDashboard />,
+      },
+      {
+        path: 'n-dashboard',
+        element: <NDashboard />,
       },
       {
         path: 'hazard-detector',

@@ -64,8 +64,10 @@ export function SidebarDemo({ outlet }) {
 
   const getHeaderTitle = () => {
     switch (location.pathname) {
-      case "/app/dashboard":
-        return "Dashboard";
+      case "/app/e-dashboard":
+        return "/// Dashboard";
+      case "/app/n-dashboard":
+        return "Nokia Dashboard";
       case "/app/users":
         return "User Management";
       case "/app/check-in-out":
@@ -92,8 +94,14 @@ export function SidebarDemo({ outlet }) {
 
   const links = [
     {
-      label: "Dashboard",
-      href: "dashboard",
+      label: "/// Dashboard",
+      href: "e-dashboard",
+      icon: (
+        <IconBrandTabler className="h-5 w-5 flex-shrink-0" />
+      ),
+    },{
+      label: "Nokia Dashboard",
+      href: "n-dashboard",
       icon: (
         <IconBrandTabler className="h-5 w-5 flex-shrink-0" />
       ),
