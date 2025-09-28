@@ -1,3 +1,5 @@
+// src/components/DataTable.js
+
 "use client"
 
 import * as React from "react"
@@ -9,20 +11,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -31,10 +26,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 
-export function DataTableDemo({columns, data, globalFilter, setGlobalFilter}) {
+
+// --- THE FIX IS HERE: Accept columnFilters and setColumnFilters as props ---
+export function DataTableDemo({ 
+  columns, 
+  data, 
+  globalFilter, 
+  setGlobalFilter,
+  columnFilters,     //<-- Add this prop
+  setColumnFilters   //<-- Add this prop
+}) {
   const [sorting, setSorting] = React.useState([])
-  const [columnFilters, setColumnFilters] = React.useState([])
+  // The line below is removed because the parent component will now manage this state
+  // const [columnFilters, setColumnFilters] = React.useState([]) 
   const [columnVisibility, setColumnVisibility] = React.useState({})
   const [rowSelection, setRowSelection] = React.useState({})
 
@@ -42,7 +48,7 @@ export function DataTableDemo({columns, data, globalFilter, setGlobalFilter}) {
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: setColumnFilters, // <-- Connect to the prop
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -50,10 +56,9 @@ export function DataTableDemo({columns, data, globalFilter, setGlobalFilter}) {
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
     state: {
       sorting,
-      columnFilters,
+      columnFilters, // <-- Use the prop here
       columnVisibility,
       rowSelection,
       globalFilter,
@@ -61,15 +66,18 @@ export function DataTableDemo({columns, data, globalFilter, setGlobalFilter}) {
   })
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-4">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow
+                key={headerGroup.id}
+                className="border-b bg-primary hover:bg-primary/90"
+              >
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="text-primary-foreground">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -112,28 +120,55 @@ export function DataTableDemo({columns, data, globalFilter, setGlobalFilter}) {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        {/* <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div> */}
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+      
+       {/* --- Pagination --- */}
+       <div className="flex items-center justify-between px-2">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} row(s).
+        </div>
+        <div className="flex items-center space-x-6 lg:space-x-8">
+           <div className="flex items-center space-x-2">
+             <p className="text-sm font-medium">Rows per page</p>
+             <Select
+               value={`${table.getState().pagination.pageSize}`}
+               onValueChange={(value) => {
+                 table.setPageSize(Number(value))
+               }}
+             >
+               <SelectTrigger className="h-8 w-[70px]">
+                 <SelectValue placeholder={table.getState().pagination.pageSize} />
+               </SelectTrigger>
+               <SelectContent side="top">
+                 {[10, 20, 30, 40, 50].map((pageSize) => (
+                   <SelectItem key={pageSize} value={`${pageSize}`}>
+                     {pageSize}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+             Page {table.getState().pagination.pageIndex + 1} of{" "}
+             {table.getPageCount()}
+           </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     </div>
