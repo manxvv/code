@@ -98,6 +98,15 @@ export function SidebarDemo({ outlet }) {
         <IconBrandTabler className="h-5 w-5 flex-shrink-0" />
       ),
     },
+    // ...(role === "user" || userName === "ß"
+    //   ? [
+    //       {
+    //         label: "Special Permission",
+    //         href: "/special-permission",
+    //         icon: <IconUsers className="h-5 w-5 flex-shrink-0" />,
+    //       },
+    //     ]
+    //   : []),
     ...(role === "user"
       ? [
         // {
@@ -129,9 +138,26 @@ export function SidebarDemo({ outlet }) {
             <IconUsers className="h-5 w-5 flex-shrink-0" />
           ),
         },
+        
+  
+      
+        {
+          label: "GPL-Audit ///",
+          href: "gpl-audit-///",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
+          {
+          label: "GPL-Audit Nokia",
+          href: "gpl-audit-nokia",
+          icon: (
+            <IconUsers className="h-5 w-5 flex-shrink-0" />
+          ),
+        },
       ]
       : []),
-
+     
     ...(role === "admin"
       ? [
 

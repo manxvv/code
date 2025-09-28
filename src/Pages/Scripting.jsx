@@ -14,8 +14,11 @@ import { final_url } from "@/lib/http";
 
 function Scripting() {
   const queryClient = useQueryClient();
+  const [loadingRow, setLoadingRow] = useState(null);
   const { register, handleSubmit, watch } = useForm();
-
+  const [downloading, setDownloading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [rowStates, setRowStates] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [commonisModalOpen, setCommonIsModalOpen] = useState(false);
   const [commonisModalData, setCommonIsModalData] = useState(false);
@@ -23,7 +26,11 @@ function Scripting() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
-
+  
+  const [uploadingId, setUploadingId] = useState(null);
+  const [uploadErrorId, setUploadErrorId] = useState(null);
+  const [uploadErrorMsg, setUploadErrorMsg] = useState("");
+  
   const [taskId, setTaskId] = useState("");
   const { data: enms_list } = useQuery({
     queryKey: ["enmfiles"],
@@ -47,52 +54,145 @@ function Scripting() {
     queryKey: ["enms"],
     queryFn: enms
   });
-
-
-
-
-  // ✅ mutation for file upload
-  const { mutate: uploadFileMutation, isLoading: isUploading } = useMutation({
-    mutationFn: async (formData) => {
-      setUploading(true);
-      Swal.fire({
-        title: "Processing...",
-        text: "Please wait",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-      });
-
+  // const { mutate: uploadFileMutation } = useMutation({
+  //   mutationFn: async ({ rowId, formData }) => {
+  //     // mark row uploading
+  //     setRowStates((prev) => ({
+  //       ...prev,
+  //       [rowId]: { uploading: true, error: null },
+  //     }));
+  
+  //     return uploadScripting(formData);
+  //   },
+  //   onSuccess: (res, { rowId }) => {
+  //     setRowStates((prev) => ({
+  //       ...prev,
+  //       [rowId]: { uploading: false, error: null },
+  //     }));
+  //     queryClient.invalidateQueries(["user_scripting_files"]);
+  //     setIsModalOpen(false);
+  //   },
+  //   onError: (err, { rowId }) => {
+  //     setRowStates((prev) => ({
+  //       ...prev,
+  //       [rowId]: {
+  //         uploading: false,
+  //         error: err?.response?.data?.message || "Something went wrong during file upload",
+  //       },
+  //     }));
+  //   },
+  // });
+  const { mutate: uploadFileMutation } = useMutation({
+    mutationFn: async ({ rowId, formData }) => {
+      // Set row status to uploading
+      setRowStates((prev) => ({
+        ...prev,
+        [rowId]: { status: "uploading", errorMsg: "" },
+      }));
       return uploadScripting(formData);
     },
-    onSuccess: (res) => {
-      Swal.close();
-      setUploading(false);
-      setError(null);
+    onSuccess: (res, { rowId }) => {
+      setRowStates((prev) => ({
+        ...prev,
+        [rowId]: { status: "completed", errorMsg: "" },
+      }));
       queryClient.invalidateQueries(["user_scripting_files"]);
-      console.log("File uploaded successfully:", res);
-      setIsModalOpen(false)
+      setIsModalOpen(false); // Close modal after success
     },
-    onError: (err) => {
-      Swal.close();
-      setUploading(false);
-      setError(err?.response?.data?.message || "Something went wrong during file upload");
-      console.error("File upload failed:", err);
+    onError: (err, { rowId }) => {
+      setRowStates((prev) => ({
+        ...prev,
+        [rowId]: { status: "error", errorMsg: err?.response?.data?.message || "Upload failed" },
+      }));
     },
   });
+  // const onSubmit = async (data) => {
+  //   const formData = new FormData();
+  //   formData.append("taskId", taskId);
+  //   formData.append("softwareRelease", data.softwareRelease);
+  
+  //   if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
+  
+  //   try {
+  //     await uploadFileMutation(formData);
+  //     setIsModalOpen(false); 
+  //   } catch (error) {
 
-  const onSubmit = (data) => {
+  //     console.error(error);
+  //   }
+  // };
+  
+  // const onSubmit = async (data) => {
+  //   const formData = new FormData();
+  //   formData.append("taskId", taskId);
+  //   formData.append("softwareRelease", data.softwareRelease);
+  //   if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
+  
+  //   // Set row to pending first
+  //   setRowStates((prev) => ({
+  //     ...prev,
+  //     [taskId]: { status: "pending", errorMsg: "" },
+  //   }));
+  
+  //   try {
+  //     await new Promise((resolve, reject) => {
+  //       uploadFileMutation({ rowId: taskId, formData }, {
+  //         onSuccess: resolve,
+  //         onError: reject,
+  //       });
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+  const onSubmit = async (data) => {
     const formData = new FormData();
-    // formData.append("circle", data.circle);
-    // formData.append("enm", data.enm);
     formData.append("taskId", taskId);
     formData.append("softwareRelease", data.softwareRelease);
-
     if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
-    // if (data.siteList?.length) formData.append("siteList", data.siteList[0]);
-
-    uploadFileMutation(formData);
+  
+    // Optional: mark row as pending
+    setRowStates((prev) => ({
+      ...prev,
+      [taskId]: { status: "pending", errorMsg: "" },
+    }));
+  
+    try {
+      await new Promise((resolve, reject) => {
+        uploadFileMutation(
+          { rowId: taskId, formData },
+          {
+            onSuccess: (res) => {
+              // Close modal on success
+              setIsModalOpen(false);
+  
+              // Optional: mark row as completed
+              setRowStates((prev) => ({
+                ...prev,
+                [taskId]: { status: "completed", errorMsg: "" },
+              }));
+              resolve(res);
+            },
+            onError: (err) => {
+              // Show error if upload fails
+              setRowStates((prev) => ({
+                ...prev,
+                [taskId]: {
+                  status: "error",
+                  errorMsg:
+                    err?.response?.data?.message || "Something went wrong",
+                },
+              }));
+              reject(err);
+            },
+          }
+        );
+      });
+    } catch (error) {
+      console.error(error);
+    }
   };
-
 
   const downloadFile = async (url, token, filename) => {
     const response = await fetch(url, {
@@ -175,25 +275,102 @@ function Scripting() {
       },
     },
     
-
     {
       accessorKey: "nsa_op_folder",
       header: "DOWNLOAD",
       cell: ({ row }) => {
         const file = row.original;
         const token = useSelector((state) => state.auth.access_token);
-
-        console.log(row, "rowrowrowrowrowrowrowrowrowrowrowrow")
-        return (
-          <Button
-            onClick={() =>
-              downloadFile(final_url + "/" + file.nsa_op_folder, token)
+        const [rowStates, setRowStates] = useState({});
+    
+        const handleDownload = async () => {
+          
+          setRowStates((prev) => ({
+            ...prev,
+            [file.id]: { loading: true, progress: 0 },
+          }));
+    
+          try {
+            
+            for (let i = 0; i <= 100; i += 10) {
+              await new Promise((resolve) => setTimeout(resolve, 100));
+              setRowStates((prev) => ({
+                ...prev,
+                [file.id]: { ...prev[file.id], progress: i },
+              })); 
             }
-          >
-            Download
-          </Button>
+            await downloadFile(final_url + "/" + file.nsa_op_folder, token);
+          } catch (error) {
+            console.error("Download failed:", error);
+          } finally {
+            
+            setRowStates((prev) => ({
+              ...prev,
+              [file.id]: { loading: false, progress: 0 },
+            }));
+          }
+        };
+    
+        const rowState = rowStates[file.id] || { loading: false, progress: 0 }; 
+    
+        return (
+          <div>
+            <Button
+              onClick={handleDownload}
+              disabled={rowState.loading} 
+              style={{
+                backgroundColor: rowState.loading ? "#ccc" : "#007bff",
+                color: rowState.loading ? "#666" : "#fff",
+                cursor: rowState.loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {rowState.loading ? "Downloading..." : "Download"}
+            </Button>
+    
+            {rowState.loading && ( 
+              <div style={{ marginTop: "10px" }}>
+                <div>Downloading: {rowState.progress}%</div>
+                <div style={{ width: "100%", background: "#eee", borderRadius: "5px" }}>
+                  <div
+                    style={{
+                      width: `${rowState.progress}%`,
+                      background: "#4caf50",
+                      height: "8px",
+                      borderRadius: "5px",
+                    }}
+                  ></div>
+                </div>
+              </div>
+            )}
+          </div>
         );
       },
+    },
+    {
+      id: "Processing",
+      header: "Processing",
+      cell: ({ row }) => {
+        const rowState = rowStates[row.original.taskId] || { status: "pending", errorMsg: "" };
+    
+        return (
+          <div className="flex flex-col gap-1">
+            {rowState.status === "pending" && <span className="text-gray-500 text-sm">Pending</span>}
+            {rowState.status === "uploading" && (
+              <div className="flex items-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                <span className="text-blue-500 text-sm">Uploading...</span>
+              </div>
+            )}
+            {rowState.status === "completed" && <span className="text-green-600 text-sm">Completed</span>}
+            {rowState.status === "error" && <span className="text-red-500 text-sm">{rowState.errorMsg}</span>}
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
     },
     {
       id: "actions",
@@ -322,11 +499,9 @@ function Scripting() {
 
                   {JSON.stringify(enms_list)}
 
-                  {
-                    enms_list && enms_list.map((one_enm) => {
-                      return <option>{one_enm.task_id}</option>
-                    })
-                  }
+                  {enms_list && enms_list.map((one_enm, idx) => (
+                  <option key={idx}>{one_enm.task_id}</option>
+                ))}
                 </datalist>
 
                 {
