@@ -9,7 +9,10 @@ class aa_Command(Script):
     def create_rpc_msg(self): pass
     def special_formate_scripts(self):
         date_str = datetime.now().strftime("%m%d%Y")
-        all_nodes = ";".join(self.usid.nodes)
+        all_nodes = ";".join(self.usid.df_site.node.unique())
+        nr_nodes = ";".join(self.usid.df_site.loc[self.usid.df_site.nr].node.unique())
+        lte_nodes = ";".join(self.usid.df_site.loc[self.usid.df_site.lte].node.unique())
+        print(nr_nodes)
         status_command = ';'.join([
             F'CmFunction.(syncStatus)',
             F'NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState)',
@@ -24,19 +27,16 @@ class aa_Command(Script):
         self.s_dict['cli'] = [
             F'##########################- Pre Check -##########################',
             F'####---- NodeStatus ----####',
-            F'pre_status_{self.usid.circle}_{self.usid.enm}_{date_str}.txt',
-            F'',
-            F'cmedit get {all_nodes} {status_command} --list',
-            F'',
+            F'pre_status_{self.usid.circle}_{self.usid.enm}_{date_str}.txt', F'',
+            F'cmedit get {all_nodes} {status_command} --list', F'',
             F'####---- NodeAlarms ----####',
-            F'pre_alarms_{self.usid.circle}_{self.usid.enm}_{date_str}.txt',
-            F'',
-            F'alarm get {all_nodes} --list',
-            F'',
+            F'pre_alarms_{self.usid.circle}_{self.usid.enm}_{date_str}.txt', F'',
+            F'alarm get {all_nodes} --list', F'',
             F'####---- MO Dump ----####',
             F'pre_dump_{self.usid.circle}_{self.usid.enm}_{date_str}.txt',
-            F'',
-            F'cmedit get {all_nodes} {self.usid.log_mos} --dynamic',
+            F'cmedit export -n {all_nodes} filetype dynamic --filecompression gzip',
+            F'cmedit export --status --job jobid',
+            F'cmedit export --download --job jobid',
             F'',
             F'##########################- Activity -##########################',
             F'####---- Activity ----####',
@@ -49,11 +49,11 @@ class aa_Command(Script):
             F'3. Load ---  02_MOs_Create using Bulk import',
             F'4. Load ---  03_Lock_NR using Bulk import (If you have NR cells unlocked during pre-check)',
             F'5. Load ---  04_Parameter using Bulk import',
-            F'      Run Below commands on CLI terminal',
-            F'      ',
-            F'      cmedit set {all_nodes} GNBCUCPFunction,NRCellCU,EUtranCellRelation isHoAllowed=true --force',
-            F'      ',
-            F'      ',
+            F'Run Below commands on CLI terminal',
+            F'',
+            F'cmedit set {nr_nodes} GNBCUCPFunction,NRCellCU,EUtranCellRelation isHoAllowed=true --force',
+            F'',
+            F'',
             F'6. Load ---  05_UnLock_NR (If you have NR cells unlocked during pre-check)',
             F'7. Create post CV ---  Use CLI Terminal',
             F'',
@@ -63,13 +63,13 @@ class aa_Command(Script):
             F'8. Validate and Check Status using get commands',
             F'',
             F'##########################- Some Important get CLI Commands -##########################',
-            F'cmedit get {all_nodes} GNBDUFunction,TermPointToAmf.(administrativeState,operationalState,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2) -t',
-            F'cmedit get {all_nodes} GNBDUFunction,NRCellDU.(administrativeState,operationalState,cellBarred,cellReservedForOperator) -t',
-            F'cmedit get {all_nodes} GNBDUFunction,NRSectorCarrier.(administrativeState,operationalState) -t',
-            F'cmedit get {all_nodes} ENodeBFunction,EUtranCellFDD.(administrativeState,operationalState,cellBarred,primaryPlmnReserved) -t',
-            F'cmedit get {all_nodes} ENodeBFunction,EUtranCellTDD.(administrativeState,operationalState,cellBarred,primaryPlmnReserved) -t',
-            F'cmedit get {all_nodes} ENodeBFunction,NbIotCell.(administrativeState,operationalState) -t',
-            F'cmedit get {all_nodes} SectorCarrier.(operationalState,reservedBy,sectorFunctionRef) -t',
+            F'cmedit get {nr_nodes} GNBDUFunction,TermPointToAmf.(administrativeState,operationalState,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2) -t',
+            F'cmedit get {nr_nodes} GNBDUFunction,NRCellDU.(administrativeState,operationalState,cellBarred,cellReservedForOperator) -t',
+            F'cmedit get {nr_nodes} GNBDUFunction,NRSectorCarrier.(administrativeState,operationalState) -t',
+            F'cmedit get {lte_nodes} ENodeBFunction,EUtranCellFDD.(administrativeState,operationalState,cellBarred,primaryPlmnReserved) -t',
+            F'cmedit get {lte_nodes} ENodeBFunction,EUtranCellTDD.(administrativeState,operationalState,cellBarred,primaryPlmnReserved) -t',
+            F'cmedit get {lte_nodes} ENodeBFunction,NbIotCell.(administrativeState,operationalState) -t',
+            F'cmedit get {lte_nodes} SectorCarrier.(operationalState,reservedBy,sectorFunctionRef) -t',
             F'cmedit get {all_nodes} SectorEquipmentFunction.(administrativeState,operationalState) -t',
             F'cmedit get {all_nodes} FieldReplaceableUnit.(administrativeState,operationalState,productData) -t',
             F'',
@@ -77,28 +77,28 @@ class aa_Command(Script):
             F'##########################- Post Check -##########################',
             F'####---- NodeStatus ----####',
             F'post_status_{self.usid.circle}_{self.usid.enm}.txt',
-            F'',
-            F'cmedit get {all_nodes} ',
-            F'CmFunction.(syncStatus);',
-            F'NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState);',
-            F'NRCellDU.(administrativeState,cellState,operationalState,serviceState,ssbDuration,ssbFrequency,ssbOffset,ssbPeriodicity);',
-            F'EUtranCellTDD.(administrativeState,cellSubscriptionCapacity,channelBandwidth,earfcn,operationalState);',
-            F'EUtranCellFDD.(administrativeState,dlChannelBandwidth,earfcndl,earfcnul,operationalState,ulChannelBandwidth);',
-            F'SectorCarrier.(SectorCarrierId,configuredMaxTxPower,operationalState,reservedBy,rfBranchRxRef,rfBranchTxRef);',
-            F'SectorEquipmentFunction.(administrativeState,operationalState,availableHwOutputPower,reservedBy,rfBranchRef);',
-            F'FieldReplaceableUnit.(administrativeState,operationalState,productData);',
+            F'cmedit get {all_nodes} '
+            F'CmFunction.(syncStatus);'
+            F'NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState);'
+            F'NRCellDU.(administrativeState,cellState,operationalState,serviceState,ssbDuration,ssbFrequency,ssbOffset,ssbPeriodicity);'
+            F'EUtranCellTDD.(administrativeState,cellSubscriptionCapacity,channelBandwidth,earfcn,operationalState);'
+            F'EUtranCellFDD.(administrativeState,dlChannelBandwidth,earfcndl,earfcnul,operationalState,ulChannelBandwidth);'
+            F'SectorCarrier.(SectorCarrierId,configuredMaxTxPower,operationalState,reservedBy,rfBranchRxRef,rfBranchTxRef);'
+            F'SectorEquipmentFunction.(administrativeState,operationalState,availableHwOutputPower,reservedBy,rfBranchRef);'
+            F'FieldReplaceableUnit.(administrativeState,operationalState,productData);'
             F'TermPointToAmf.(administrativeState,operationalState,defaultAmf,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2,usedIpAddress) --list',
             F'',
             F'',
             F'####---- NodeAlarms ----####',
             F'post_alarms_{self.usid.circle}_{self.usid.enm}_{date_str}.txt',
-            F'',
             F'alarm get {all_nodes} --list',
             F'',
             F'####---- MO Dump ----####',
             F'post_dump_{self.usid.circle}_{self.usid.enm}_{date_str}.txt',
+            F'cmedit export -n {all_nodes} filetype dynamic --filecompression gzip',
+            F'cmedit export --status --job jobid',
+            F'cmedit export --download --job jobid',
             F'',
-            F'cmedit get {all_nodes} {self.usid.log_mos} --dynamic',
             F'',
             F'',
 
@@ -106,22 +106,25 @@ class aa_Command(Script):
             F'##########################- Run it at your Own Risk -##########################',
             F'##########################- Donot Run if you dont understand any of these commands -##########################',
             F'####---- Lock All NR Cells ----####',
-            F'cmedit set {all_nodes} GNBDUFunction,NRCellDU administrativeState=LOCKED --force',
-            F'cmedit set {all_nodes} GNBDUFunction,NRSectorCarrier administrativeState=LOCKED --force',
+            F'cmedit set {nr_nodes} GNBDUFunction,NRCellDU administrativeState=LOCKED --force',
+            F'cmedit set {nr_nodes} GNBDUFunction,NRSectorCarrier administrativeState=LOCKED --force',
             F'',
             F'####---- Unlock All NR Cells ----####',
-            F'cmedit set {all_nodes} GNBDUFunction,NRSectorCarrier administrativeState=UNLOCKED --force',
-            F'cmedit set {all_nodes} GNBDUFunction,NRCellDU administrativeState=UNLOCKED --force',
+            F'cmedit set {nr_nodes} GNBDUFunction,NRSectorCarrier administrativeState=UNLOCKED --force',
+            F'cmedit set {nr_nodes} GNBDUFunction,NRCellDU administrativeState=UNLOCKED --force',
             F'',
             F'####---- set CU cell Parameters for transmitSib----####',
-            F'cmedit set {all_nodes} GNBDUFunction,NRCellCU transmitSib2=true --force',
-            F'cmedit set {all_nodes} GNBDUFunction,NRCellCU transmitSib4=true --force',
-            F'cmedit set {all_nodes} GNBDUFunction,NRCellCU transmitSib5=true --force',
+            F'cmedit set {nr_nodes} GNBDUFunction,NRCellCU transmitSib2=true --force',
+            F'cmedit set {nr_nodes} GNBDUFunction,NRCellCU transmitSib4=true --force',
+            F'cmedit set {nr_nodes} GNBDUFunction,NRCellCU transmitSib5=true --force',
             F'',
             F'###############################################################################',
             F'###############################################################################',
+            F'',
+            F'#### Restart Command for NR Nodes ####',
             F'',
         ]
+        self.s_dict['cli'] += self.retart_commands_list()
 
         self.write_script_file()
 
@@ -135,3 +138,16 @@ class aa_Command(Script):
                 f.write('\n')
                 f.write('\n'.join(self.s_dict['cli']))
             self.s_dict['cli'] = []
+
+    def retart_commands_list(self):
+        restart_commands_list = []
+        print(self.usid.df_site.loc[(self.usid.df_site.nr)].node.unique())
+        for node in self.usid.df_site.loc[(self.usid.df_site.nr)].node.unique():
+            print(node)
+            self.set_node_site_and_para_for_dcgk(node=node)
+            restart_commands_list.append(
+                F'cmedit action {self.site.me},Equipment=1,FieldReplaceableUnit={self.site.bbu} restartunit.('
+                F'restartrank=RESTART_COLD,restartreason=PLANNED_RECONFIGURATION,restartinfo=NSAtoSA) --force)'
+            )
+        print(restart_commands_list)
+        return restart_commands_list

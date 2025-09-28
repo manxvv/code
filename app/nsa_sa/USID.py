@@ -77,7 +77,7 @@ class USID:
             if len(self.sites[node].du_cell) > 0 or len(self.sites[node].cu_cell) > 0: self.nr_node += [node]
             if len(self.sites[node].fdd_cell) > 0 or len(self.sites[node].tdd_cell) > 0: self.lte_node += [node]
         # Site List Data Process
-        self.df_site = self.site_data(site_file=site_file)
+        # self.df_site = self.site_data(site_file=site_file)
         self.df_amf = self.get_amf_table()
         self.df_feature = self.get_feature_table()
         self.df_site = pd.concat([self.df_site, self.process_df_site_with_logs_data()], axis=1)
@@ -284,6 +284,7 @@ class USID:
                 tmp_dict |= {
                     'log': True if len(site.fdns) > 0 else False,
                     'syncstatus': site.get_fdn_parameter(fdn=F'NetworkElement={node},CmFunction=1', para='syncStatus'),
+                    'status': True,
                     'nr': True if node in self.nr_node else False,
                     'amf': len(self.df_amf.loc[(self.df_amf.node == node)].index),
                     'gNBId': None,
@@ -303,6 +304,7 @@ class USID:
                     'DU_gNBIdLength': site.get_fdn_parameter(fdn='GNBDUFunction=1', para='gNBIdLength'),
                     'CUCP_gNBIdLength': site.get_fdn_parameter(fdn='GNBCUCPFunction=1', para='gNBIdLength'),
                     'CUUP_gNBIdLength': site.get_fdn_parameter(fdn='GNBCUUPFunction=1', para='gNBIdLength'),
+                    'bbu': site.bbu,
                 }
                 if tmp_dict['DU_gNBId'] == tmp_dict['CUCP_gNBId'] == tmp_dict['CUUP_gNBId']:
                     tmp_dict['gNBId'] = tmp_dict['DU_gNBId']
@@ -311,7 +313,6 @@ class USID:
                     tmp_dict['gNBIdLength'] = tmp_dict['DU_gNBIdLength']
                     del tmp_dict['DU_gNBIdLength'], tmp_dict['CUCP_gNBIdLength'], tmp_dict['CUUP_gNBIdLength']
             tmp_list.append(tmp_dict)
-
 
         new_df = pd.DataFrame(tmp_list)
         return new_df

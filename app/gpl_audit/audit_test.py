@@ -7,7 +7,7 @@ from AuditReport import AuditReport
 from custom_log import Custom_Log
 
 current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
-site_name = 'Audit_09_27_2025'
+site_name = 'Audit_09_29_2025'
 circle = 'AP'
 nsa_sa_path = r'/Users/aj_mac/Documents/Atel/server/code/app/gpl_audit'
 file_path = r'/Users/aj_mac/Documents/Atel/Inputs'
@@ -23,7 +23,7 @@ for node in list(a_usid.df_site.node.unique()):
     a_usid.custom_log.log.info(F'Audit Started for {node}')
     self = getattr(importlib.import_module('Audit'), 'Audit')(a_usid=a_usid, node=node)
     self.run()
-    self.run_all_parameters_audit()
+    # self.run_all_parameters_audit()
 
 AuditReport(a_usid=a_usid)
 a_usid.custom_log.log.info(F'Audit Completed!!!')

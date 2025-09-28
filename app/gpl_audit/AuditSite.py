@@ -16,6 +16,8 @@ class AuditSite:
         else:
             custom_log.log.exception(F'Error : For Node: {self.node} dnPrefix could not be found')
         self.fdns = sorted(list(self.mos.keys()))
+        self.bbu = self.get_bbu_id()
+
         self.du_cell = sorted([re.match(".*,NRCellDU=([^,]*)$", _).group(1)
                                for _ in self.fdns if re.match(".*,NRCellDU=([^,]*)$", _)])
         self.cu_cell = sorted([re.match(".*,NRCellCU=([^,]*)$", _).group(1)
@@ -98,3 +100,12 @@ class AuditSite:
         if xn_sctp and re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_sctp):
             xn_sctp = re.match(F'.*,ManagedElement=[^,]*,(.*)', xn_sctp).group(1)
         return tn_dict, xn_ip, xn_sctp, type_int
+
+    def get_bbu_id(self) -> str:
+        for fdn in [_ for _ in self.fdns if re.match('Equipment=1,FieldReplaceableUnit=([^,]*)$', _)]:
+            product = None
+            if 'productData' in self.mos[fdn].keys() and self.mos[fdn].get('productData') is not None:
+                product = self.mos[fdn].get('productData').get('productName')
+            if product and len([_ for _ in ['Baseband ', 'RAN Processor '] if _ in product]) > 0:
+                return re.match('Equipment=1,FieldReplaceableUnit=([^,]*)$', fdn).group(1)
+        return 'NA'
