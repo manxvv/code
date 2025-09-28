@@ -1,10 +1,10 @@
+import sys
 import copy
 import re
-import sys
 from custom_log import Custom_Log
 
 
-class Site:
+class AuditSite:
     def __init__(self, *, node: str, mos: dict, custom_log: Custom_Log):
 
         self.node = node
@@ -16,7 +16,6 @@ class Site:
         else:
             custom_log.log.exception(F'Error : For Node: {self.node} dnPrefix could not be found')
         self.fdns = sorted(list(self.mos.keys()))
-
         self.du_cell = sorted([re.match(".*,NRCellDU=([^,]*)$", _).group(1)
                                for _ in self.fdns if re.match(".*,NRCellDU=([^,]*)$", _)])
         self.cu_cell = sorted([re.match(".*,NRCellCU=([^,]*)$", _).group(1)
@@ -26,6 +25,9 @@ class Site:
         self.tdd_cell = sorted([re.match(".*,EUtranCellTDD=([^,]*)$", _).group(1)
                                 for _ in self.fdns if re.match(".*,EUtranCellTDD=([^,]*)$", _)])
         self.tn_dict, self.xn_ip, self.xn_sctp, self.type_int = self.get_sctp_local_sctp_dicts()
+        if len(self.fdd_cell + self.tdd_cell) > 0:
+            for ldn in sorted([_ for _ in self.fdns if re.match(F".*ENodeBFunction=1,EUtranCell.DD=([^,]*)$", _)]):
+                self.mos[ldn]['mappingInfo.mappingInfoSIB24'] = self.mos[ldn].get('mappingInfo', {}).get('mappingInfoSIB24', 'N/F')
 
     def fdn_exists(self, *, fdn: str) -> bool: return fdn in self.fdns
 

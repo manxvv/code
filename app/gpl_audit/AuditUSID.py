@@ -9,7 +9,7 @@ import numpy as np
 from collections import OrderedDict
 from custom_log import Custom_Log
 from audit_parse_dynamic_data_to_dict import parse_dynamic_data_to_dict
-from Audit_Site import Site
+from AuditSite import AuditSite
 
 
 dump_list = [
@@ -63,20 +63,19 @@ class AuditUSID:
 
         # DB Process
         self.db = self.db_data(nsa_sa_path=nsa_sa_path)
-        # Site List Data
+        # AuditSite List Data
         self.df_site = self.site_data(site_file=site_file)
-        # self.nodes = list(self.df_site.node.unique())
         # Log Data Process
         self.sites = {}
         mos_dict = parse_dynamic_data_to_dict(para_file=para_file)
         for node in list(self.df_site.node.unique()):
-            self.sites[node] = Site(node=node, mos=mos_dict.get(node, {}), custom_log=self.custom_log)
+            self.sites[node] = AuditSite(node=node, mos=mos_dict.get(node, {}), custom_log=self.custom_log)
         del mos_dict
         self.nr_node, self.lte_node = [], []
         for node in self.sites.keys():
             if len(self.sites[node].du_cell) > 0 or len(self.sites[node].cu_cell) > 0: self.nr_node += [node]
             if len(self.sites[node].fdd_cell) > 0 or len(self.sites[node].tdd_cell) > 0: self.lte_node += [node]
-        # Site List Data Process
+        # AuditSite List Data Process
         # self.df_site = self.site_data(site_file=site_file)
         self.df_amf = self.get_amf_table()
         self.df_feature = self.get_feature_table()
@@ -86,12 +85,13 @@ class AuditUSID:
         self.df_gpl = pd.DataFrame([])
         # self.df_site = pd.concat([self.df_site, pd.DataFrame(tmp_list)], axis=1).reset_index(drop=True, inplace=False)
 
-        self.df_gpl = pd.DataFrame([], columns=['node', 'mo', 'parameter', 'value', 'gpl_value', 'flag', 'remark'])
+        self.df_gpl = pd.DataFrame([], columns=['Node', 'Technology', 'MO_Class', 'Parameter', 'MO',
+                                                'Current_Value', 'Baseline', 'Deviation', 'Parameter_Type'])
         self.gpl_list = []
         self.gpl_completed_mo_para = []
-
         # self.save_different_dataframe()
-
+        # Save Logical Data in Excell Sheets
+        self.save_site_cell_table()
 
     def site_data(self, *, site_file: str) -> pd.DataFrame:
         df = pd.read_excel(site_file, sheet_name='Node', dtype='str')
@@ -135,7 +135,6 @@ class AuditUSID:
 
         db = {_: pd.DataFrame([], columns=db_dict[_]) for _ in db_dict.keys()}
         for sheet in db_dict.keys():
-            print(os.path.join(nsa_sa_path, '../gpl_audit/GPL.xlsx'))
             df = pd.read_excel(os.path.join(nsa_sa_path, '../gpl_audit/GPL.xlsx'), sheet_name=sheet, dtype='str')
             df = df[db_dict[sheet]]
             df = df.replace('[^a-zA-Z0-9.,-_/+()[]{}]', '', regex=True)
@@ -316,34 +315,34 @@ class AuditUSID:
         new_df = pd.DataFrame(tmp_list)
         return new_df
 
+    @staticmethod
     def highlight_even_row(*, row) -> list:
         return ['background-color: #D2D3D3; ' if _ % 2 == 1 else 'background-color: #FFFFFF' for _ in range(len(row))]
 
     def save_site_cell_table(self):
         current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
-        self.audit_file = pd.ExcelWriter(os.path.join(
-            self.base_dir, F'Logic_{self.audit_usid.circle}_{current_time}.xlsx'), engine='openpyxl')
+        file = pd.ExcelWriter(os.path.join(self.base_dir, F'Logic_{self.circle}_{current_time}.xlsx'), engine='openpyxl')
         df_style = self.df_site.style.apply(lambda x: self.highlight_even_row(row=x))
-        df_style.to_excel(excel_writer=self.audit_file, sheet_name='Site', index=False)
-        self.audit_file.sheets['Site'].auto_filter.ref = self.audit_file.sheets['Site'].calculate_dimension()
-        self.audit_file.sheets['Site'].auto_filter.enable = True
+        df_style.to_excel(excel_writer=file, sheet_name='Site', index=False)
+        file.sheets['Site'].auto_filter.ref = file.sheets['Site'].calculate_dimension()
+        file.sheets['Site'].auto_filter.enable = True
 
         df_style = self.df_cell.style.apply(lambda x: self.highlight_even_row(row=x))
-        df_style.to_excel(excel_writer=self.audit_file, sheet_name='Cell', index=False)
-        self.audit_file.sheets['Cell'].auto_filter.ref = self.audit_file.sheets['Cell'].calculate_dimension()
-        self.audit_file.sheets['Cell'].auto_filter.enable = True
-        self.audit_file.close()
+        df_style.to_excel(excel_writer=file, sheet_name='Cell', index=False)
+        file.sheets['Cell'].auto_filter.ref = file.sheets['Cell'].calculate_dimension()
+        file.sheets['Cell'].auto_filter.enable = True
+        file.close()
 
 
-    def save_logic_dataframe(self, *, current_time: str):
-        data = {'Site': self.df_site, 'Cell': self.df_cell, 'AMF': self.df_amf, 'Feature': self.df_feature}
-        with ExcelWriter(os.path.join(self.base_dir, F'Logic_{current_time}.xlsx')) as writer:
-            self.df_site.reset_index().to_excel(writer, sheet_name='Site', index=True)
-            self.df_cell.reset_index().to_excel(writer, sheet_name='Cell', index=True)
-
-    def save_audit_dataframe(self, *, current_time: str) -> None:
-        df = self.df_gpl.copy()
-        with ExcelWriter(os.path.join(self.base_dir, F'AuditReport_{self.circle}_{current_time}.xlsx')) as writer:
-            df.reset_index().to_excel(writer, sheet_name='AuditReport', index=True)
-            self.df_feature.reset_index().to_excel(writer, sheet_name='Feature', index=True)
-            self.df_amf.reset_index().to_excel(writer, sheet_name='AMF', index=True)
+    # def save_logic_dataframe(self, *, current_time: str):
+    #     data = {'Site': self.df_site, 'Cell': self.df_cell, 'AMF': self.df_amf, 'Feature': self.df_feature}
+    #     with ExcelWriter(os.path.join(self.base_dir, F'Logic_{current_time}.xlsx')) as writer:
+    #         self.df_site.reset_index().to_excel(writer, sheet_name='Site', index=True)
+    #         self.df_cell.reset_index().to_excel(writer, sheet_name='Cell', index=True)
+    #
+    # def save_audit_dataframe(self, *, current_time: str) -> None:
+    #     df = self.df_gpl.copy()
+    #     with ExcelWriter(os.path.join(self.base_dir, F'AuditReport_{self.circle}_{current_time}.xlsx')) as writer:
+    #         df.reset_index().to_excel(writer, sheet_name='AuditReport', index=True)
+    #         self.df_feature.reset_index().to_excel(writer, sheet_name='Feature', index=True)
+    #         self.df_amf.reset_index().to_excel(writer, sheet_name='AMF', index=True)

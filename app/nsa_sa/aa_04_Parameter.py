@@ -128,10 +128,10 @@ class aa_04_Parameter(Script):
             },
         }
         # FeatureState
-        for r in ['CXC4012578', 'CXC4012385', 'CXC4012371', 'CXC4010620']:
+        for r in ['CXC4012578', 'CXC4012385', 'CXC4012371', 'CXC4010620', 'CXC4012324', 'CXC4012218']:
             self.mo_dict['lte']['SystemFunctions']['Lm']['FeatureState'].append({'attributes': {'xc:operation': 'update'},
                                                                                  'featureStateId': r, 'featureState': 'ACTIVATED'})
-        for r in ['CXC4012324', 'CXC4012580']:
+        for r in ['CXC4012580']:
             self.mo_dict['lte']['SystemFunctions']['Lm']['FeatureState'].append({'attributes': {'xc:operation': 'update'},
                                                                                  'featureStateId': r, 'featureState': 'DEACTIVATED'})
         # EUtranCellFDD

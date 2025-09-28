@@ -53,7 +53,8 @@ dump_list = [
 
 
 class USID:
-    def __init__(self, *, nsa_sa_path: str, base_dir: str, custom_log: Custom_Log, para_file: str, site_file: str, circle: str, enm: str):
+    def __init__(self, *, nsa_sa_path: str, base_dir: str, custom_log: Custom_Log,
+                 para_file: list, site_file: str, circle: str, enm: str):
         self.base_dir = base_dir
         self.custom_log = custom_log
         self.circle = circle
@@ -166,9 +167,16 @@ class USID:
 
     def get_feature_table(self) -> pd.DataFrame:
         featureStateId = [
-            'CXC4012493', 'CXC4012534', 'CXC4012538', 'CXC4012549', 'CXC4012550', 'CXC4012591', 'CXC4012592', 'CXC4012637',
-            'CXC4012607', 'CXC4012475', 'CXC4012548', 'CXC4012724', 'CXC4012680', 'CXC4012688', 'CXC4012601', 'CXC4012330',
-            'CXC4012406', 'CXC4012510', 'CXC4012562', 'CXC4012593', 'CXC4012638', 'CXC4012590', 'CXC4012218'
+            # NR Features
+            'CXC4012493', 'CXC4012534', 'CXC4012538', 'CXC4012549', 'CXC4012550', 'CXC4012591',
+            'CXC4012592', 'CXC4012637', 'CXC4012607', 'CXC4012475', 'CXC4012548', 'CXC4012724',
+            'CXC4012680', 'CXC4012688', 'CXC4012601', 'CXC4012330', 'CXC4012406', 'CXC4012510',
+            'CXC4012562', 'CXC4012593', 'CXC4012638', 'CXC4012590', 'CXC4012503', 'CXC4012589',
+            'CXC4012668', 'CXC4012673', 'CXC4012635',
+
+            # LTE Features
+            'CXC4012578', 'CXC4012385', 'CXC4012371', 'CXC4010620', 'CXC4012324', 'CXC4012218',
+            'CXC4012580'
         ]
         tmp_list = []
         description_dict = {'circle': '', 'enm': '', 'node': 'description'}

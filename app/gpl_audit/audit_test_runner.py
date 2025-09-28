@@ -8,7 +8,6 @@ sys.path.append(path_nsa_sa)
 from AuditUSID import AuditUSID
 from custom_log import Custom_Log
 
-
 def run_gpl_audit(curr_dir, circle, enmFile_list, siteList_file_path, task_id):
     current_time = datetime.now().strftime('%m%d%Y_%H%M%S')
     folder_name = task_id+"_"+circle+"_"+current_time
@@ -24,16 +23,16 @@ def run_gpl_audit(curr_dir, circle, enmFile_list, siteList_file_path, task_id):
         para_file.append(os.path.join(curr_dir, one_enmFile))
     site_file = os.path.join(curr_dir, siteList_file_path)
     custom_log = Custom_Log(log_file=log_file)
-    audit_usid = AuditUSID(nsa_sa_path=nsa_sa_path, base_dir=base_dir, custom_log=custom_log,
+    a_usid = AuditUSID(nsa_sa_path=nsa_sa_path, base_dir=base_dir, custom_log=custom_log,
                            para_file=para_file, site_file=site_file, circle=circle)
     modules = ['aa_01_NR_Parameter', 'aa_02_LTE_Parameter']
-    audit_usid.df_gpl = pd.DataFrame(audit_usid.gpl_list)
-    for node in list(audit_usid.df_site.node.unique()):
+    a_usid.df_gpl = pd.DataFrame(a_usid.gpl_list)
+    for node in list(a_usid.df_site.node.unique()):
         for module in modules:
-            self = getattr(importlib.import_module(F'{module}'), module)(audit_usid=audit_usid, node=node)
+            self = getattr(importlib.import_module(F'{module}'), module)(a_usid=a_usid, node=node)
             self.run()
 
-    audit_usid.df_gpl = pd.DataFrame(audit_usid.gpl_list)
-    audit_usid.save_logic_dataframe(current_time=current_time)
-    audit_usid.save_audit_dataframe(current_time=current_time)
+    a_usid.df_gpl = pd.DataFrame(a_usid.gpl_list)
+    a_usid.save_logic_dataframe(current_time=current_time)
+    a_usid.save_audit_dataframe(current_time=current_time)
     return os.path.join("downloads", "gpl_audit", folder_name)

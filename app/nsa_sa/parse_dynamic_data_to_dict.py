@@ -1,7 +1,7 @@
 import re
 
 
-def parse_dynamic_data_to_dict(*, para_file: str) -> dict:
+def parse_dynamic_data_to_dict(*, para_file: list) -> dict:
     def normalize(value):
         if type(value) == str and re.match('(.*,ManagedElement=[^,]*),(.*)', value):
             return re.match('(.*,ManagedElement=[^,]*),(.*)', value).group(2)
@@ -30,10 +30,22 @@ def parse_dynamic_data_to_dict(*, para_file: str) -> dict:
         dicts = re.findall(r"\{([^{}]+)\}", value)  # Extract all `{...}` blocks
         return [parse_nested_dict(item) for item in dicts]
 
+    def moodify_block_if_colon_is_missing(*, block_data: list) -> list:
+        indices_to_remove = []
+        for i in range(len(block_data)):
+            if ' : ' not in block_data[i]:
+                block_data[i-1] = block_data[i-1] + block_data[i]
+                indices_to_remove.append(i)
+        indices_to_remove.sort(reverse=True)
+        for i in indices_to_remove:
+            del block_data[i]
+        return block_data
+
     def parse_fdn_dict_block(*, block_data: list) -> dict:
         result = {}
+        # block_data = moodify_block_if_colon_is_missing(block_data=block_data)
         for para_line in block_data:
-            key, value = para_line.split(" :", maxsplit=1)
+            key, value = para_line.split(" : ", maxsplit=1)
             key, value = str(key.strip()), str(value.strip())
             if value == "<empty>": value = None
             elif value.startswith("{") and value.endswith("}"): value = parse_nested_dict(value[1:-1])
@@ -45,27 +57,34 @@ def parse_dynamic_data_to_dict(*, para_file: str) -> dict:
             result[key] = value
         return result
 
-    mos_dict, block_data, current_fdn, node = {}, [], None, None
-    with open(para_file, 'r') as log_file:
-        for line in log_file:
-            line = line.strip().strip('\n')
-            if not line or ' :' not in line: continue
-            if line.startswith("FDN :"):
-                if node and current_fdn:
-                    mos_dict[node][current_fdn].update(parse_fdn_dict_block(block_data=block_data))
-                    block_data = []
-                current_fdn = line.split("FDN :", maxsplit=1)[1].strip().strip('"')
-                if ',MeContext=' in current_fdn: node = re.match('.*,MeContext=([^,]*),.*', current_fdn).group(1)
-                elif current_fdn.startswith('NetworkElement='): node = re.match('NetworkElement=([^,]*),.*', current_fdn).group(1)
-                else: current_fdn, node = None, None
-                if node and node not in mos_dict.keys(): mos_dict[node] = {}
-
-                if current_fdn and re.match('(.*,ManagedElement=[^,]*),.*', current_fdn):
-                    if not mos_dict[node].get('me_me', None):
-                        mos_dict[node]['me_me'] = re.match('(.*,ManagedElement=[^,]*),(.*)', current_fdn).group(1)
-                    current_fdn = re.match('(.*,ManagedElement=[^,]*),(.*)', current_fdn).group(2)
-                if current_fdn not in mos_dict.get(node, {}).keys(): mos_dict[node][current_fdn] = {}
-            else:
-                block_data.append(line)
-        if node and current_fdn: mos_dict[node][current_fdn].update(parse_fdn_dict_block(block_data=block_data))
+    mos_dict = {}
+    node, current_fdn, block_data = None, None, []
+    for l_file in para_file:
+        with open(l_file, 'r') as log_file:
+            for line in log_file:
+                line = line.strip().strip('\n')
+                if not line or ' :' not in line: continue
+                if line.startswith("FDN :"):
+                    if node and current_fdn:
+                        mos_dict[node][current_fdn].update(parse_fdn_dict_block(block_data=block_data))
+                        node, current_fdn, block_data = None, None, []
+                    fdn = line.split("FDN :", maxsplit=1)[1].strip().strip('"')
+                    if re.match('.*,MeContext=([^,]*).*', fdn):
+                        node = re.match('.*,MeContext=([^,]*).*', fdn).group(1)
+                        if re.match('.*,ManagedElement=([^,]*),.*', fdn):
+                            current_fdn = re.match('.*,ManagedElement=[^,]*,(.*)', fdn).group(1)
+                        else: current_fdn = fdn
+                    elif re.match('NetworkElement=([^,]*).*', fdn):
+                        node = re.match('NetworkElement=([^,]*).*', fdn).group(1)
+                        current_fdn = fdn
+                    else:
+                        node, current_fdn = None, None
+                    if node and current_fdn:
+                        if node not in mos_dict.keys(): mos_dict[node] = {}
+                        if current_fdn not in mos_dict[node].keys(): mos_dict[node][current_fdn] = {}
+                        if not mos_dict[node].get('me_me') and re.match('(.*,ManagedElement=[^,]*),.*', fdn):
+                            mos_dict[node]['me_me'] = re.match('(.*,ManagedElement=[^,]*),(.*)', fdn).group(1)
+                else:
+                    block_data.append(line)
+            if node and current_fdn: mos_dict[node][current_fdn].update(parse_fdn_dict_block(block_data=block_data))
     return mos_dict
