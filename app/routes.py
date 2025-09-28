@@ -1567,31 +1567,46 @@ def create_circle():
 def create_enm():
     data = request.get_json()
 
-    # Validate required fields
-    if not data or "enm" not in data or "circle" not in data:
-        return jsonify({"message": "Invalid input, 'ENM' and 'Circle' are required"}), 400
+    vendor = data.get("vendor")
+    vendor = data["vendor"].strip().lower()  # Normalize to lowercase
+    # Conditional validation based on vendor
+    if vendor == "ericsson":
+        if not data or "enm" not in data or "circle" not in data:
+            return jsonify({"message": "Invalid input, 'ENM' and 'Circle' are required for Ericsson"}), 400
+    elif vendor == "nokia":
+        if not data or "circle" not in data:
+            return jsonify({"message": "Invalid input, 'Circle' is required for Nokia"}), 400
+    else:
+        return jsonify({"message": "Invalid vendor"}), 400
 
-    # Check if the combination already exists
-    existing = mongo.db.enms.find_one({"enm": data["enm"], "circle": data["circle"]})
+    # Check if combination already exists
+    query = {"circle": data["circle"]}
+    if vendor == "ericsson":
+        query["enm"] = data["enm"]
+
+    existing = mongo.db.enms.find_one(query)
     if existing:
-        return jsonify({"message": "ENM with this 'ENM' and 'Circle' already exists"}), 400
+        return jsonify({"message": f"ENM with this combination already exists for {vendor}"}), 400
 
-    enm = {
+    enm_record = {
         "user_id": request.user.get("sub"),
-        "enm": data["enm"],
-        "ts":datetime.now().timestamp(),
-        "updated":request.user.get("sub"),
-        "circle": data["circle"]
+        "vendor": vendor,
+        "circle": data["circle"],
+        "ts": datetime.now().timestamp(),
+        "updated": request.user.get("sub")
     }
 
-    result = mongo.db.enms.insert_one(enm)
+    # Include ENM only if vendor is Ericsson
+    if vendor == "ericsson":
+        enm_record["enm"] = data["enm"]
 
-    print(enm,"enmenmenm")
+    result = mongo.db.enms.insert_one(enm_record)
+
+    print(enm_record, "enmenmenm")
     return jsonify({
         "message": "ENM created successfully",
         "id": str(result.inserted_id)
     }), 201
-    
     
     
 
@@ -1677,8 +1692,10 @@ def get_enms():
         enms.append({
             "id": str(e["_id"]),
             "enm": e.get("enm"),
-            "circle": e.get("circle")
+            "circle": e.get("circle"),
+            "vendor":e.get("vendor")
         })
+
 
     return jsonify(enms), 200
 
