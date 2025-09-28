@@ -16,17 +16,17 @@ def audit_nsa_sa(siteList_original_filename,eFile_original_filename,nsa_sa_path,
     shutil.copy(site_file,os.path.join(base_dir,"input_"+siteList_original_filename))
     log_file = os.path.join(base_dir, F'{site_name}_{current_time}.log')
     custom_log = Custom_Log(log_file=log_file)
-    audit_usid = AuditUSID(nsa_sa_path=nsa_sa_path, base_dir=base_dir, custom_log=custom_log,
+    a_usid = AuditUSID(nsa_sa_path=nsa_sa_path, base_dir=base_dir, custom_log=custom_log,
                      para_file=para_file, site_file=site_file, circle=circle)
     modules = ['aa_01_5qiTable_BWP', 'aa_02_MOs_Create', 'aa_03_Lock_NR', 'aa_04_Parameter', 'aa_05_UnLock_NR']
     # aa_Command
-    for node in audit_usid.nodes:
+    for node in a_usid.nodes:
         for module in modules:
-            self = getattr(importlib.import_module(F'{module}'), module)(audit_usid=audit_usid, node=node)
+            self = getattr(importlib.import_module(F'{module}'), module)(a_usid=a_usid, node=node)
             self.run()
-    if len(audit_usid.nodes) > 0:
-        node = audit_usid.nodes[0]
-        self = getattr(importlib.import_module(F'aa_Command'), 'aa_Command')(audit_usid=audit_usid, node=node)
+    if len(a_usid.nodes) > 0:
+        node = a_usid.nodes[0]
+        self = getattr(importlib.import_module(F'aa_Command'), 'aa_Command')(a_usid=a_usid, node=node)
         self.run()
-    audit_usid.save_different_dataframe(current_time=current_time)
+    a_usid.save_different_dataframe(current_time=current_time)
     return base_dir
