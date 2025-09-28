@@ -1,3 +1,5 @@
+// src/components/DataTable.js
+
 "use client"
 
 import * as React from "react"
@@ -9,19 +11,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Filter } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Select,
   SelectContent,
@@ -29,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -38,10 +26,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 
-export function DataTableDemo({ columns, data, globalFilter, setGlobalFilter }) {
+
+// --- THE FIX IS HERE: Accept columnFilters and setColumnFilters as props ---
+export function DataTableDemo({ 
+  columns, 
+  data, 
+  globalFilter, 
+  setGlobalFilter,
+  columnFilters,     //<-- Add this prop
+  setColumnFilters   //<-- Add this prop
+}) {
   const [sorting, setSorting] = React.useState([])
-  const [columnFilters, setColumnFilters] = React.useState([])
+  // The line below is removed because the parent component will now manage this state
+  // const [columnFilters, setColumnFilters] = React.useState([]) 
   const [columnVisibility, setColumnVisibility] = React.useState({})
   const [rowSelection, setRowSelection] = React.useState({})
 
@@ -49,7 +48,7 @@ export function DataTableDemo({ columns, data, globalFilter, setGlobalFilter }) 
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: setColumnFilters, // <-- Connect to the prop
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -59,7 +58,7 @@ export function DataTableDemo({ columns, data, globalFilter, setGlobalFilter }) 
     onGlobalFilterChange: setGlobalFilter,
     state: {
       sorting,
-      columnFilters,
+      columnFilters, // <-- Use the prop here
       columnVisibility,
       rowSelection,
       globalFilter,
@@ -68,8 +67,6 @@ export function DataTableDemo({ columns, data, globalFilter, setGlobalFilter }) 
 
   return (
     <div className="w-full space-y-4">
-      {/* --- Toolbar: Filters --- */}
-
       <div className="rounded-md border">
         <Table>
           <TableHeader>
