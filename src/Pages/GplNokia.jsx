@@ -268,7 +268,7 @@ function GplNokia() {
 
       <DataTableDemo
         columns={columns}
-        data={user_scripting_files || []}
+        data={[]}
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
       />
