@@ -15,6 +15,7 @@ import mimetypes
 import pandas as pd
 
 import pymongo
+import threading
 
 import os
 import tempfile
@@ -961,6 +962,60 @@ def script_entry_migration(request,taskId,file_con,file_path):
     )
     
     
+
+def process_scripting_task(task_data, eFile_original_filename, eFile_file_path, siteList_file_path, curr_dir, uid):
+    try:
+        nsa_sa_path = os.path.join(os.getcwd(), "app", "nsa_sa")
+        sys.path.append(nsa_sa_path)
+
+        nsa_op_folder = scripting_nsa_sa(
+            task_data["original_filename"],
+            eFile_original_filename,
+            nsa_sa_path,
+            task_data["circle"],
+            task_data["enms"],
+            os.path.join(curr_dir, siteList_file_path),
+            os.path.join(curr_dir, eFile_file_path),
+            curr_dir
+        )
+
+        list_dirr = os.listdir(nsa_op_folder)
+        excel_file = ""
+        script_file = ""
+        for i in list_dirr:
+            if "Script_Status" in i:
+                excel_file = i
+                script_file = i
+
+        shutil.make_archive(nsa_op_folder, 'zip', nsa_op_folder)
+
+        file_con = {
+            "siteList_original_filename": task_data["original_filename"],
+            "siteList_unique_filename": task_data["filename"],
+            "eFile_original_filename": eFile_original_filename,
+            "eFile_unique_filename": os.path.basename(eFile_file_path),
+            "nsa_op_folder": nsa_op_folder.replace(os.getcwd(), "") + ".zip",
+            "taskId": task_data["task_id"]
+        }
+
+        script_entry_migration(None, task_data["task_id"], file_con, os.path.join(nsa_op_folder, excel_file))
+
+        mongo.db.site_id_status.update_one(
+            {"task_id": task_data["task_id"]},
+            {"$set": {
+                "status": "Scripting Completed",
+                "statusCtr": 4,
+                "scripting_ts": datetime.now().timestamp(),
+                "scripting_updated": uid
+            }}
+        )
+
+        db_update_migration(uid, "scripting_completed", 3, os.path.join(nsa_op_folder, script_file), task_data["task_id"])
+    
+    except Exception as e:
+        print("Error in background task:", str(e))
+
+    
     
     
     
@@ -1007,6 +1062,18 @@ def uploadScripting_file():
     # siteList.save(siteList_file_path)
     eFile_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"scripting_enm"), eFile_unique_filename)
     eFile.save(eFile_file_path)
+    
+    
+    
+    
+    threading.Thread(
+        target=process_scripting_task,
+        args=(one_task_data, eFile_original_filename, eFile_file_path, siteList_file_path, curr_dir, uid),
+        daemon=True
+    ).start()
+
+    return jsonify({"message": "File uploaded successfully, processing started in background"}), 201
+
     
     
     nsa_sa_path = os.path.join(os.getcwd(),"app","nsa_sa")
