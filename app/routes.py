@@ -1875,9 +1875,9 @@ def run_gpl_audit_api():
     
     shutil.copy(siteList_file_path, final_file_path)
     
-    for filll in enmFile_list:
+    # for filll in enmFile_list:
         
-        shutil.copy(filll, final_file_path)
+    #     shutil.copy(filll, final_file_path)
         
     
     zip_path = create_zip_from_folder(final_file_path, final_file_path+".zip")
