@@ -2,6 +2,7 @@ import copy
 import os
 import json
 import re
+from datetime import datetime
 import pandas as pd
 from pandas import ExcelWriter
 import numpy as np
@@ -13,6 +14,7 @@ from Site import Site
 
 dump_list = [
     'TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandling,ipv6Address1,ipv6Address2,ipv4Address1,ipv4Address2)',
+    'FieldReplaceableUnit.(administrativeState,operationalState,productData)',
     'SystemFunctions', 'Lm', 'FeatureState.(description,featureState,featureStateId,licenseState,serviceState)',
     'CmFunction.(syncStatus)',
     'ManagedElement',
@@ -49,7 +51,13 @@ dump_list = [
     'GNBCUUPFunction', 'CUUP5qiTable', 'CUUP5qi', 'UeCC', 'DcDlCfg', 'GtpuSupervision', 'GtpuSupervisionProfile',
     'ENodeBFunction', 'UePolicyOptimization', 'EUtranCellFDD', 'EUtranCellTDD', 'UeMeasControl', 'ReportConfigB1NR',
     'GUtranSyncSignalFrequency', 'GUtranFreqRelation', 'GUtranCellRelation',
+    'McpcPCellNrFreqRelProfileUeCfg', 'McpcPSCellNrFreqRelProfileUeCfg'
 ]
+
+
+def highlight_even_row(*, row) -> list:
+    return ['background-color: #D2D3D3; border: 1px solid black;' if _ % 2 == 1 else
+            'border: 1px solid black;' for _ in range(len(row))]
 
 
 class USID:
@@ -60,38 +68,28 @@ class USID:
         self.circle = circle
         self.enm = enm
         self.log_mos = ';'.join([F'{_}.<w>' if '(' not in _ else _ for _ in dump_list])
-
+        # print(self.log_mos)
         # DB Process
         self.db = self.db_data(nsa_sa_path=nsa_sa_path)
         # Site List Data
         self.df_site = self.site_data(site_file=site_file)
-        self.nodes = list(self.df_site.node.unique())
         # Log Data Process
         self.sites = {}
         mos_dict = parse_dynamic_data_to_dict(para_file=para_file)
         for node in list(self.df_site.node.unique()):
             self.sites[node] = Site(node=node, mos=mos_dict.get(node, {}), custom_log=self.custom_log)
         del mos_dict
-        self.nr_node, self.lte_node = [], []
-        for node in self.sites.keys():
-            if len(self.sites[node].du_cell) > 0 or len(self.sites[node].cu_cell) > 0: self.nr_node += [node]
-            if len(self.sites[node].fdd_cell) > 0 or len(self.sites[node].tdd_cell) > 0: self.lte_node += [node]
+
         # Site List Data Process
-        # self.df_site = self.site_data(site_file=site_file)
         self.df_amf = self.get_amf_table()
         self.df_feature = self.get_feature_table()
-        self.df_site = pd.concat([self.df_site, self.process_df_site_with_logs_data()], axis=1)
         self.df_cell = self.get_cell_table()
-
-
-
+        self.df_site = pd.concat([self.df_site, self.process_df_site_with_logs_data()], axis=1)
         self.df_site.reset_index(drop=True, inplace=True)
-        # self.df_site = pd.concat([self.df_site, pd.DataFrame(tmp_list)], axis=1).reset_index(drop=True, inplace=False)
-
         self.df_gpl = pd.DataFrame([], columns=['node', 'mo', 'parameter', 'value', 'gpl_value', 'flag', 'remark'])
         self.gpl_list = []
-        # self.save_different_dataframe()
-
+        self.status_file = os.path.join(self.base_dir, F'Status_{self.circle}_{self.enm}_{datetime.now().strftime("%m%d%Y_%H%M%S")}.xlsx')
+        self.save_different_dataframe(data=None)
 
     def site_data(self, *, site_file: str) -> pd.DataFrame:
         if site_file is None: df = pd.DataFrame([], columns=['circle', 'ENM', 'SiteID', 'Node'])
@@ -154,7 +152,6 @@ class USID:
             db[sheet] = df.copy()
         return db
 
-
     def get_amf_table(self) -> pd.DataFrame:
         col = ['circle', 'enm', 'node', 'termPointToAmfId', 'administrativeState',  'defaultAmf', 'pwsRestartHandling',
                'ipv6Address1', 'ipv6Address2', 'ipv4Address1', 'ipv4Address2']
@@ -197,16 +194,17 @@ class USID:
     def get_cell_table(self) -> pd.DataFrame:
         tmp_list = []
         for node in self.sites.keys():
+            siteid = self.df_site.loc[(self.df_site['node'] == node), 'siteid'].iloc[0]
             site = self.sites[node]
             tmp_cu_cell_list = []
             for r in sorted([_ for _ in site.fdns if re.match(".*GNBDUFunction=[^,]*,NRCellDU=([^,]*)$", _)]):
                 tmp_dict = {
-                    'circle': self.circle, 'enm': self.enm, 'type': 'NR', 'node': node,
+                    'circle': self.circle, 'enm': self.enm, 'siteid': siteid, 'node': node, 'type': 'NR',
                     'gnbid_enbid': site.get_fdn_parameter(fdn=','.join(r.split(',')[:-1]), para='gNBId'),
                     'cellid': site.get_fdn_parameter(fdn=r, para='cellLocalId'),
                     'tac': site.get_fdn_parameter(fdn=r, para='nRTAC'),
                     'cell': r.split('=')[-1],
-                    'CU': None,  'sib2': None, 'sib4': None, 'sib5': None, 'nr_intra_rel': None, 'nr_inter_rel': None,
+                    'cu': None,  'sib2': None, 'sib4': None, 'sib5': None, 'nr_intra_rel': None, 'nr_inter_rel': None,
                     'ssbFrequency': site.get_fdn_parameter(fdn=r, para='ssbFrequency'),
                     'ssbSubCarrierSpacing': site.get_fdn_parameter(fdn=r, para='ssbSubCarrierSpacing'),
                     'ssbPeriodicity': site.get_fdn_parameter(fdn=r, para='ssbPeriodicity'),
@@ -221,7 +219,7 @@ class USID:
                         intra_rel = [_ for _ in relations if site.get_fdn_parameter(fdn=s, para='nRFrequencyRef') == freq]
                         inter_rel = [_ for _ in relations if site.get_fdn_parameter(fdn=s, para='nRFrequencyRef') != freq]
                         tmp_dict |= {
-                            'CU': s.split('=')[-1],
+                            'cu': s.split('=')[-1],
                             'sib2': len(intra_rel) > 0,
                             'sib4': len(inter_rel) > 0,
                             'sib5': len([_ for _ in site.fdns if re.match(F'{s},EUtranFreqRelation=([^,]*)$', _)]) > 0,
@@ -232,15 +230,15 @@ class USID:
                             'transmitSib5': site.get_fdn_parameter(fdn=s, para='transmitSib5'),
                         }
                 tmp_list.append(copy.deepcopy(tmp_dict))
-            for s in sorted([_ for _ in site.fdns if re.match(".*GNBDUFunction=[^,]*,NRCellCU=([^,]*)$", _)]):
+            for s in sorted([_ for _ in site.fdns if re.match(".*GNBCUCPFunction=[^,]*,NRCellCU=([^,]*)$", _)]):
                 if s.split('=')[-1] not in tmp_cu_cell_list:
                     freq = site.get_fdn_parameter(fdn=s, para='nRFrequencyRef')
                     relations = [_ for _ in site.fdns if re.match(F'{s},NRFreqRelation=([^,]*)$', _)]
                     intra_rel = [_ for _ in relations if site.get_fdn_parameter(fdn=s, para='nRFrequencyRef') == freq]
                     inter_rel = [_ for _ in relations if site.get_fdn_parameter(fdn=s, para='nRFrequencyRef') != freq]
                     tmp_dict = {
-                        'circle': self.circle, 'enm': self.enm, 'type': 'NR', 'node': node,
-                        'cell': None, 'CU': s.split('=')[-1], 'nr_intra_rel': None, 'nr_inter_rel': None,
+                        'circle': self.circle, 'enm': self.enm, 'siteid': siteid, 'node': node, 'type': 'NR',
+                        'cell': None, 'cu': s.split('=')[-1], 'nr_intra_rel': None, 'nr_inter_rel': None,
                         'cellid': site.get_fdn_parameter(fdn=s, para='cellLocalId'),
                         'intra_rel': intra_rel,
                         'inter_rel': inter_rel,
@@ -249,25 +247,15 @@ class USID:
                         'transmitSib5': site.get_fdn_parameter(fdn=s, para='transmitSib5'),
                     }
                     tmp_list.append(copy.deepcopy(tmp_dict))
-            #         ENodeBFunction=1,EUtranCellFDD=
-            for r in sorted([_ for _ in site.fdns if re.match(".*ENodeBFunction=[^,]*,EUtranCellFDD=([^,]*)$", _)]):
+            for r in sorted([_ for _ in site.fdns if re.match(".*ENodeBFunction=[^,]*,EUtranCell.DD=([^,]*)$", _)]):
+                cell_type = r.split(',')[-1].split('=')[0][-3:]
                 tmp_dict = {
-                    'circle': self.circle, 'enm': self.enm, 'type': 'FDD', 'node': node,
+                    'circle': self.circle, 'enm': self.enm, 'siteid': siteid, 'node': node, 'type': cell_type,
                     'gnbid_enbid': site.get_fdn_parameter(fdn=','.join(r.split(',')[:-1]), para='eNBId'),
                     'cellid': site.get_fdn_parameter(fdn=r, para='cellId'),
                     'cell': r.split('=')[-1],
-                    'earfcn': site.get_fdn_parameter(fdn=r, para='earfcndl'),
+                    'earfcn': site.get_fdn_parameter(fdn=r, para='earfcndl' if cell_type == 'FDD' else 'earfcn'),
                     'tac': site.get_fdn_parameter(fdn=r, para='tac'),
-                }
-                tmp_list.append(copy.deepcopy(tmp_dict))
-            for r in sorted([_ for _ in site.fdns if re.match(".*ENodeBFunction=[^,]*,EUtranCellTDD=([^,]*)$", _)]):
-                tmp_dict = {
-                    'circle': self.circle, 'enm': self.enm, 'type': 'FDD', 'node': node,
-                    'gnbid_enbid': site.get_fdn_parameter(fdn=','.join(r.split(',')[:-1]), para='eNBId'),
-                    'cellid': site.get_fdn_parameter(fdn=r, para='cellId'),
-                    'cell': r.split('=')[-1],
-                    'tac': site.get_fdn_parameter(fdn=r, para='tac'),
-                    'earfcn': site.get_fdn_parameter(fdn=r, para='earfcn'),
                 }
                 tmp_list.append(copy.deepcopy(tmp_dict))
         df_cell = pd.DataFrame(tmp_list)
@@ -275,29 +263,34 @@ class USID:
 
     def process_df_site_with_logs_data(self) -> pd.DataFrame:
         tmp_list = []
+        site_with_cell_config_issue_sites = self.df_cell.loc[((self.df_cell.type.isin(['NR'])) &
+                                                              ((self.df_cell.cell.isna()) | (self.df_cell.cu.isna())))].siteid.unique()
         for r in self.df_site.itertuples():
+            siteid = r.__getattribute__('siteid')
             node = r.__getattribute__('node')
             site = self.sites[node]
             tmp_dict = {}
-            if not hasattr(site, 'fdns') or len(site.fdns) < 1: tmp_dict |= {'log': False}
+            if not hasattr(site, 'fdns') or len(site.fdns) < 1: tmp_dict |= {'status': False, 'remark': 'No Site Found in log File',
+                                                                             'log': False}
             else:
                 tmp_dict |= {
+                    'status': False if siteid in site_with_cell_config_issue_sites else True,
+                    'remark': 'Config Issue' if siteid in site_with_cell_config_issue_sites else None,
                     'log': True if len(site.fdns) > 0 else False,
-                    'syncstatus': site.get_fdn_parameter(fdn=F'NetworkElement={node},CmFunction=1', para='syncStatus'),
-                    'status': True,
-                    'nr': True if node in self.nr_node else False,
+                    'nr': len(self.df_cell.loc[((self.df_cell['node'] == node) & (self.df_cell.type.isin(['NR'])))].index) > 0,
+                    'lte': len(self.df_cell.loc[((self.df_cell['node'] == node) & (self.df_cell.type.isin(['FDD', 'TDD'])))].index) > 0,
                     'amf': len(self.df_amf.loc[(self.df_amf.node == node)].index),
+                    'syncstatus': site.get_fdn_parameter(fdn=F'NetworkElement={node},CmFunction=1', para='syncStatus'),
                     'gNBId': None,
                     'gNBIdLength': None,
-                    'lte': True if node in self.lte_node else False,
                     'eNBId': site.get_fdn_parameter(fdn='ENodeBFunction=1', para='eNBId'),
                     'xn_status': site.type_int,
                     'xn_localipzddress': site.xn_ip,
                     'xn_sctpendpoint': site.xn_sctp,
-                    'nr_du_Cells': site.du_cell,
-                    'nr_cu_Cells': site.cu_cell,
-                    'fdd_Cells': site.fdd_cell,
-                    'tdd_Cells': site.tdd_cell,
+                    'nr_du_Cells': site.get_du_cell(),
+                    'nr_cu_Cells': site.get_cu_cell(),
+                    'fdd_Cells': site.get_fdd_cell(),
+                    'tdd_Cells': site.get_tdd_cell(),
                     'DU_gNBId': site.get_fdn_parameter(fdn='GNBDUFunction=1', para='gNBId'),
                     'CUCP_gNBId': site.get_fdn_parameter(fdn='GNBCUCPFunction=1', para='gNBId'),
                     'CUUP_gNBId': site.get_fdn_parameter(fdn='GNBCUUPFunction=1', para='gNBId'),
@@ -312,14 +305,24 @@ class USID:
                 if (tmp_dict['DU_gNBIdLength'] == tmp_dict['CUCP_gNBIdLength'] == tmp_dict['CUUP_gNBIdLength']):
                     tmp_dict['gNBIdLength'] = tmp_dict['DU_gNBIdLength']
                     del tmp_dict['DU_gNBIdLength'], tmp_dict['CUCP_gNBIdLength'], tmp_dict['CUUP_gNBIdLength']
+                tmp_dict['status'] = tmp_dict['status'] and tmp_dict['log'] and (tmp_dict['nr'] or tmp_dict['lte'])
             tmp_list.append(tmp_dict)
 
         new_df = pd.DataFrame(tmp_list)
         return new_df
 
-    def save_different_dataframe(self, *, current_time: str) -> None:
-        data = {'Site': self.df_site, 'Cell': self.df_cell, 'AMF': self.df_amf, 'Feature': self.df_feature, 'GPL': self.df_gpl}
-        with ExcelWriter(os.path.join(self.base_dir, F'Script_Status_{current_time}.xlsx')) as writer:
-            for key in data:
-                df = data.get(key).copy()
-                df.reset_index().to_excel(writer, key, index=False)
+    def save_different_dataframe(self, *, data: dict = None) -> None:
+        if data is None:
+            data = {'Site': self.df_site, 'Cell': self.df_cell, 'AMF': self.df_amf, 'Feature': self.df_feature}
+        os.makedirs(os.path.dirname(self.status_file), exist_ok=True)
+        if os.path.exists(self.status_file):
+            audit_file = pd.ExcelWriter(self.status_file, engine='openpyxl', mode='a')
+        else:
+            audit_file = pd.ExcelWriter(self.status_file, engine='openpyxl', mode='w')
+        for sheet_name in data.keys():
+            df = data.get(sheet_name).copy()
+            df_style = df.style.apply(lambda x: highlight_even_row(row=x))
+            df_style.to_excel(excel_writer=audit_file, sheet_name=sheet_name, index=False)
+            audit_file.sheets[sheet_name].auto_filter.ref = audit_file.sheets[sheet_name].calculate_dimension()
+            audit_file.sheets[sheet_name].auto_filter.enable = True
+        audit_file.close()

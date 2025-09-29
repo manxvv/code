@@ -28,6 +28,7 @@ class Script:
         self.validate_existing_mo_parameter = True
         self.site = self.usid.sites[self.node]
         self.me = self.site.me
+        self.site_dict = self.usid.df_site.loc[(self.usid.df_site.node == self.node)].squeeze().to_dict()
         self.relative_path = {}
         self.set_node_site_and_para_for_dcgk(node)
         self.remark = '_'.join(self.__class__.__name__.split('_')[1:])
@@ -53,6 +54,7 @@ class Script:
         self.mo_dict = {}
         self.site = self.usid.sites[self.node]
         self.me = self.site.me
+        self.site_dict = self.usid.df_site.loc[(self.usid.df_site.node == self.node)].squeeze().to_dict()
         self.s_dict = {'cli': [], 'cmedit': []}
         sc_name = '_'.join([self.node, self.usid.circle, *self.__class__.__name__.split('_')[1:], '.txt'])
         self.relative_path = {
@@ -99,78 +101,6 @@ class Script:
 
     @staticmethod
     def non_null_flag(*, val: object) -> bool: return str(val) not in ['None', 'null', 'empty', '', '""', '[]', '{}']
-
-    def netconf_value_update(self, val):
-        """ :rtype: str """
-        if self.null_flag(val=val):
-            return ''
-        else:
-            val = str(val).strip('"')
-        if ',' in val and '=' in val:
-            if 'ManagedElement=' in val:
-                val = re.match('.*ManagedElement=[^,]*,(.*)', val).group(1)
-            val = F'ManagedElement={self.node},{val}'
-        elif re.match('.*\s\((.*)\)$', val):
-            val = re.match('.*\s\((.*)\)$', val).group(1)
-        return val
-
-    def netconf_para_element(self, para, val):
-        """ :rtype: object """
-        val = self.netconf_value_update(val)
-        if para in [None, 'None', 'null', 'empty', '', '""', [], {}] or val in [None, 'None', 'null', 'empty', '', '""', [], {}]: return None
-        doc = Document()
-        ele = doc.createElement(para)
-        if val == 'XMLemptyELEMENT': return ele
-        ele.appendChild(doc.createTextNode(val))
-        return ele
-
-    def netconf_mo_form_dict(self, adddict, moname='ManagedElement'):
-        """ :rtype: Document """
-        doc = Document()
-        xml_mo = doc.createElement(moname)
-        mo_attribute = self.mo_attr.get(moname)
-        moname_id = self.get_moc_id(moname)
-        del_flag = False
-        if mo_attribute: xml_mo.setAttribute('xmlns', F'urn:com:ericsson:ecim:{mo_attribute}')
-        if 'attributes' in adddict.keys():
-            for attr in adddict['attributes'].keys():
-                if adddict['attributes'][attr] in ['create', 'update']: continue
-                xml_mo.setAttribute(attr, str(adddict['attributes'][attr]))
-                if adddict['attributes'][attr] == 'delete':
-                    del_flag = True
-                    moname_id = self.get_moc_id(moname)
-        for para in adddict.keys():
-            if adddict[para] in [None, 'None', 'null', 'empty', '""', [], {}] or para == 'attributes':
-                continue
-            elif del_flag is True and moname_id != para:
-                continue
-            elif type(adddict[para]) == dict:
-                xml_mo.appendChild(self.netconf_mo_form_dict(adddict[para], para))
-            elif type(adddict[para]) == list:
-                for val in adddict[para]:
-                    if type(val) == dict:
-                        xml_mo.appendChild(self.netconf_mo_form_dict(val, para))
-                    else:
-                        element = self.netconf_para_element(para, val)
-                        if element is not None: xml_mo.appendChild(element)
-            elif type(adddict[para]) in [int, str]:
-                element = self.netconf_para_element(para, adddict[para])
-                if element is not None: xml_mo.appendChild(element)
-        return xml_mo
-
-    def netconf_doc_form_dict(self, mo=None, mo_fdn='1', moc='ManagedElement'):
-        """ :rtype: list """
-        if mo in [None, 'None', '', [], {}]: return []
-        doc = Document()
-        doc.appendChild(self.netconf_mo_form_dict(
-            {'attributes': {'message-id': str(mo_fdn), 'xmlns': 'urn:ietf:params:xml:ns:netconf:base:1.0'},
-             'edit-config': {'target': {'running': 'XMLemptyELEMENT'},
-                             'config': {'attributes': {'xmlns:xc': 'urn:ietf:params:xml:ns:netconf:base:1.0'}}}
-             }, 'rpc'))
-        doc.getElementsByTagName('config')[0].appendChild(self.netconf_mo_form_dict(mo, moc))
-        # for para in ['loopback', 'cleartext']:
-        #     for _ in doc.getElementsByTagName(para): _.firstChild.nodeValue = ''
-        return [doc]
 
     def cmedit_cli_norm_value(self, val):
         """
@@ -278,26 +208,7 @@ class Script:
     @staticmethod
     def get_moc_id(moc: str) -> str: return moc[0].lower() + moc[1:] + 'Id'
 
-
-
-
-    def netconf_hello_msg(self):
-        """ :rtype: list """
-        doc = Document()
-        doc.appendChild(self.netconf_mo_form_dict(
-            {'attributes': {'xmlns': 'urn:ietf:params:xml:ns:netconf:base:1.0'},
-             'capabilities': {'capability': ['urn:ietf:params:netconf:base:1.0',
-                                             'urn:com:ericsson:ebase:0.1.0', 'urn:com:ericsson:ebase:1.1.0']}}, 'hello')
-        )
-        lines = [doc.toprettyxml(encoding='UTF-8', indent='  ').decode('utf-8').strip()] + [']]>]]>']
-        return lines
-
-    def netconf_close_msg(self):
-        """ :rtype: list """
-        doc = Document()
-        doc.appendChild(self.netconf_mo_form_dict({'attributes': {
-            'message-id': 'Closing', 'xmlns': 'urn:ietf:params:xml:ns:netconf:base:1.0'}, 'close-session': 'XMLemptyELEMENT'}, 'rpc'))
-        # for _ in doc.getElementsByTagName('close-session'): _.firstChild.nodeValue = ''
-        lines = [doc.toprettyxml(encoding='UTF-8', indent='  ').decode('utf-8').replace('<?xml version="1.0" encoding="UTF-8"?>', '').strip()] + \
-                [']]>]]>', '']
-        return lines
+    def check_if_node_is_nr_node_and_ready_for_scripting(self) -> bool:
+        """ :rtype: bool """
+        flag = False
+        return flag

@@ -30,7 +30,7 @@ def audit_report_complete_site(*, df: pd.DataFrame, node: str, base_dir) -> None
         audit_file.sheets[node].auto_filter.ref = audit_file.sheets[node].calculate_dimension()
         audit_file.sheets[node].auto_filter.enable = True
     audit_file.close()
-    print(F'{node} {len(df.index)}')
+
 
 class AuditReport:
     def __init__(self, *, a_usid: AuditUSID):

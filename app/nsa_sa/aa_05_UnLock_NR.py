@@ -5,7 +5,7 @@ from Script import Script
 
 class aa_05_UnLock_NR(Script):
     def create_rpc_msg(self):
-        if self.node not in self.usid.nr_node: return
+        if not self.site_dict['nr']: return
         self.validate_existing_mo_parameter = False
         self.mo_dict['DU'] = {'managedElementId': self.node, 'GNBDUFunction': {'gNBDUFunctionId': '1', 'NRCellDU': [], 'NRSectorCarrier': []}}
         for aa in ['NRCellDU', 'NRSectorCarrier']:

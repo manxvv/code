@@ -4,7 +4,7 @@ from Script import Script
 
 class aa_01_5qiTable_BWP(Script):
     def create_rpc_msg(self):
-        if self.node not in self.usid.nr_node: return
+        if not self.site_dict['nr']: return
         # 5qi Tables ---
         self.mo_dict['5qi'] = {
             'managedElementId': self.node,
@@ -98,7 +98,7 @@ class aa_01_5qiTable_BWP(Script):
         }
         # Need to move to Next Sctipt
         # NRCellDU
-        for cell in self.site.du_cell:
+        for cell in self.site.get_du_cell():
             self.mo_dict['GNBDUFunction_BWP']['GNBDUFunction']['NRCellDU'].append({
                 'attributes': {'xc:operation': 'update'}, 'nRCellDUId': cell,
                 'sNSSAIList': [{'sd': '1', 'sst': '1'}],

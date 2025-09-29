@@ -19,15 +19,16 @@ class Site:
         self.fdns = sorted(list(self.mos.keys()))
         self.bbu = self.get_bbu_id()
 
-        self.du_cell = sorted([re.match(".*,NRCellDU=([^,]*)$", _).group(1)
-                               for _ in self.fdns if re.match(".*,NRCellDU=([^,]*)$", _)])
-        self.cu_cell = sorted([re.match(".*,NRCellCU=([^,]*)$", _).group(1)
-                               for _ in self.fdns if re.match(".*,NRCellCU=([^,]*)$", _)])
-        self.fdd_cell = sorted([re.match(".*,EUtranCellFDD=([^,]*)$", _).group(1)
-                                for _ in self.fdns if re.match(".*,EUtranCellFDD=([^,]*)$", _)])
-        self.tdd_cell = sorted([re.match(".*,EUtranCellTDD=([^,]*)$", _).group(1)
-                                for _ in self.fdns if re.match(".*,EUtranCellTDD=([^,]*)$", _)])
+        # self.du_cell = sorted([re.match(".*,NRCellDU=([^,]*)$", _).group(1)
+        #                        for _ in self.fdns if re.match(".*,NRCellDU=([^,]*)$", _)])
+        # self.cu_cell = sorted([re.match(".*,NRCellCU=([^,]*)$", _).group(1)
+        #                        for _ in self.fdns if re.match(".*,NRCellCU=([^,]*)$", _)])
+        # self.get_fdd_cell() = sorted([re.match(".*,EUtranCellFDD=([^,]*)$", _).group(1)
+        #                         for _ in self.fdns if re.match(".*,EUtranCellFDD=([^,]*)$", _)])
+        # self.tdd_cell = sorted([re.match(".*,EUtranCellTDD=([^,]*)$", _).group(1)
+        #                         for _ in self.fdns if re.match(".*,EUtranCellTDD=([^,]*)$", _)])
         self.tn_dict, self.xn_ip, self.xn_sctp, self.type_int = self.get_sctp_local_sctp_dicts()
+
 
     def fdn_exists(self, *, fdn: str) -> bool: return fdn in self.fdns
 
@@ -100,10 +101,23 @@ class Site:
         return tn_dict, xn_ip, xn_sctp, type_int
 
     def get_bbu_id(self) -> str:
-        for fdn in [_ for _ in self.fdns if re.match('Equipment=1,FieldReplaceableUnit=([^,]*)$', _)]:
+        for fdn in [_ for _ in self.fdns if re.match('.*Equipment=1,FieldReplaceableUnit=([^,]*)$', _)]:
             product = None
             if 'productData' in self.mos[fdn].keys() and self.mos[fdn].get('productData') is not None:
                 product = self.mos[fdn].get('productData').get('productName')
             if product and len([_ for _ in ['Baseband ', 'RAN Processor '] if _ in product]) > 0:
                 return re.match('Equipment=1,FieldReplaceableUnit=([^,]*)$', fdn).group(1)
         return 'NA'
+
+    def get_du_cell(self):
+        return sorted([re.match(".*,NRCellDU=([^,]*)$", _).group(1)
+                       for _ in self.fdns if re.match(".*,NRCellDU=([^,]*)$", _)])
+    def get_cu_cell(self):
+        return sorted([re.match(".*,NRCellCU=([^,]*)$", _).group(1)
+                       for _ in self.fdns if re.match(".*,NRCellCU=([^,]*)$", _)])
+    def get_fdd_cell(self):
+        return sorted([re.match(".*,EUtranCellFDD=([^,]*)$", _).group(1)
+                       for _ in self.fdns if re.match(".*,EUtranCellFDD=([^,]*)$", _)])
+    def get_tdd_cell(self):
+        return sorted([re.match(".*,EUtranCellTDD=([^,]*)$", _).group(1)
+                       for _ in self.fdns if re.match(".*,EUtranCellTDD=([^,]*)$", _)])

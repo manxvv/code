@@ -6,10 +6,11 @@ import re
 
 class aa_04_Parameter(Script):
     def create_rpc_msg(self):
-        if self.node in self.usid.nr_node: self.nr_parameter_update()
-        if self.node in self.usid.lte_node: self.lte_parameter_update()
+        self.nr_parameter_update()
+        self.lte_parameter_update()
 
     def nr_parameter_update(self):
+        if not self.site_dict['nr']: return
         df_tmp = self.usid.db['MOC'].copy(deep=True)
         df_tmp = df_tmp.loc[(~df_tmp.mo.str.contains('ENodeBFunction=1'))]
 
@@ -38,37 +39,36 @@ class aa_04_Parameter(Script):
         tmp_dict = {}
         for r in df_tmp.loc[(df_tmp.mo.isin(['NRCellDU']))].itertuples():
             tmp_dict[r.__getattribute__('parameter')] = r.__getattribute__('value')
-        for cell in self.site.du_cell:
+        for cell in self.site.get_du_cell():
             mo = F'GNBDUFunction=1,NRCellDU={cell}'
             for r in tmp_dict.keys():
                 self.mo_dict[F'{mo}{r}'] = {'managedElementId': self.node, 'GNBDUFunction': {
                     'gNBDUFunctionId': '1', 'NRCellDU': {
                         'nRCellDUId': cell, 'attributes': {'xc:operation': 'update'}, r: tmp_dict[r]}
                 }}
-
         # NRCellCU
         tmp_dict = {}
         for r in df_tmp.loc[(df_tmp.mo.isin(['NRCellCU']))].itertuples():
             if r.__getattribute__('parameter') in ['transmitSib2', 'transmitSib4', 'transmitSib5']: continue
             tmp_dict[r.__getattribute__('parameter')] = r.__getattribute__('value')
-        for cell in self.site.cu_cell:
+        for cell in self.site.get_cu_cell():
             mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
             for r in tmp_dict.keys():
                 self.mo_dict[F'{mo}{r}'] = {'managedElementId': self.node, 'GNBCUCPFunction': {
                     'gNBCUCPFunctionId': '1', 'NRCellCU': {'nRCellCUId': cell, 'attributes': {'xc:operation': 'update'}, r: tmp_dict[r]}}}
-            if self.usid.df_cell.loc[(self.usid.df_cell.CU == cell), 'sib2'].iloc[0]:
+            if self.usid.df_cell.loc[(self.usid.df_cell.cu == cell), 'sib2'].iloc[0]:
                 self.mo_dict[F'{mo}--transmitSib2'] = {'managedElementId': self.node, 'GNBCUCPFunction': {
                     'gNBCUCPFunctionId': '1', 'NRCellCU': {'nRCellCUId': cell, 'attributes': {'xc:operation': 'update'}, 'transmitSib2': 'true'}}}
-            if self.usid.df_cell.loc[(self.usid.df_cell.CU == cell), 'sib4'].iloc[0]:
+            if self.usid.df_cell.loc[(self.usid.df_cell.cu == cell), 'sib4'].iloc[0]:
                 self.mo_dict[F'{mo}--transmitSib4'] = {'managedElementId': self.node, 'GNBCUCPFunction': {
                     'gNBCUCPFunctionId': '1', 'NRCellCU': {'nRCellCUId': cell, 'attributes': {'xc:operation': 'update'}, 'transmitSib4': 'true'}}}
-            if (self.usid.df_cell.loc[(self.usid.df_cell.CU == cell), 'sib5'].iloc[0] or
+            if (self.usid.df_cell.loc[(self.usid.df_cell.cu == cell), 'sib5'].iloc[0] or
                     len(self.usid.db['EUtranFreqRelation'].index) > 0):
                 self.mo_dict[F'{mo}--transmitSib5'] = {'managedElementId': self.node, 'GNBCUCPFunction': {
                     'gNBCUCPFunctionId': '1', 'NRCellCU': {'nRCellCUId': cell, 'attributes': {'xc:operation': 'update'}, 'transmitSib5': 'true'}}}
 
         # NRCellCU,NRFreqRelation,ueMCNrFreqRelProfileRef,mcpcPCellNrFreqRelProfileRef
-        for cell in self.site.cu_cell:
+        for cell in self.site.get_cu_cell():
             mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
             tmp_list = []
             for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},NRFreqRelation=([^,]*)$", _)]):
@@ -82,7 +82,7 @@ class aa_04_Parameter(Script):
                     'gNBCUCPFunctionId': '1', 'NRCellCU': {'nRCellCUId': cell, 'NRFreqRelation': copy.deepcopy(tmp_list)}}}
 
         # NRCellCU,NRCellRelation,isHoAllowed
-        for cell in self.site.cu_cell:
+        for cell in self.site.get_cu_cell():
             mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
             tmp_list = []
             for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},NRCellRelation=([^,]*)$", _)]):
@@ -93,7 +93,7 @@ class aa_04_Parameter(Script):
             }}
 
         # NRCellCU,EUtranFreqRelation,anrMeasOn
-        for cell in self.site.cu_cell:
+        for cell in self.site.get_cu_cell():
             mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
             tmp_list = []
             for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},EUtranFreqRelation=([^,]*)$", _)]):
@@ -104,7 +104,7 @@ class aa_04_Parameter(Script):
             }}
 
         # NRCellCU,EUtranCellRelation,isHoAllowed
-        for cell in self.site.cu_cell:
+        for cell in self.site.get_cu_cell():
             mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
             tmp_list = []
             for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},EUtranCellRelation=([^,]*)$", _)]):
@@ -115,7 +115,7 @@ class aa_04_Parameter(Script):
             }}
 
     def lte_parameter_update(self):
-        if self.node not in self.usid.lte_node: return
+        if not self.site_dict['lte']: return
         self.mo_dict['lte'] = {
             'managedElementId': self.node,
             'SystemFunctions': {'systemFunctionsId': '1', 'Lm': {'lmId': '1', 'FeatureState': []}},
@@ -135,7 +135,7 @@ class aa_04_Parameter(Script):
             self.mo_dict['lte']['SystemFunctions']['Lm']['FeatureState'].append({'attributes': {'xc:operation': 'update'},
                                                                                  'featureStateId': r, 'featureState': 'DEACTIVATED'})
         # EUtranCellFDD
-        for cell in self.site.fdd_cell:
+        for cell in self.site.get_fdd_cell():
             mo = F'ENodeBFunction=1,EUtranCellFDD={cell}'
             tmp_dict = {
                 'attributes': {'xc:operation': 'update'}, 'eUtranCellFDDId': cell,
@@ -167,7 +167,7 @@ class aa_04_Parameter(Script):
             self.mo_dict['lte']['ENodeBFunction']['EUtranCellFDD'].append(copy.deepcopy(tmp_dict))
 
         # EUtranCellTDD
-        for cell in self.site.tdd_cell:
+        for cell in self.site.get_tdd_cell():
             mo = F'ENodeBFunction=1,EUtranCellTDD={cell}'
             tmp_dict = {
                 'attributes': {'xc:operation': 'update'}, 'eUtranCellTDDId': cell,

@@ -5,7 +5,7 @@ from Script import Script
 
 class aa_02_MOs_Create(Script):
     def create_rpc_msg(self):
-        if self.node not in self.usid.nr_node: return
+        if not self.site_dict['nr']: return
 
         # EUtranFreqRelation
         trStSa = list(set(['Default'] + [
@@ -152,13 +152,13 @@ class aa_02_MOs_Create(Script):
             if not self.site.fdn_exists(fdn=F'GNBCUCPFunction=1,EUtraNetwork=1,EUtranFrequency={r}'):
                 self.mo_dict['mos_mos']['GNBCUCPFunction']['EUtraNetwork']['EUtranFrequency'].append({
                     'attributes': {'xc:operation': 'create'}, 'arfcnValueEUtranDl': r, 'eUtranFrequencyId': r})
-
+        print(self.mo_dict['mos_mos']['GNBCUCPFunction']['EUtraNetwork'])
         tmp_mo_list = []
         for r in self.usid.db['EUtranFreqRelation'].itertuples():
             tmp_dict = {_: r.__getattribute__(_) for _ in tmp_list}
             tmp_dict |= {'attributes': {'xc:operation': 'create'}}
             tmp_mo_list.append(copy.deepcopy(tmp_dict))
-        for r in self.site.cu_cell:
+        for r in self.site.get_cu_cell():
             self.mo_dict['mos_mos']['GNBCUCPFunction']['NRCellCU'].append({
                 'attributes': {'xc:operation': 'update'}, 'nRCellCUId': r, 'EUtranFreqRelation': copy.deepcopy(tmp_mo_list)
             })
