@@ -927,7 +927,7 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
     
     
     
-def script_entry_migration(request,taskId,file_con,file_path):
+def script_entry_migration(request_user,taskId,file_con,file_path,inserted_id):
     
     
     df = pd.read_excel(file_path,sheet_name=None)
@@ -946,14 +946,15 @@ def script_entry_migration(request,taskId,file_con,file_path):
         "site_id":"/".join(SiteID_list),
         "nodes":"/".join(Node_list),
         "ts":datetime.now().timestamp(),
-        "updated":request.user.get("sub") 
+        "updated":request_user 
     }
     
     
     final_data = {**file_con,**datafind}
     
-    mongo.db.scripting.insert_one(
-        final_data
+    mongo.db.scripting.update_one(
+        {"_id": inserted_id},  # filter by the inserted document's ID
+        {"$set": {"status": "Completed",**final_data}}
     )
     
     mongo.db.migration.update_one(
@@ -963,10 +964,18 @@ def script_entry_migration(request,taskId,file_con,file_path):
     
     
 
-def process_scripting_task(task_data, eFile_original_filename, eFile_file_path, siteList_file_path, curr_dir, uid):
+def process_scripting_task(request_user,task_data, eFile_original_filename, eFile_file_path, siteList_file_path, curr_dir, uid,inserted_id):
     try:
         nsa_sa_path = os.path.join(os.getcwd(), "app", "nsa_sa")
         sys.path.append(nsa_sa_path)
+        
+        
+        mongo.db.scripting.update_one(
+            {"_id": inserted_id},
+            {"$set": {"status": "Processing", "ts": datetime.now().timestamp()}}
+        )
+        
+        print(inserted_id,"inserted_idinserted_idinserted_idinserted_id973")
 
         nsa_op_folder = scripting_nsa_sa(
             task_data["original_filename"],
@@ -979,11 +988,19 @@ def process_scripting_task(task_data, eFile_original_filename, eFile_file_path, 
             curr_dir
         )
 
+
+
+
+        mongo.db.scripting.update_one(
+            {"_id": inserted_id},
+            {"$set": {"status": "Processing Completed", "ts": datetime.now().timestamp()}}
+        )
+        
         list_dirr = os.listdir(nsa_op_folder)
         excel_file = ""
         script_file = ""
         for i in list_dirr:
-            if "Script_Status" in i:
+            if "Status_" in i:
                 excel_file = i
                 script_file = i
 
@@ -998,8 +1015,9 @@ def process_scripting_task(task_data, eFile_original_filename, eFile_file_path, 
             "taskId": task_data["task_id"]
         }
 
-        script_entry_migration(None, task_data["task_id"], file_con, os.path.join(nsa_op_folder, excel_file))
+        script_entry_migration(request_user, task_data["task_id"], file_con, os.path.join(nsa_op_folder, excel_file),inserted_id)
 
+        print(inserted_id,"inserted_idinserted_idinserted_idinserted_id973")
         mongo.db.site_id_status.update_one(
             {"task_id": task_data["task_id"]},
             {"$set": {
@@ -1014,6 +1032,15 @@ def process_scripting_task(task_data, eFile_original_filename, eFile_file_path, 
     
     except Exception as e:
         print("Error in background task:", str(e))
+        print(traceback.print_exc())
+        mongo.db.scripting.update_one(
+            {"_id": inserted_id},
+            {"$set": {"status": "Failed", "error": str(e), "ts": datetime.now().timestamp()},
+            "$inc": {"retry_count": 1}}
+        )
+        
+        
+
 
     
     
@@ -1064,11 +1091,20 @@ def uploadScripting_file():
     eFile.save(eFile_file_path)
     
     
+    final_data = {
+        "taskId":taskId,
+        "status":"Pending"
+    }
+    
+    result = mongo.db.scripting.insert_one(final_data)
+    inserted_id = result.inserted_id
+    print("Inserted document ID:", inserted_id)
+    
     
     
     threading.Thread(
         target=process_scripting_task,
-        args=(one_task_data, eFile_original_filename, eFile_file_path, siteList_file_path, curr_dir, uid),
+        args=(request.user.get("sub"),one_task_data, eFile_original_filename, eFile_file_path, siteList_file_path, curr_dir, uid,inserted_id),
         daemon=True
     ).start()
 
