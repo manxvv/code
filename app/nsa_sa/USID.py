@@ -88,7 +88,9 @@ class USID:
         self.df_site.reset_index(drop=True, inplace=True)
         self.df_gpl = pd.DataFrame([], columns=['node', 'mo', 'parameter', 'value', 'gpl_value', 'flag', 'remark'])
         self.gpl_list = []
-        self.status_file = os.path.join(self.base_dir, F'Status_{self.circle}_{self.enm}_{datetime.now().strftime("%m%d%Y_%H%M%S")}.xlsx')
+        date_time = datetime.now().strftime("%m%d%Y_%H%M%S")
+        self.status_file = os.path.join(self.base_dir, F'Status_{self.circle}_{self.enm}_{date_time}.xlsx')
+        self.para_file = os.path.join(self.base_dir, F'Parameter_{self.circle}_{self.enm}_{date_time}.csv')
         self.save_different_dataframe(data=None)
 
     def site_data(self, *, site_file: str) -> pd.DataFrame:
@@ -131,7 +133,7 @@ class USID:
                         'packetDelayBudget', 'packetDelayBudgetOffset', 'profile5qi', 'tOooUlDelivery'], # 'drbRef',
 
 
-            'MOC': ['circle', 'mo', 'parameter', 'value', 'flag'],
+            'MOC': ['circle', 'sw', 'tech', 'mo', 'parameter', 'value', 'flag'],
         }
 
         db = {_: pd.DataFrame([], columns=db_dict[_]) for _ in db_dict.keys()}
@@ -258,7 +260,13 @@ class USID:
                     'tac': site.get_fdn_parameter(fdn=r, para='tac'),
                 }
                 tmp_list.append(copy.deepcopy(tmp_dict))
-        df_cell = pd.DataFrame(tmp_list)
+        if len(tmp_list) > 0:
+            df_cell = pd.DataFrame(tmp_list)
+        else:
+            df_cell = pd.DataFrame(tmp_list, columns=[
+                'circle', 'enm', 'siteid', 'node', 'type', 'gnbid_enbid', 'cellid', 'tac', 'cell', 'cu', 'sib2', 'sib4',
+                'sib5', 'nr_intra_rel', 'nr_inter_rel', 'ssbFrequency', 'ssbSubCarrierSpacing', 'ssbPeriodicity', 'ssbOffset',
+                'ssbDuration', 'intra_rel', 'inter_rel', 'transmitSib2', 'transmitSib4', 'transmitSib5', 'earfcn'])
         return df_cell
 
     def process_df_site_with_logs_data(self) -> pd.DataFrame:
@@ -271,7 +279,7 @@ class USID:
             site = self.sites[node]
             tmp_dict = {}
             if not hasattr(site, 'fdns') or len(site.fdns) < 1: tmp_dict |= {'status': False, 'remark': 'No Site Found in log File',
-                                                                             'log': False}
+                                                                             'log': False, 'nr': False, 'lte': False}
             else:
                 tmp_dict |= {
                     'status': False if siteid in site_with_cell_config_issue_sites else True,
@@ -307,8 +315,16 @@ class USID:
                     del tmp_dict['DU_gNBIdLength'], tmp_dict['CUCP_gNBIdLength'], tmp_dict['CUUP_gNBIdLength']
                 tmp_dict['status'] = tmp_dict['status'] and tmp_dict['log'] and (tmp_dict['nr'] or tmp_dict['lte'])
             tmp_list.append(tmp_dict)
-
-        new_df = pd.DataFrame(tmp_list)
+        if len(tmp_list) > 0:
+            new_df = pd.DataFrame(tmp_list)
+        else:
+            new_df = pd.DataFrame(tmp_list, columns=[
+                'status', 'remark', 'log', 'nr', 'lte', 'amf', 'syncstatus', 'gNBId',
+                'gNBIdLength', 'eNBId', 'xn_status', 'xn_localipzddress',
+                'xn_sctpendpoint', 'nr_du_Cells', 'nr_cu_Cells', 'fdd_Cells',
+                'tdd_Cells', 'bbu'
+            ])
+        print(new_df.columns)
         return new_df
 
     def save_different_dataframe(self, *, data: dict = None) -> None:
@@ -326,3 +342,7 @@ class USID:
             audit_file.sheets[sheet_name].auto_filter.ref = audit_file.sheets[sheet_name].calculate_dimension()
             audit_file.sheets[sheet_name].auto_filter.enable = True
         audit_file.close()
+
+    def save_parameter_data_in_csv_file(self, *, df: pd.DataFrame = None) -> None:
+        if df is None or len(df.index) < 1: return
+        df.to_csv(self.para_file, index=False)

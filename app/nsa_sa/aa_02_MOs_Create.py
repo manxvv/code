@@ -132,6 +132,7 @@ class aa_02_MOs_Create(Script):
         for r in self.usid.db['TermPointToAmf'].itertuples():
             tmp_dict = {_: r.__getattribute__(_) for _ in tmp_list}
             if len(self.usid.df_amf.loc[(
+                    (self.usid.df_amf.node == self.node) &
                     (self.usid.df_amf.ipv6Address1 == tmp_dict['ipv6Address1']) & (self.usid.df_amf.ipv6Address2 == tmp_dict['ipv6Address2']) &
                     (self.usid.df_amf.ipv4Address1 == tmp_dict['ipv4Address1']) &
                     (self.usid.df_amf.ipv4Address2 == tmp_dict['ipv4Address2']))].index) == 0:
@@ -152,7 +153,6 @@ class aa_02_MOs_Create(Script):
             if not self.site.fdn_exists(fdn=F'GNBCUCPFunction=1,EUtraNetwork=1,EUtranFrequency={r}'):
                 self.mo_dict['mos_mos']['GNBCUCPFunction']['EUtraNetwork']['EUtranFrequency'].append({
                     'attributes': {'xc:operation': 'create'}, 'arfcnValueEUtranDl': r, 'eUtranFrequencyId': r})
-        print(self.mo_dict['mos_mos']['GNBCUCPFunction']['EUtraNetwork'])
         tmp_mo_list = []
         for r in self.usid.db['EUtranFreqRelation'].itertuples():
             tmp_dict = {_: r.__getattribute__(_) for _ in tmp_list}
@@ -162,7 +162,6 @@ class aa_02_MOs_Create(Script):
             self.mo_dict['mos_mos']['GNBCUCPFunction']['NRCellCU'].append({
                 'attributes': {'xc:operation': 'update'}, 'nRCellCUId': r, 'EUtranFreqRelation': copy.deepcopy(tmp_mo_list)
             })
-
         # UeGroupSelection
         ue_dict = {
             'UeGroupSelectionProfile': [
@@ -232,13 +231,21 @@ class aa_02_MOs_Create(Script):
         }
         tmp_list = list(ue_dict.keys())
         for r in tmp_list:
-            ue_dict[F'{r}_mos'] = [_ for _ in self.site.fdns if re.match(F'GNBCUCPFunction=[^,]*,UeGroupSelection=[^,]*,{r}=[^,]*$', _)]
+            ue_dict[F'{r}_mos'] = [_ for _ in self.site.fdns if re.match(F'GNBCUCPFunction=1,UeGroupSelection=1,{r}=[^,]*$', _)]
         for r in tmp_list:
             for child_mo in ue_dict[r]:
                 mos_exists = [_ for _ in ue_dict.get(F'{r}_mos') if
                               self.site.get_fdn_parameter(fdn=_, para='selectionCriteria') == child_mo.get('selectionCriteria')]
                 if len(mos_exists) > 0:
-                    ue_dict.update({'attributes': {'xc:operation': 'update'}, F'{r[0].lower()}{r[1:]}Id': mos_exists[0].split('=')[-1]})
+                    child_mo.update({'attributes': {'xc:operation': 'update'}, F'{r[0].lower()}{r[1:]}Id': mos_exists[0].split('=')[-1]})
                     self.mo_dict['mos_mos']['GNBCUCPFunction']['UeGroupSelection'][r].append(copy.deepcopy(child_mo))
                 else:
                     self.mo_dict['mos_mos']['GNBCUCPFunction']['UeGroupSelection'][r].append(copy.deepcopy(child_mo))
+
+        # self.mo_dict['mos_mos'] = self.mo_dict['mos_mos'] = {
+        #     'managedElementId': self.node,
+        #     'Transport': {'transportId': '1', 'SctpEndpoint': {}},
+        #     'GNBCUCPFunction': {
+        #         'gNBCUCPFunctionId': '1',
+        #         'EndpointResource': {'endpointResourceId': '1', 'LocalSctpEndpoint': {}},
+        #         'TermPointToAmf': copy.deepcopy(self.mo_dict['mos_mos']['GNBCUCPFunction']['TermPointToAmf']),}}

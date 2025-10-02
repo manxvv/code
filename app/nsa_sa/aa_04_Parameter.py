@@ -12,9 +12,9 @@ class aa_04_Parameter(Script):
     def nr_parameter_update(self):
         if not self.site_dict['nr']: return
         df_tmp = self.usid.db['MOC'].copy(deep=True)
-        df_tmp = df_tmp.loc[(~df_tmp.mo.str.contains('ENodeBFunction=1'))]
-
-        for r in df_tmp.loc[(~df_tmp.mo.isin(['NRCellDU', 'NRCellCU']))].itertuples():
+        df_tmp = df_tmp.loc[(df_tmp.tech.isin(['NR']))]
+        # Para setting for complete MOs
+        for r in df_tmp.loc[(df_tmp.mo.str.contains('='))].itertuples():
             mo, para, gpl = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')
             self.mo_dict[F'{mo}_{para}-{gpl}'] = {'managedElementId': self.node}
             self.mo_dict[F'{mo}_{para}-{gpl}'].update(self.create_mo_dict_from_mo(mo=mo, para_dict={para: gpl}))
@@ -42,10 +42,16 @@ class aa_04_Parameter(Script):
         for cell in self.site.get_du_cell():
             mo = F'GNBDUFunction=1,NRCellDU={cell}'
             for r in tmp_dict.keys():
-                self.mo_dict[F'{mo}{r}'] = {'managedElementId': self.node, 'GNBDUFunction': {
-                    'gNBDUFunctionId': '1', 'NRCellDU': {
-                        'nRCellDUId': cell, 'attributes': {'xc:operation': 'update'}, r: tmp_dict[r]}
-                }}
+                self.mo_dict[F'{mo}{r}'] = {
+                    'managedElementId': self.node,
+                    'GNBDUFunction': {
+                        'gNBDUFunctionId': '1',
+                        'NRCellDU': {
+                            'attributes': {'xc:operation': 'update'}, 'nRCellDUId': cell,
+                            r: tmp_dict[r]
+                        }
+                    }
+                }
         # NRCellCU
         tmp_dict = {}
         for r in df_tmp.loc[(df_tmp.mo.isin(['NRCellCU']))].itertuples():
@@ -116,88 +122,39 @@ class aa_04_Parameter(Script):
 
     def lte_parameter_update(self):
         if not self.site_dict['lte']: return
-        self.mo_dict['lte'] = {
-            'managedElementId': self.node,
-            'SystemFunctions': {'systemFunctionsId': '1', 'Lm': {'lmId': '1', 'FeatureState': []}},
-            'ENodeBFunction': {
-                'eNodeBFunctionId': '1',
-                'UePolicyOptimization': {'attributes': {'xc:operation': 'update'}, 'uePolicyOptimizationId': '1', 'zzzTemporary1': '3'},
-                'AnrFunction': {'anrFunctionId': '1', 'AnrFunctionNR': {
-                    'attributes': {'xc:operation': 'update'}, 'anrFunctionNRId': '1', 'anrStateNR': 'ACTIVATED', 'gNodebIdLength': '26'}},
-                'EUtranCellFDD': [], 'EUtranCellTDD': [],
-            },
-        }
-        # FeatureState
-        for r in ['CXC4012578', 'CXC4012385', 'CXC4012371', 'CXC4010620', 'CXC4012324', 'CXC4012218']:
-            self.mo_dict['lte']['SystemFunctions']['Lm']['FeatureState'].append({'attributes': {'xc:operation': 'update'},
-                                                                                 'featureStateId': r, 'featureState': 'ACTIVATED'})
-        for r in ['CXC4012580']:
-            self.mo_dict['lte']['SystemFunctions']['Lm']['FeatureState'].append({'attributes': {'xc:operation': 'update'},
-                                                                                 'featureStateId': r, 'featureState': 'DEACTIVATED'})
-        # EUtranCellFDD
-        for cell in self.site.get_fdd_cell():
-            mo = F'ENodeBFunction=1,EUtranCellFDD={cell}'
-            tmp_dict = {
-                'attributes': {'xc:operation': 'update'}, 'eUtranCellFDDId': cell,
-                'sib1AltSchInfo': 'false', 'mappingInfo': {'mappingInfoSIB24': '1 (MAPPED_SI_1)'},
-                'changeNotification': {
-                    'changeNotificationSIB1': 'true', 'changeNotificationSIB13': 'true', 'changeNotificationSIB15': 'true',
-                    'changeNotificationSIB16': 'true', 'changeNotificationSIB2': 'true', 'changeNotificationSIB24': 'true',
-                    'changeNotificationSIB3': 'true', 'changeNotificationSIB4': 'true', 'changeNotificationSIB5': 'true',
-                    'changeNotificationSIB6': 'true', 'changeNotificationSIB7': 'true', 'changeNotificationSIB8': 'true'
-                },
-                'UeMeasControl': {
-                    'ueMeasControlId': '1',
-                    'waitForStartNRMeas': '6000', 'waitForResumeNRMeas': '6000', 'nrB1MobilityTimerLessTtt': '600', 'sMeasure': '0',
-                    'nrB1MeasEnabled': 'true', 'nrB1MeasAtEndcEnabled': 'true',
-                    'ReportConfigB1NR': {'attributes': {'xc:operation': 'update'}, 'reportConfigB1NRId': '1', 'triggerQuantityB1NR': 'SS_RSRP',
-                                         'b1ThresholdRsrp': '-107', 'hysteresisB1': '2', 'timeToTriggerB1': '640'}
-                },
-                'GUtranFreqRelation': [],
-            }
-            tmp_list = []
-            for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},GUtranFreqRelation=([^,]*)$", _)]):
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'anrMeasOn': 'true'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'connectedModeMobilityPrio': '7'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'cellReselectionPriority': '7'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'qRxLevMin': '-110'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'threshXHigh': '4'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'pMaxNR': '33'})
-            if len(tmp_list) > 0: tmp_dict['GUtranFreqRelation'].extend(tmp_list)
-            self.mo_dict['lte']['ENodeBFunction']['EUtranCellFDD'].append(copy.deepcopy(tmp_dict))
+        df_tmp = self.usid.db['MOC'].copy(deep=True)
+        df_tmp = df_tmp.loc[(df_tmp.tech.isin(['LTE']))]
+        # Para setting for complete MOs
+        for r in df_tmp.loc[(df_tmp.mo.str.contains('='))].itertuples():
+            mo, para, gpl = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')
+            self.mo_dict[F'{mo}_{para}-{gpl}'] = {'managedElementId': self.node}
+            self.mo_dict[F'{mo}_{para}-{gpl}'].update(self.create_mo_dict_from_mo(mo=mo, para_dict={para: gpl}))
 
-        # EUtranCellTDD
-        for cell in self.site.get_tdd_cell():
-            mo = F'ENodeBFunction=1,EUtranCellTDD={cell}'
-            tmp_dict = {
-                'attributes': {'xc:operation': 'update'}, 'eUtranCellTDDId': cell,
-                'sib1AltSchInfo': 'false',
-                'mappingInfo': {'mappingInfoSIB24': '1 (MAPPED_SI_1)'},
-                'changeNotification': {
-                    'changeNotificationSIB1': 'true', 'changeNotificationSIB13': 'true', 'changeNotificationSIB15': 'true',
-                    'changeNotificationSIB16': 'true', 'changeNotificationSIB2': 'true', 'changeNotificationSIB24': 'true',
-                    'changeNotificationSIB3': 'true', 'changeNotificationSIB4': 'true', 'changeNotificationSIB5': 'true',
-                    'changeNotificationSIB6': 'true', 'changeNotificationSIB7': 'true', 'changeNotificationSIB8': 'true'
-                },
-                'UeMeasControl': {
-                    'ueMeasControlId': '1',
-                    'waitForStartNRMeas': '6000', 'waitForResumeNRMeas': '6000', 'nrB1MobilityTimerLessTtt': '600', 'sMeasure': '0',
-                    'nrB1MeasEnabled': 'true', 'nrB1MeasAtEndcEnabled': 'true',
-                    'ReportConfigB1NR': {'attributes': {'xc:operation': 'update'}, 'reportConfigB1NRId': '1', 'triggerQuantityB1NR': 'SS_RSRP',
-                                         'b1ThresholdRsrp': '-107', 'hysteresisB1': '2', 'timeToTriggerB1': '640'}
-                },
-                'GUtranFreqRelation': [],
-            }
-            tmp_list = []
-            for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},GUtranFreqRelation=([^,]*)$", _)]):
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'anrMeasOn': 'true'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'connectedModeMobilityPrio': '7'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'cellReselectionPriority': '7'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'qRxLevMin': '-110'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'threshXHigh': '4'})
-                tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'pMaxNR': '33'})
-            if len(tmp_list) > 0: tmp_dict['GUtranFreqRelation'].extend(tmp_list)
-            self.mo_dict['lte']['ENodeBFunction']['EUtranCellTDD'].append(copy.deepcopy(tmp_dict))
+        # NRCellCU,NRFreqRelation,ueMCNrFreqRelProfileRef,mcpcPCellNrFreqRelProfileRef
+        for moc in ['EUtranCellFDD', 'EUtranCellTDD']:
+            for s in sorted([_ for _ in self.site.fdns if
+                             re.match(F".*ENodeBFunction=1,{moc}=([^,]*)$", _)]):
+                for r in df_tmp.loc[(df_tmp.mo == moc)].itertuples():
+                    mo, para, gpl = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')
+                    self.mo_dict[F'{s}_{para}-{gpl}'] = {'managedElementId': self.node}
+                    self.mo_dict[F'{s}_{para}-{gpl}'].update(self.create_mo_dict_from_mo(mo=s, para_dict={para: gpl}))
+                # moc_child = 'UeMeasControl'
+                mo_child = F'{s},UeMeasControl=1'
+                for r in df_tmp.loc[(df_tmp.mo == 'UeMeasControl')].itertuples():
+                    mo, para, gpl = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')
+                    self.mo_dict[F'{mo_child}_{para}-{gpl}'] = {'managedElementId': self.node}
+                    self.mo_dict[F'{mo_child}_{para}-{gpl}'].update(self.create_mo_dict_from_mo(mo=mo_child, para_dict={para: gpl}))
+                mo_child = F'{s},UeMeasControl=1,ReportConfigB1NR=1'
+                for r in df_tmp.loc[(df_tmp.mo == 'ReportConfigB1NR')].itertuples():
+                    mo, para, gpl = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')
+                    self.mo_dict[F'{mo_child}_{para}-{gpl}'] = {'managedElementId': self.node}
+                    self.mo_dict[F'{mo_child}_{para}-{gpl}'].update(self.create_mo_dict_from_mo(mo=mo_child, para_dict={para: gpl}))
+                for ss in sorted([_ for _ in self.site.fdns if
+                                   re.match(F"{s},GUtranFreqRelation=([^,]*)$", _)]):
+                    for r in df_tmp.loc[(df_tmp.mo == 'GUtranFreqRelation')].itertuples():
+                        mo, para, gpl = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')
+                        self.mo_dict[F'{ss}_{para}-{gpl}'] = {'managedElementId': self.node}
+                        self.mo_dict[F'{ss}_{para}-{gpl}'].update(self.create_mo_dict_from_mo(mo=ss, para_dict={para: gpl}))
 
     @staticmethod
     def create_mo_dict_from_mo(*, mo: str, para_dict: dict) -> dict:
@@ -213,3 +170,170 @@ class aa_04_Parameter(Script):
                     current_level[moc[0]] |= para_dict
             current_level = current_level[moc[0]]
         return mo_dict
+
+        #
+        # for cell in self.site.get_cu_cell():
+        #     mo = F'GNBCUCPFunction=1,NRCellCU={cell}'
+        #     tmp_list = []
+        #     for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},NRFreqRelation=([^,]*)$", _)]):
+        #         tmp_list.append({
+        #             'attributes': {'xc:operation': 'update'}, 'nRFreqRelationId': s.split('=')[-1],
+        #             'ueMCNrFreqRelProfileRef': 'GNBCUCPFunction=1,UeMC=1,UeMCNrFreqRelProfile=Midband',
+        #             'mcpcPCellNrFreqRelProfileRef': 'GNBCUCPFunction=1,Mcpc=1,McpcPCellNrFreqRelProfile=Default',
+        #         })
+        #     if len(tmp_list) > 0:
+        #         self.mo_dict[F'{mo},NRFreqRelation=all_mos-ueMCNrFreqRelProfileRef'] = {'managedElementId': self.node, 'GNBCUCPFunction': {
+        #             'gNBCUCPFunctionId': '1', 'NRCellCU': {'nRCellCUId': cell, 'NRFreqRelation': copy.deepcopy(tmp_list)}}}
+        #
+        #
+        #
+        # self.mo_dict['lte'] = {
+        #     'managedElementId': self.node,
+        #     'SystemFunctions': {'systemFunctionsId': '1', 'Lm': {'lmId': '1', 'FeatureState': []}},
+        #     'ENodeBFunction': {
+        #         'attributes': {'xc:operation': 'update'}, 'eNodeBFunctionId': '1',
+        #         'UePolicyOptimization': {'attributes': {'xc:operation': 'update'}, 'uePolicyOptimizationId': '1', 'zzzTemporary1': '3'},
+        #         'AnrFunction': {
+        #             'anrFunctionId': '1', 'attributes': {'xc:operation': 'update'},
+        #             'AnrFunctionNR': {
+        #                 'attributes': {'xc:operation': 'update'}, 'anrFunctionNRId': '1',
+        #                 'anrStateNR': 'ACTIVATED', 'gNodebIdLength': '26'}},
+        #         'EUtranCellFDD': [], 'EUtranCellTDD': [],
+        #     },
+        # }
+        # # FeatureState
+        # for r in ['CXC4012578', 'CXC4012385', 'CXC4012371', 'CXC4010620', 'CXC4012324', 'CXC4012218']:
+        #     self.mo_dict['lte']['SystemFunctions']['Lm']['FeatureState'].append({
+        #         'attributes': {'xc:operation': 'update'}, 'featureStateId': r, 'featureState': 'ACTIVATED'})
+        # for r in ['CXC4012580']:
+        #     self.mo_dict['lte']['SystemFunctions']['Lm']['FeatureState'].append({
+        #         'attributes': {'xc:operation': 'update'}, 'featureStateId': r, 'featureState': 'DEACTIVATED'})
+        # # EUtranCellFDD & EUtranCellTDD
+        # cell_dict = {
+        #     'sib1AltSchInfo': 'false', 'mappingInfo': {'mappingInfoSIB24': '1 (MAPPED_SI_1)'},
+        #     'changeNotification': {
+        #         'changeNotificationSIB1': 'true', 'changeNotificationSIB13': 'true', 'changeNotificationSIB15': 'true',
+        #         'changeNotificationSIB16': 'true', 'changeNotificationSIB2': 'true', 'changeNotificationSIB24': 'true',
+        #         'changeNotificationSIB3': 'true', 'changeNotificationSIB4': 'true', 'changeNotificationSIB5': 'true',
+        #         'changeNotificationSIB6': 'true', 'changeNotificationSIB7': 'true', 'changeNotificationSIB8': 'true'
+        #     },
+        #     'UeMeasControl': {
+        #         'attributes': {'xc:operation': 'update'}, 'ueMeasControlId': '1',
+        #         'waitForStartNRMeas': '6000', 'waitForResumeNRMeas': '6000', 'nrB1MobilityTimerLessTtt': '600', 'sMeasure': '0',
+        #         'nrB1MeasEnabled': 'true', 'nrB1MeasAtEndcEnabled': 'true',
+        #         'ReportConfigB1NR': {
+        #             'attributes': {'xc:operation': 'update'},
+        #             'reportConfigB1NRId': '1',
+        #             'triggerQuantityB1NR': 'SS_RSRP',
+        #             'b1ThresholdRsrp': '-107',
+        #             'hysteresisB1': '2',
+        #             'timeToTriggerB1': '640'
+        #         }
+        #     },
+        #     'GUtranFreqRelation': [],
+        # }
+        # rel_dict = {
+        #     'anrMeasOn': 'true',
+        #     'connectedModeMobilityPrio': '7',
+        #     'cellReselectionPriority': '7',
+        #     'qRxLevMin': '-110',
+        #     'threshXHigh': '4',
+        #     'pMaxNR': '33',
+        # }
+        # for s in sorted([_ for _ in self.site.fdns if re.match(F".*ENodeBFunction=1,EUtranCell.DD=([^,]*)$", _)]):
+        #     moc = self.get_end_moc(mo=s)
+        #     moid = self.get_moc_id(moc=moc)
+        #     mo_dict = {'attributes': {'xc:operation': 'update'}, moid: s.split('=')[-1]}
+        #     for k, v in cell_dict.items():
+        #         tmp_dict = copy.deepcopy(mo_dict)
+        #         tmp_dict[k] = v
+        #         self.mo_dict['lte']['ENodeBFunction'][moc].append(copy.deepcopy(tmp_dict))
+        #     mo_dict = {moid: s.split('=')[-1], 'GUtranFreqRelation': []}
+        #     # tmp_dict = copy.deepcopy(cell_dict)
+        #     # tmp_dict.update({moid: s.split('=')[-1]})
+        #     moc_child = 'GUtranFreqRelation'
+        #     for r in sorted([_ for _ in self.site.fdns if re.match(F".*{s},{moc_child}=([^,]*)$", _)]):
+        #         moid_child = self.get_moc_id(moc=moc_child)
+        #         mo_dict_child = {'attributes': {'xc:operation': 'update'}, moid_child: r.split('=')[-1]}
+        #         for k, v in rel_dict.items():
+        #             tmp_dict = copy.deepcopy(mo_dict_child)
+        #             tmp_dict[k] = v
+        #             mo_dict[moc_child].append(copy.deepcopy(tmp_dict))
+        #     self.mo_dict['lte']['ENodeBFunction'][moc].append(copy.deepcopy(mo_dict))
+        #
+        # # for cell in self.site.get_fdd_cell():
+        # #     mo = F'ENodeBFunction=1,EUtranCellFDD={cell}'
+        # #     tmp_dict = {
+        # #         'attributes': {'xc:operation': 'update'}, 'eUtranCellFDDId': cell,
+        # #         'sib1AltSchInfo': 'false', 'mappingInfo': {'mappingInfoSIB24': '1 (MAPPED_SI_1)'},
+        # #         'changeNotification': {
+        # #             'changeNotificationSIB1': 'true', 'changeNotificationSIB13': 'true', 'changeNotificationSIB15': 'true',
+        # #             'changeNotificationSIB16': 'true', 'changeNotificationSIB2': 'true', 'changeNotificationSIB24': 'true',
+        # #             'changeNotificationSIB3': 'true', 'changeNotificationSIB4': 'true', 'changeNotificationSIB5': 'true',
+        # #             'changeNotificationSIB6': 'true', 'changeNotificationSIB7': 'true', 'changeNotificationSIB8': 'true'
+        # #         },
+        # #         'UeMeasControl': {
+        # #             'ueMeasControlId': '1', 'attributes': {'xc:operation': 'update'},
+        # #             'waitForStartNRMeas': '6000', 'waitForResumeNRMeas': '6000', 'nrB1MobilityTimerLessTtt': '600', 'sMeasure': '0',
+        # #             'nrB1MeasEnabled': 'true', 'nrB1MeasAtEndcEnabled': 'true',
+        # #             'ReportConfigB1NR': {'attributes': {'xc:operation': 'update'}, 'reportConfigB1NRId': '1', 'triggerQuantityB1NR': 'SS_RSRP',
+        # #                                  'b1ThresholdRsrp': '-107', 'hysteresisB1': '2', 'timeToTriggerB1': '640'}
+        # #         },
+        # #         'GUtranFreqRelation': [],
+        # #     }
+        # #     tmp_list = []
+        # #     for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},GUtranFreqRelation=([^,]*)$", _)]):
+        # #         tmp_list.append({
+        # #             'attributes': {'xc:operation': 'update'},
+        # #             'gUtranFreqRelationId': s.split('=')[-1],
+        # #             'anrMeasOn': 'true',
+        # #             'connectedModeMobilityPrio': '7',
+        # #             'cellReselectionPriority': '7',
+        # #             'qRxLevMin': '-110',
+        # #             'threshXHigh': '4',
+        # #             'pMaxNR': '33',
+        # #         })
+        # #         tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'connectedModeMobilityPrio': '7'})
+        # #         tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'cellReselectionPriority': '7'})
+        # #         tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'qRxLevMin': '-110'})
+        # #         tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'threshXHigh': '4'})
+        # #         tmp_list.append({'attributes': {'xc:operation': 'update'}, 'gUtranFreqRelationId': s.split('=')[-1], 'pMaxNR': '33'})
+        # #     if len(tmp_list) > 0: tmp_dict['GUtranFreqRelation'].extend(tmp_list)
+        # #     self.mo_dict['lte']['ENodeBFunction']['EUtranCellFDD'].append(copy.deepcopy(tmp_dict))
+        # #
+        # # # EUtranCellTDD
+        # # for cell in self.site.get_tdd_cell():
+        # #     mo = F'ENodeBFunction=1,EUtranCellTDD={cell}'
+        # #     tmp_dict = {
+        # #         'attributes': {'xc:operation': 'update'}, 'eUtranCellTDDId': cell,
+        # #         'sib1AltSchInfo': 'false',
+        # #         'mappingInfo': {'mappingInfoSIB24': '1 (MAPPED_SI_1)'},
+        # #         'changeNotification': {
+        # #             'changeNotificationSIB1': 'true', 'changeNotificationSIB13': 'true', 'changeNotificationSIB15': 'true',
+        # #             'changeNotificationSIB16': 'true', 'changeNotificationSIB2': 'true', 'changeNotificationSIB24': 'true',
+        # #             'changeNotificationSIB3': 'true', 'changeNotificationSIB4': 'true', 'changeNotificationSIB5': 'true',
+        # #             'changeNotificationSIB6': 'true', 'changeNotificationSIB7': 'true', 'changeNotificationSIB8': 'true'
+        # #         },
+        # #         'UeMeasControl': {
+        # #             'ueMeasControlId': '1', 'attributes': {'xc:operation': 'update'},
+        # #             'waitForStartNRMeas': '6000', 'waitForResumeNRMeas': '6000', 'nrB1MobilityTimerLessTtt': '600', 'sMeasure': '0',
+        # #             'nrB1MeasEnabled': 'true', 'nrB1MeasAtEndcEnabled': 'true',
+        # #             'ReportConfigB1NR': {'attributes': {'xc:operation': 'update'}, 'reportConfigB1NRId': '1', 'triggerQuantityB1NR': 'SS_RSRP',
+        # #                                  'b1ThresholdRsrp': '-107', 'hysteresisB1': '2', 'timeToTriggerB1': '640'}
+        # #         },
+        # #         'GUtranFreqRelation': [],
+        # #     }
+        # #     tmp_list = []
+        # #     for s in sorted([_ for _ in self.site.fdns if re.match(F".*{mo},GUtranFreqRelation=([^,]*)$", _)]):
+        # #         tmp_list.append({
+        # #             'attributes': {'xc:operation': 'update'},
+        # #             'gUtranFreqRelationId': s.split('=')[-1],
+        # #             'anrMeasOn': 'true',
+        # #             'connectedModeMobilityPrio': '7',
+        # #             'cellReselectionPriority': '7',
+        # #             'qRxLevMin': '-110',
+        # #             'threshXHigh': '4',
+        # #             'pMaxNR': '33',
+        # #         })
+        # #     if len(tmp_list) > 0: tmp_dict['GUtranFreqRelation'].extend(tmp_list)
+        # #     self.mo_dict['lte']['ENodeBFunction']['EUtranCellTDD'].append(copy.deepcopy(tmp_dict))
