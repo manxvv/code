@@ -10,8 +10,8 @@ class aa_Command(Script):
     def special_formate_scripts(self):
         date_str = datetime.now().strftime("%m%d%Y")
         all_nodes = ";".join(self.usid.df_site.node.unique())
-        nr_nodes = ";".join(self.usid.df_site.loc[self.usid.df_site.nr].node.unique())
-        lte_nodes = ";".join(self.usid.df_site.loc[self.usid.df_site.lte].node.unique())
+        nr_nodes = ";".join(self.usid.df_site.loc[((self.usid.df_site.status) & (self.usid.df_site.nr))].node.unique())
+        lte_nodes = ";".join(self.usid.df_site.loc[((self.usid.df_site.status) & (self.usid.df_site.lte))].node.unique())
         nr_bb_reset = '\n'.join(self.retart_commands_list())
 
         status_command = ';'.join([
@@ -45,7 +45,7 @@ cmedit export --download --job jobid
 ####---- Activity ----####
 Select Parallel operation/Skip to next operation during import of Bulk Files
 1. Create pre CV ---  Use CLI Terminal
-cmedit action {all_nodes} BrmBackupManager=1 createBackup.(name="pre_NSA_SA_{date_str}")
+cmedit action -n {all_nodes} BrmBackupManager=1 createBackup.(name="pre_NSA_SA_{date_str}")
 
 2. Load ---  01_5qiTable_BWP using Bulk import
 3. Load ---  02_MOs_Create using Bulk import
@@ -53,11 +53,11 @@ cmedit action {all_nodes} BrmBackupManager=1 createBackup.(name="pre_NSA_SA_{dat
 5. Load ---  04_Parameter using Bulk import
 
 Run Below commands on CLI terminal
-cmedit set {nr_nodes} GNBCUCPFunction,NRCellCU,EUtranCellRelation isHoAllowed=true --force
+cmedit set -n {nr_nodes} GNBCUCPFunction,NRCellCU,EUtranCellRelation isHoAllowed=true --force
 
 6. Load ---  05_UnLock_NR (If you have NR cells unlocked during pre-check)
 7. Create post CV ---  Use CLI Terminal
-cmedit action {all_nodes} BrmBackupManager=1 createBackup.(name="post_NSA_SA_{date_str}")
+cmedit action -n {all_nodes} BrmBackupManager=1 createBackup.(name="post_NSA_SA_{date_str}")
 
 7. Restart the NR Nodes base on Circle/Market guidelines
 

@@ -39,8 +39,8 @@ def scripting_nsa_sa(siteList_original_filename, eFile_original_filename,
                     custom_log.log.info(module)
                     self = getattr(importlib.import_module(F'{module}'), module)(usid=usid, node=node)
                     self.run()
-            # usid.df_gpl = pd.DataFrame(usid.gpl_list)
-            # usid.save_different_dataframe(data={'GPL': usid.df_gpl})
+            usid.df_gpl = pd.DataFrame(usid.gpl_list)
+            usid.save_different_dataframe(data={'GPL': usid.df_gpl})
             custom_log.log.info(F'Scripting Completed Successfully!!!')
     except Exception as e:
         custom_log.log.error(F'Error: \n\n{e}\n\n')
