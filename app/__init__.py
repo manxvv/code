@@ -18,7 +18,6 @@ def create_app():
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
 
-    # Config
     mongo_uri = (
         f"mongodb://{os.getenv('MONGO_USER')}:{os.getenv('MONGO_PASSWORD')}"
         f"@{os.getenv('MONGO_HOST')}:{os.getenv('MONGO_PORT')}/"
