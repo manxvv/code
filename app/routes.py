@@ -1416,7 +1416,7 @@ def get_user_scripting_files():
 # @api.route("/migrationList", methods=["GET"])
 # @token_required
 # def migrationList():
-    user_id = request.user.get("sub")  
+    # user_id = request.user.get("sub")  
     
     
     # aggr = [
@@ -1487,64 +1487,64 @@ def get_user_scripting_files():
     # ]
     
     
-    aggr = [
-        {
-            '$lookup': {
-                'from': 'status_log_node', 
-                'let': {
-                    'node': '$nodes', 
-                    'task': '$task_id'
-                }, 
-                'pipeline': [
-                    {
-                        '$match': {
-                            '$expr': {
-                                '$and': [
-                                    {
-                                        '$eq': [
-                                            '$node_id', '$$node'
-                                        ]
-                                    }, {
-                                        '$eq': [
-                                            '$taskId', '$$task'
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    }, {
-                        '$project': {
-                            '_id': 0
-                        }
-                    }
-                ], 
-                'as': 'statusList'
-            }
-        }, {
-            '$unwind': {
-                'path': '$statusList', 
-                'preserveNullAndEmptyArrays': True
-            }
-        },{
-            '$sort': {
-                '_id': -1
-            }
-        }
-    ]
+    # aggr = [
+    #     {
+    #         '$lookup': {
+    #             'from': 'status_log_node', 
+    #             'let': {
+    #                 'node': '$nodes', 
+    #                 'task': '$task_id'
+    #             }, 
+    #             'pipeline': [
+    #                 {
+    #                     '$match': {
+    #                         '$expr': {
+    #                             '$and': [
+    #                                 {
+    #                                     '$eq': [
+    #                                         '$node_id', '$$node'
+    #                                     ]
+    #                                 }, {
+    #                                     '$eq': [
+    #                                         '$taskId', '$$task'
+    #                                     ]
+    #                                 }
+    #                             ]
+    #                         }
+    #                     }
+    #                 }, {
+    #                     '$project': {
+    #                         '_id': 0
+    #                     }
+    #                 }
+    #             ], 
+    #             'as': 'statusList'
+    #         }
+    #     }, {
+    #         '$unwind': {
+    #             'path': '$statusList', 
+    #             'preserveNullAndEmptyArrays': True
+    #         }
+    #     },{
+    #         '$sort': {
+    #             '_id': -1
+    #         }
+    #     }
+    # ]
 
-    # files_cursor = mongo.db.files.find({"user_id": user_id})
-    files_cursor = mongo.db.migration.aggregate(aggr)
+    # # files_cursor = mongo.db.files.find({"user_id": user_id})
+    # files_cursor = mongo.db.migration.aggregate(aggr)
     
     
-    files_list = []
-    for f in files_cursor:
+    # files_list = []
+    # for f in files_cursor:
         
-        print(f)
+    #     print(f)
         
         
-        files_list.append(f)
+    #     files_list.append(f)
     
-    return jsonify(files_list), 200
+    # return jsonify(files_list), 200
 
 @api.route("/migrationList", methods=["GET"])
 @token_required
