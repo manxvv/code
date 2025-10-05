@@ -10,7 +10,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of your app
 COPY . .
 
-EXPOSE 5000
+# Expose new port
+EXPOSE 9000
 
 # Use run.py as entrypoint
 CMD ["python", "run.py"]
