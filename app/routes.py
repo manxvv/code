@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from app.utils import token_required
 from bson import ObjectId
 import os
+from bson.errors import InvalidId
 import uuid
 from werkzeug.utils import secure_filename
 # from app.parsinglogic import parse_text_to_excel,Calculator
@@ -179,6 +180,10 @@ def login():
 @api.route("/", methods=["GET"])
 def user111():
     return {"message": "Hello from Flask!"+"------------"+os.getenv("APP_NAME")+"-----------"+os.getenv("MONGO_DB")}
+
+
+
+
 
 
 @api.route("/users", methods=["GET"])
@@ -1392,10 +1397,10 @@ def get_user_scripting_files():
     
     return jsonify(files_list), 200
 
-@api.route("/migrationList", methods=["GET"])
-@token_required
-def migrationList():
-    user_id = request.user.get("sub")  
+# @api.route("/migrationList", methods=["GET"])
+# @token_required
+# def migrationList():
+    # user_id = request.user.get("sub")  
     
     
     # aggr = [
@@ -1466,65 +1471,128 @@ def migrationList():
     # ]
     
     
+    # aggr = [
+    #     {
+    #         '$lookup': {
+    #             'from': 'status_log_node', 
+    #             'let': {
+    #                 'node': '$nodes', 
+    #                 'task': '$task_id'
+    #             }, 
+    #             'pipeline': [
+    #                 {
+    #                     '$match': {
+    #                         '$expr': {
+    #                             '$and': [
+    #                                 {
+    #                                     '$eq': [
+    #                                         '$node_id', '$$node'
+    #                                     ]
+    #                                 }, {
+    #                                     '$eq': [
+    #                                         '$taskId', '$$task'
+    #                                     ]
+    #                                 }
+    #                             ]
+    #                         }
+    #                     }
+    #                 }, {
+    #                     '$project': {
+    #                         '_id': 0
+    #                     }
+    #                 }
+    #             ], 
+    #             'as': 'statusList'
+    #         }
+    #     }, {
+    #         '$unwind': {
+    #             'path': '$statusList', 
+    #             'preserveNullAndEmptyArrays': True
+    #         }
+    #     },{
+    #         '$sort': {
+    #             '_id': -1
+    #         }
+    #     }
+    # ]
+
+    # # files_cursor = mongo.db.files.find({"user_id": user_id})
+    # files_cursor = mongo.db.migration.aggregate(aggr)
+    
+    
+    # files_list = []
+    # for f in files_cursor:
+        
+    #     print(f)
+        
+        
+    #     files_list.append(f)
+    
+    # return jsonify(files_list), 200
+
+@api.route("/migrationList", methods=["GET"])
+@token_required
+def migrationList():
+    user_id = request.user.get("sub")  
+
+    # Get pagination params from query string
+    page = int(request.args.get("page", 1))      # Default page = 1
+    limit = int(request.args.get("limit", 10))   # Default limit = 10
+    skip = (page - 1) * limit
+
     aggr = [
         {
             '$lookup': {
                 'from': 'status_log_node', 
-                'let': {
-                    'node': '$nodes', 
-                    'task': '$task_id'
-                }, 
+                'let': {'node': '$nodes', 'task': '$task_id'}, 
                 'pipeline': [
                     {
                         '$match': {
                             '$expr': {
                                 '$and': [
-                                    {
-                                        '$eq': [
-                                            '$node_id', '$$node'
-                                        ]
-                                    }, {
-                                        '$eq': [
-                                            '$taskId', '$$task'
-                                        ]
-                                    }
+                                    {'$eq': ['$node_id', '$$node']},
+                                    {'$eq': ['$taskId', '$$task']}
                                 ]
                             }
                         }
-                    }, {
-                        '$project': {
-                            '_id': 0
-                        }
-                    }
+                    },
+                    {'$project': {'_id': 0}}
                 ], 
                 'as': 'statusList'
             }
-        }, {
+        },
+        {
             '$unwind': {
                 'path': '$statusList', 
                 'preserveNullAndEmptyArrays': True
             }
-        },{
-            '$sort': {
-                '_id': -1
-            }
+        },
+        {
+            '$sort': {'_id': -1}  # Sort newest first
+        },
+        {
+            '$skip': skip           # Skip previous pages
+        },
+        {
+            '$limit': limit         # Limit results to page size
         }
     ]
 
-    # files_cursor = mongo.db.files.find({"user_id": user_id})
     files_cursor = mongo.db.migration.aggregate(aggr)
-    
-    
-    files_list = []
-    for f in files_cursor:
-        
-        print(f)
-        
-        
-        files_list.append(f)
-    
-    return jsonify(files_list), 200
+    files_list = list(files_cursor)
 
+    # Optional: Get total count for frontend pagination info
+    total_count = mongo.db.migration.count_documents({})  # total docs in migration collection
+
+    return jsonify({
+        "page": page,
+        "limit": limit,
+        "total_count": total_count,
+        "total_pages": (total_count + limit - 1) // limit,
+        "data": files_list
+    }), 200
+    
+    
 @api.route("/downloads/<file_id>", methods=["GET"])
 @token_required
 def download_file(file_id):
@@ -1765,6 +1833,195 @@ def delete_user(user_id):
 
     except Exception as e:
         return jsonify({"message": "Error deleting ENM", "error": str(e)}), 500
+
+
+@api.route("/user-files/count", methods=["GET"])
+@token_required
+def get_user_files_count():
+    user_id = request.user.get("sub")  
+
+    aggr = [
+        {
+            '$addFields': {
+                'user_id_obj': {
+                    '$convert': {
+                        'input': '$user_id', 
+                        'to': 'objectId'
+                    }
+                }
+            }
+        },
+        {
+            '$match': {
+                'user_id_obj': ObjectId(user_id)  # filter only for this user
+            }
+        },
+        {
+            '$lookup': {
+                'from': 'users', 
+                'localField': 'user_id_obj', 
+                'foreignField': '_id', 
+                'as': 'userresult'
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$userresult', 
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+        {
+            '$lookup': {
+                'from': 'enmfiles', 
+                'localField': 'taskId', 
+                'foreignField': 'task_id', 
+                'as': 'taskIdresult'
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$taskIdresult', 
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+        {
+            '$count': 'total_files'
+        }
+    ]
+
+    count_cursor = mongo.db.files.aggregate(aggr)
+    count_result = list(count_cursor)
+    total_files = count_result[0]['total_files'] if count_result else 0
+
+    return jsonify({"count": total_files}), 200
+
+@api.route("/migrationList/count", methods=["GET"])
+@token_required
+def migrationList_count():
+    user_id = request.user.get("sub")  
+
+    aggr = [
+        {
+            '$lookup': {
+                'from': 'status_log_node', 
+                'let': {
+                    'node': '$nodes', 
+                    'task': '$task_id'
+                }, 
+                'pipeline': [
+                    {
+                        '$match': {
+                            '$expr': {
+                                '$and': [
+                                    {'$eq': ['$node_id', '$$node']},
+                                    {'$eq': ['$taskId', '$$task']}
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        '$project': {'_id': 0}
+                    }
+                ],
+                'as': 'statusList'
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$statusList',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+        {
+            '$count': 'total_migrations'
+        }
+    ]
+
+    count_cursor = mongo.db.migration.aggregate(aggr)
+    count_result = list(count_cursor)
+    total_migrations = count_result[0]['total_migrations'] if count_result else 0
+
+    return jsonify({"count": total_migrations}), 200
+
+
+@api.route("/user-scripting-files/count", methods=["GET"])
+@token_required
+def get_user_scripting_files_count():
+    user_id = request.user.get("sub")  
+
+    aggr = [
+        {
+            '$addFields': {
+                'user_id_obj': {
+                    '$convert': {
+                        'input': '$user_id', 
+                        'to': 'objectId'
+                    }
+                }
+            }
+        },
+        {
+            '$match': {
+                'user_id_obj': ObjectId(user_id)  # filter only for this user
+            }
+        },
+        {
+            '$lookup': {
+                'from': 'users', 
+                'localField': 'user_id_obj', 
+                'foreignField': '_id', 
+                'as': 'userresult'
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$userresult', 
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+        {
+            '$count': 'total_files'
+        }
+    ]
+
+    count_cursor = mongo.db.scripting.aggregate(aggr)
+    count_result = list(count_cursor)
+    total_files = count_result[0]['total_files'] if count_result else 0
+
+    return jsonify({"count": total_files}), 200
+
+@api.route("/user-enm-files/count", methods=["GET"])
+@token_required
+def get_user_enm_files_count():
+    user_id = request.user.get("sub")  
+
+    aggr = [
+        {
+            '$addFields': {
+                'user_id_obj': {
+                    '$convert': {
+                        'input': '$user_id', 
+                        'to': 'objectId'
+                    }
+                }
+            }
+        },
+        {
+            '$match': {
+                'user_id_obj': ObjectId(user_id)  # Filter only for this user
+            }
+        },
+        {
+            '$count': 'total_files'
+        }
+    ]
+
+    count_cursor = mongo.db.enmfiles.aggregate(aggr)
+    count_result = list(count_cursor)
+
+    total_files = count_result[0]['total_files'] if count_result else 0
+
+    return jsonify({"count": total_files}), 200
 
 
 @api.route("/enms", methods=["GET"])
@@ -2061,3 +2318,118 @@ def get_gpl_audit_files():
         files_list.append(f)
     
     return jsonify(files_list), 200
+
+
+
+@api.route("/sidebar-links", methods=["GET"])
+@token_required
+def get_sidebar_links():
+    user_role = request.user.get("role")
+    links = mongo.db.sidebar_links.find({"roles": {"$in": [user_role]}})
+    
+    link_list = []
+    for link in links:
+        link_list.append({
+            "id": str(link["_id"]),
+            "label": link.get("label"),
+            "href": link.get("href"),
+            "icon": link.get("icon"),
+            "roles":link.get("roles")
+        })
+
+    return jsonify(link_list), 200
+
+
+@api.route("/sidebar-links/<link_id>/toggle-role", methods=["PUT"])
+@token_required
+def toggle_sidebar_link_role(link_id):
+    """
+    Toggles a specific role's access for a given sidebar link.
+    If the role exists in the array, it's removed.
+    If it doesn't exist, it's added.
+    This endpoint is for admins only.
+    """
+    # 1. Authorization: Ensure user is an admin
+    if request.user.get("role") != "admin":
+        return jsonify({"message": "Forbidden: Admin access required"}), 403
+
+    # 2. Get the role to toggle from the request body
+    try:
+        data = request.get_json()
+        role_to_toggle = data.get("role")
+        if not role_to_toggle:
+            raise ValueError("'role' key is required in the request body.")
+    except Exception as e:
+        return jsonify({"message": f"Bad Request: Invalid JSON or data format. {str(e)}"}), 400
+
+    # 3. Database Operation
+    try:
+        object_id = ObjectId(link_id)
+
+        # First, find the link to see its current roles
+        link = mongo.db.sidebar_links.find_one({"_id": object_id})
+
+        if not link:
+            return jsonify({"message": "Link not found"}), 404
+
+        current_roles = link.get("roles", [])
+        
+        # This is the core "toggle" logic
+        if role_to_toggle in current_roles:
+            # If role exists, REMOVE it using the $pull operator
+            mongo.db.sidebar_links.update_one(
+                {"_id": object_id},
+                {"$pull": {"roles": role_to_toggle}}
+            )
+            action_taken = "disabled"
+        else:
+            # If role does not exist, ADD it using the $addToSet operator
+            # $addToSet is safer than $push as it prevents duplicates
+            mongo.db.sidebar_links.update_one(
+                {"_id": object_id},
+                {"$addToSet": {"roles": role_to_toggle}}
+            )
+            action_taken = "enabled"
+        
+        # 4. Fetch the updated document to return it
+        updated_link = mongo.db.sidebar_links.find_one({"_id": object_id})
+        updated_link["_id"] = str(updated_link["_id"]) # Convert ObjectId for JSON
+
+        return jsonify({
+            "message": f"Role '{role_to_toggle}' has been {action_taken} for link '{updated_link['label']}'.",
+            "link": updated_link
+        }), 200
+
+    except InvalidId:
+        return jsonify({"message": "Invalid link ID format"}), 400
+    except Exception as e:
+        return jsonify({"message": f"An internal server error occurred: {str(e)}"}), 500
+
+
+# @api.route("/sidebar-links", methods=["POST"])
+# @token_required
+# def create_sidebar_links(decoded_token):
+#     if decoded_token.get("role") != "admin":
+#         return jsonify({"message": "Unauthorized"}), 403
+
+#     data = request.get_json()
+    
+#     if not isinstance(data, list):
+#         return jsonify({"message": "Expected a list of links"}), 400
+
+#     inserted_ids = []
+#     for item in data:
+#         # Validate required fields
+#         required_fields = ["label", "href", "roles", "icon", "enabled"]
+#         for field in required_fields:
+#             if field not in item:
+#                 return jsonify({"message": f"{field} is required in one of the links"}), 400
+
+#         result = mongo.db.sidebar_links.insert_one(item)
+#         inserted_ids.append(str(result.inserted_id))
+
+#     return jsonify({
+#         "message": "Sidebar links created successfully",
+#         "inserted_ids": inserted_ids
+#     }), 201
+    
