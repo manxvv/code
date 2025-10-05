@@ -901,16 +901,11 @@ cmedit export --download --job jobid
         "enm_file_name": ffnme
     }), 201
     
-<<<<<<< HEAD
     
     
 def script_entry_migration(request_user,taskId,file_con,file_path,inserted_id):
     
     
-=======
-
-def script_entry_migration(request,taskId,file_con,file_path):
->>>>>>> aj_backend
     df = pd.read_excel(file_path,sheet_name=None)
     unique_circle = df["Site"]["circle"].unique()
     unique_enm = df["Site"]["enm"].unique()
@@ -927,22 +922,16 @@ def script_entry_migration(request,taskId,file_con,file_path):
     }
 
     final_data = {**file_con,**datafind}
-<<<<<<< HEAD
     
     mongo.db.scripting.update_one(
         {"_id": inserted_id},  # filter by the inserted document's ID
         {"$set": {"status": "Completed",**final_data}}
-=======
-    mongo.db.scripting.insert_one(
-        final_data
->>>>>>> aj_backend
     )
     mongo.db.migration.update_one(
         datafind,
         {"$set": {"status": "Done"}}
     )
     
-<<<<<<< HEAD
     
 
 def process_scripting_task(request_user,task_data, eFile_original_filename, eFile_file_path, siteList_file_path, curr_dir, uid,inserted_id):
@@ -1027,9 +1016,6 @@ def process_scripting_task(request_user,task_data, eFile_original_filename, eFil
     
     
     
-=======
-
->>>>>>> aj_backend
 @api.route("/uploadScripting", methods=["POST"])
 @token_required
 def uploadScripting_file():
