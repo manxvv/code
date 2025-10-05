@@ -11,6 +11,7 @@ class Site:
         self.node = node
         self.mos = mos
         self.me = F'SubNetwork=ONRM_ROOT_MO,SubNetwork=LTE_5G,MeContext={self.node},ManagedElement={self.node}'
+
         if 'me_me' in self.mos.keys():
             self.me = self.mos['me_me']
             del self.mos['me_me']
@@ -18,6 +19,9 @@ class Site:
             custom_log.log.exception(F'Error : For Node: {self.node} dnPrefix could not be found')
         self.fdns = sorted(list(self.mos.keys()))
         self.bbu = self.get_bbu_id()
+        self.release = None
+        if F'NetworkElement={self.node}' in self.fdns:
+            self.release = self.get_fdn_parameter(fdn=F'NetworkElement={self.node}', para='release')
 
         # self.du_cell = sorted([re.match(".*,NRCellDU=([^,]*)$", _).group(1)
         #                        for _ in self.fdns if re.match(".*,NRCellDU=([^,]*)$", _)])

@@ -467,21 +467,8 @@ def upload_file():
             "original_filename":original_filename,
             "unique_filename":unique_filename
         })
-        
-    
-    
-    
-    
-    
     print(postcheck_files,taskId,precheck_files)
-    
-    
     print("taskIdtaskId",taskId,"taskIdtaskId")
-    
-    
-    
-    
-    
     one_task_data = mongo.db.enmfiles.find_one({"task_id":taskId})
 
     try:    
@@ -705,24 +692,9 @@ def dashboard():
 def uploadenm_file():
     if "file" not in request.files:
         return jsonify({"message": "No file part"}), 400
-    
-    print(request.files.get("file"))
-    
-    
-    # enm_circle_cursor = mongo.db.enms.find({
-    #     "user_id":request.user.get("sub")  
-    # })
     enm_circle_cursor = mongo.db.enms.find()
-    
-    
     enm_circle_list = list(enm_circle_cursor)
-
     df = pd.DataFrame(enm_circle_list)
-    
-    print(df,"dfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdf")
-    
-    
-    
     file = request.files.get("file")
     if not file:
         return jsonify({"message": "No selected file"}), 400
@@ -731,144 +703,157 @@ def uploadenm_file():
     original_filename = secure_filename(file.filename)
     unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
     file_con = {
-        "original_filename":original_filename,
-        "unique_filename":unique_filename
+        "original_filename": original_filename,
+        "unique_filename": unique_filename
     }
-    file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"enm"), unique_filename)
+    file_path = os.path.join(os.path.join(UPLOAD_FOLDER, "enm"), unique_filename)
     file.save(file_path)
-    
-    
-    print(file_path,"file_pathfile_pathfile_path")
     read_df = pd.read_excel(file_path)
-    
     read_df["Node"] = read_df['Node'].apply(str)
-    
-    
     fileNameList = []
-    
     enmList = []
-    
-    if(len(df) == 0):
+    if len(df) == 0:
         return jsonify({"error": "Please add Circle & ENM in Admin."}), 400
-    
-    
-    
-    updf = df[["circle","enm"]]
-    
-    
-    updf["merge_ce"] = updf["circle"]+"_cp_"+updf["enm"]
-    
-    read_df["merge_ce"] = read_df["circle"]+"_cp_"+read_df["ENM"]
-    
-    
-    print(updf,read_df,"updfupdfupdfupdfupdf")
+    updf = df[["circle", "enm"]]
+    updf["merge_ce"] = updf["circle"] + "_cp_" + updf["enm"]
+    read_df["merge_ce"] = read_df["circle"] + "_cp_" + read_df["ENM"]
     read_df_enmmm = set(read_df["merge_ce"].unique())
-    
-    print(read_df_enmmm,"read_df_enmmmread_df_enmmmread_df_enmmm")
-    
-    if(len(read_df_enmmm) > 1): 
+    if(len(read_df_enmmm) > 1):
         return jsonify({"error": "Multiple combination of ENM & Circle Exist "}), 400
     unique_enm = set(updf["merge_ce"].unique())
-
-    # Find which subset ENMs are missing
     missing_enms = [enm for enm in read_df_enmmm if enm not in unique_enm]
 
-    print("Missing ENMs:", missing_enms)
-
-
-    if(len(missing_enms) > 0):
+    if len(missing_enms) > 0:
         final_enn = ""
         for oneenm in missing_enms:
-            final_enn=final_enn+" Circle - "+oneenm.split("_cp_")[0]+" & "+"ENM - "+oneenm.split("_cp_")[1]+", "
+            final_enn = final_enn+" Circle - "+oneenm.split("_cp_")[0]+" & "+"ENM - "+oneenm.split("_cp_")[1]+", "
         return jsonify({"error": final_enn + " is missing "}), 400
-    
-    
+
     for node, group in read_df.groupby("ENM"):
-        
-        
-        print(node,group,"node,groupnode,group")
-        
+        enm_activity = node
+        circle_activity = group["circle"].to_list()[0]
         enmList.append(node)
-        
-        nodes_list = group["Node"].to_list()
-    
-    
-    
-    
-    
-        
-        file_text_content = """NodeStatus
+        nodes_list = group["Node"].unique().tolist()
+        date_str = datetime.now().strftime("%m%d%Y")
+        all_nodes = ";".join(group["Node"].unique().tolist())
+        status_command = ';'.join([
+            F'CmFunction.(syncStatus)',
+            F'NRCellDU.(administrativeState,cellState,operationalState,serviceState,ssbDuration,ssbFrequency,ssbOffset,ssbPeriodicity)',
+            F'NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState,massiveMimoSleepEnabled,'
+            F'massiveMimoSleepState,nRMicroSleepTxEnabled)',
+            F'EUtranCellTDD.(administrativeState,cellSubscriptionCapacity,channelBandwidth,earfcn,operationalState)',
+            F'EUtranCellFDD.(administrativeState,dlChannelBandwidth,earfcndl,earfcnul,operationalState,ulChannelBandwidth)',
+            F'SectorCarrier.(SectorCarrierId,configuredMaxTxPower,operationalState,reservedBy,rfBranchRxRef,rfBranchTxRef)',
+            F'CellSleepFunction.(sleepMode,sleepState)',
+            F'SectorEquipmentFunction.(administrativeState,operationalState,availableHwOutputPower,reservedBy,rfBranchRef)',
+            F'FieldReplaceableUnit.(administrativeState,operationalState,productData)',
+            F'TermPointToAmf.(administrativeState,operationalState,defaultAmf,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2,usedIpAddress)',
+        ])
+        scripting_commands = ';'.join([
+            'TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandling,'
+            'ipv6Address1,ipv6Address2,ipv4Address1,ipv4Address2)',
+            'FieldReplaceableUnit.(administrativeState,operationalState,productData)',
+            'SystemFunctions', 'Lm', 'FeatureState.(description,featureState,featureStateId,licenseState,serviceState)',
+            'NetworkElement.(lastSuccessfulSoftwareSync,neProductVersion,networkElementId,networkFunctions,nodeModelIdentity,'
+            'ossModelIdentity,ossPrefix,radioAccessTechnology,release)',
+            'CmFunction.(syncStatus)',
+            'ManagedElement',
+            'AnrFunction', 'AnrFunctionNR', 'AnrFunctionNRUeCfg', 'AnrFunctionEUtran', 'AnrFunctionEUtranUeCfg',
+            'Transport', 'SctpProfile', 'Sctp', 'SctpEndpoint', 'AddressIPv4', 'AddressIPv6',
+            'EndpointResource', 'LocalSctpEndpoint', 'LocalIpEndpoint',
 
-cmedit get NodeId1;NodeId2
-CmFunction.(syncStatus);
-NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState);
-NRCellDU.(administrativeState,cellState,operationalState,serviceState,ssbDuration,ssbFrequency,ssbOffset,ssbPeriodicity);
-EUtranCellTDD.(administrativeState,cellSubscriptionCapacity,channelBandwidth,earfcn,operationalState);
-EUtranCellFDD.(administrativeState,dlChannelBandwidth,earfcndl,earfcnul,operationalState,ulChannelBandwidth);
-SectorCarrier.(SectorCarrierId,configuredMaxTxPower,operationalState,reservedBy,rfBranchRxRef,rfBranchTxRef);
-SectorEquipmentFunction.(administrativeState,operationalState,availableHwOutputPower,reservedBy,rfBranchRef);
-FieldReplaceableUnit.(administrativeState,operationalState,productData);
-TermPointToAmf.(administrativeState,operationalState,defaultAmf,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2,usedIpAddress) --list
+            'GNBDUFunction', 'NRCellDU', 'NRSectorCarrier', 'DU5qiTable', 'DU5qi', 'Paging', 'Rrc',
+            'RadioBearerTable', 'SignalingRadioBearer',
+            'BWP', 'BWPSet', 'DynPowerOpt', 'BWPSetUeCfg', 'BWPSetCfg',
+            'UeCC', 'UeBb', 'UeBbProfile', 'UeBbProfileUeCfg', 'Rach', 'RachUeCfg',
+            'RadioLinkControl', 'DrbRlc', 'DrbRlcUeCfg', 'UeAdaptiveRlc', 'UeAdaptiveRlcUeCfg',
+            'QosPriorityMapping', 'PriorityDomainMapping', 'DrxProfile', 'DrxProfileUeCfg', 'PuschRepRel16Drx',
 
+            'GNBCUCPFunction', 'NRCellCU', 'EmCall', 'SecurityHandling', 'CUCP5qiTable', 'CUCP5qi',
+            'NRNetwork', 'NRFrequency', 'NRFreqRelation', 'EUtraNetwork', 'EUtranFrequency', 'EUtranFreqRelation', 'NRCellRelation',
+            'Mcpc', 'McpcPCellEUtranFreqRelProfile', 'McpcPCellEUtranFreqRelProfileUeCfg',
+            'McpcPCellProfile', 'McpcPCellProfileUeCfg',
+            'UeCC', 'InactivityProfile', 'InactivityProfileUeCfg', 'SrHandling', 'SrHandlingUeCfg',
+            'DrbRlc', 'DrbRlcUeCfg', 'UserPlaneProfile', 'UserPlaneProfileUeCfg',
+            'RrcInactiveProfile', 'RrcInactiveProfileUeCfg',
+            'Rohc', 'RohcUeCfg',
+            'Mcfb', 'McfbCellProfile', 'McfbCellProfileUeCfg',
+            'TrafficSteering', 'TrStPSCellNrFreqRelProfile', 'TrStPSCellNrFreqRelProfileUeCfg',
+            'TrStPSCellProfile', 'TrStPSCellProfileUeCfg', 'TrStSaCellProfile', 'TrStSaCellProfileUeCfg',
+            'TrStSaEUtranFreqRelProfile', 'TrStSaEUtranFreqRelProfileUeCfg', 'TrStSaNrFreqRelProfile', 'TrStSaNrFreqRelProfileUeCfg',
+            'UeMC', 'UeMCNrFreqRelProfile', 'UeMCNrFreqRelProfileUeCfg', 'UeMCCellProfile', 'UeMCCellProfileUeCfg',
+            'UeMCEUtranFreqRelProfile', 'UeMCEUtranFreqRelProfileUeCfg',
+            'UeCovMeas', 'UcmCellProfile', 'UcmCellProfileUeCfg', 'UcmNrFreqRelProfile',
 
-NodeAlarms
+            'UeGroupSelection', 'PrefUeGroupSelectionProfile', 'UeAdmissionGroupDefinition', 'UeGroupSelectionProfile',
+            'UeMobilityGroupDefinition', 'UeServiceGroupDefinition',
 
-alarm get NodeId1;NodeId2 --list
+            'GNBCUUPFunction', 'CUUP5qiTable', 'CUUP5qi', 'UeCC', 'DcDlCfg', 'GtpuSupervision', 'GtpuSupervisionProfile',
+            'ENodeBFunction', 'UePolicyOptimization', 'EUtranCellFDD', 'EUtranCellTDD', 'UeMeasControl', 'ReportConfigB1NR',
+            'GUtranSyncSignalFrequency', 'GUtranFreqRelation', 'GUtranCellRelation',
+            'McpcPCellNrFreqRelProfileUeCfg', 'McpcPSCellNrFreqRelProfileUeCfg'
 
-ScriptLogs
+        ])
+        file_text_content = [F"""
+##########################- Pre Check -##########################
+####---- NodeStatus ----####
+pre_status_{circle_activity}_{enm_activity}_{date_str}.txt
+cmedit get -n {all_nodes} {status_command} --list
 
-cmedit get NodeId1;NodeId2
-TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandling,ipv6Address1,ipv6Address2,ipv4Address1,ipv4Address2);SystemFunctions.<w>;Lm.<w>;FeatureState.(description,featureState,featureStateId,licenseState,serviceState);CmFunction.(syncStatus);ManagedElement.<w>;AnrFunction.<w>;AnrFunctionNR.<w>;AnrFunctionNRUeCfg.<w>;AnrFunctionEUtran.<w>;AnrFunctionEUtranUeCfg.<w>;Transport.<w>;SctpProfile.<w>;Sctp.<w>;SctpEndpoint.<w>;AddressIPv4.<w>;AddressIPv6.<w>;EndpointResource.<w>;LocalSctpEndpoint.<w>;LocalIpEndpoint.<w>;GNBDUFunction.<w>;NRCellDU.<w>;NRSectorCarrier.<w>;DU5qiTable.<w>;DU5qi.<w>;Paging.<w>;Rrc.<w>;RadioBearerTable.<w>;SignalingRadioBearer.<w>;BWP.<w>;BWPSet.<w>;DynPowerOpt.<w>;BWPSetUeCfg.<w>;BWPSetCfg.<w>;UeCC.<w>;UeBb.<w>;UeBbProfile.<w>;UeBbProfileUeCfg.<w>;Rach.<w>;RachUeCfg.<w>;RadioLinkControl.<w>;DrbRlc.<w>;DrbRlcUeCfg.<w>;UeAdaptiveRlc.<w>;UeAdaptiveRlcUeCfg.<w>;QosPriorityMapping.<w>;PriorityDomainMapping.<w>;DrxProfile.<w>;DrxProfileUeCfg.<w>;PuschRepRel16Drx.<w>;GNBCUCPFunction.<w>;NRCellCU.<w>;EmCall.<w>;SecurityHandling.<w>;CUCP5qiTable.<w>;CUCP5qi.<w>;NRNetwork.<w>;NRFrequency.<w>;NRFreqRelation.<w>;EUtraNetwork.<w>;EUtranFrequency.<w>;EUtranFreqRelation.<w>;NRCellRelation.<w>;Mcpc.<w>;McpcPCellEUtranFreqRelProfile.<w>;McpcPCellEUtranFreqRelProfileUeCfg.<w>;McpcPCellProfile.<w>;McpcPCellProfileUeCfg.<w>;UeCC.<w>;InactivityProfile.<w>;InactivityProfileUeCfg.<w>;SrHandling.<w>;SrHandlingUeCfg.<w>;DrbRlc.<w>;DrbRlcUeCfg.<w>;UserPlaneProfile.<w>;UserPlaneProfileUeCfg.<w>;RrcInactiveProfile.<w>;RrcInactiveProfileUeCfg.<w>;Rohc.<w>;RohcUeCfg.<w>;Mcfb.<w>;McfbCellProfile.<w>;McfbCellProfileUeCfg.<w>;TrafficSteering.<w>;TrStPSCellNrFreqRelProfile.<w>;TrStPSCellNrFreqRelProfileUeCfg.<w>;TrStPSCellProfile.<w>;TrStPSCellProfileUeCfg.<w>;TrStSaCellProfile.<w>;TrStSaCellProfileUeCfg.<w>;TrStSaEUtranFreqRelProfile.<w>;TrStSaEUtranFreqRelProfileUeCfg.<w>;TrStSaNrFreqRelProfile.<w>;TrStSaNrFreqRelProfileUeCfg.<w>;UeMC.<w>;UeMCNrFreqRelProfile.<w>;UeMCNrFreqRelProfileUeCfg.<w>;UeMCCellProfile.<w>;UeMCCellProfileUeCfg.<w>;UeMCEUtranFreqRelProfile.<w>;UeMCEUtranFreqRelProfileUeCfg.<w>;UeCovMeas.<w>;UcmCellProfile.<w>;UcmCellProfileUeCfg.<w>;UcmNrFreqRelProfile.<w>;UeGroupSelection.<w>;PrefUeGroupSelectionProfile.<w>;UeAdmissionGroupDefinition.<w>;UeGroupSelectionProfile.<w>;UeMobilityGroupDefinition.<w>;UeServiceGroupDefinition.<w>;GNBCUUPFunction.<w>;CUUP5qiTable.<w>;CUUP5qi.<w>;UeCC.<w>;DcDlCfg.<w>;GtpuSupervision.<w>;GtpuSupervisionProfile.<w>;ENodeBFunction.<w>;UePolicyOptimization.<w>;EUtranCellFDD.<w>;EUtranCellTDD.<w>;UeMeasControl.<w>;ReportConfigB1NR.<w>;GUtranSyncSignalFrequency.<w>;GUtranFreqRelation.<w>;GUtranCellRelation.<w> --dynamic
+####---- NodeAlarms ----####
+pre_alarms_{circle_activity}_{enm_activity}_{date_str}.txt
+alarm get -n {all_nodes} --list
 
-"""
-        
-        
-        
+####---- MO Dump ----####
+pre_dump_{circle_activity}_{enm_activity}_{date_str}.txt
+cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
+cmedit export --status --job jobid
+cmedit export --download --job jobid
 
-        print(nodes_list,"; ".join(nodes_list),"nodes_listnodes_listnodes_list")
-        final_text = file_text_content.replace("NodeId1;NodeId2",";".join(nodes_list)+" ")
-        
-        print(final_text,"final_textfinal_textfinal_text")
-        
-        # ffnme = os.path.join("downloads",node+"_Command_"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S")+"_"+uuid.uuid4().hex+ ".txt")
-        ffnme = os.path.join("downloads",node+"_Command_"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + ".txt")
-            
-        with open(os.path.join(os.getcwd(),ffnme),"w+") as file:
-            
-            file.write(final_text)
-    
-    
+############################################################################
+##########################- Scripting Input Logs -##########################
+############################################################################
+
+cmedit get -n {all_nodes} {scripting_commands} --dynamic
+
+######################################################################
+
+##########################- Post Check -##########################
+####---- NodeStatus ----####
+post_status_{circle_activity}_{enm_activity}_{date_str}.txt
+cmedit get -n {all_nodes} {status_command} --list
+
+####---- NodeAlarms ----####
+post_alarms_{circle_activity}_{enm_activity}_{date_str}.txt
+alarm get -n {all_nodes} --list
+
+####---- MO Dump ----####
+post_dump_{circle_activity}_{enm_activity}_{date_str}.txt
+cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
+cmedit export --status --job jobid
+cmedit export --download --job jobid
+
+        """]
+
+        ffnme = os.path.join("downloads", node+"_Command_"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + ".txt")
+        with open(os.path.join(os.getcwd(), ffnme), "w+") as file:
+            file.write('\n'.join(file_text_content))
         fileNameList.append(ffnme)
         
-    print(read_df,"read_dfread_dfread_df")
+    print(read_df, "read_dfread_dfread_df")
     circle_list = read_df["circle"].unique().tolist()
     enm_list = read_df["ENM"].unique().tolist()
     SiteID_list = read_df["SiteID"].unique().tolist()
     Node_list = read_df["Node"].unique().tolist()
     
-    
     one_last_data = mongo.db.enmfiles.find_one(sort=[('_id', -1)])
-
     task_id = "DY000001"
-
     if(one_last_data):
-        last_task = one_last_data["task_id"].replace("DY","")
-        
+        last_task = one_last_data["task_id"].replace("DY", "")
         new_id = int(last_task)+1
-        
-        
         str_new_id = len(str(new_id))
-        
         task_id = "DY"+(6-str_new_id)*"0"+str(new_id)
-        
-        
-        print(task_id)
-        
 
-    
-    print(one_last_data,"one_last_dataone_last_dataone_last_data")
-    
-    
     file_doc = {
         "datetime":datetime.now().timestamp(),
         "datetime_stamp":datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
@@ -884,26 +869,17 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
         "updated":request.user.get("sub") 
     }
     
-    
-    
     task_file_doc={
         "enm_updated":request.user.get("sub"),
         "enm_ts":datetime.now().timestamp(),
         "task_id":task_id,
-        
         "status":"ENM Command Executed",
         "statusCtr":1
     }
     
-    
-    
-    
-    
     result = mongo.db.site_id_status.insert_one(task_file_doc)
-
     result = mongo.db.enmfiles.insert_one(file_doc)
-    
-    
+
     for index, oneValDf in read_df.iterrows():
         print(oneValDf["ENM"],"sajdsakdaskjdsak")
         final_data = {
@@ -924,16 +900,9 @@ TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandli
         "enm_file_name": ffnme
     }), 201
     
-    
-    
+
 def script_entry_migration(request,taskId,file_con,file_path):
-    
-    
     df = pd.read_excel(file_path,sheet_name=None)
-    print(file_path,df,"file_pathfile_pathfile_pathfile_path")
-    
-    print(df["Site"])
-    
     unique_circle = df["Site"]["circle"].unique()
     unique_enm = df["Site"]["enm"].unique()
     SiteID_list = df["Site"]["siteid"].unique().tolist()
@@ -947,23 +916,17 @@ def script_entry_migration(request,taskId,file_con,file_path):
         "ts":datetime.now().timestamp(),
         "updated":request.user.get("sub") 
     }
-    
-    
+
     final_data = {**file_con,**datafind}
-    
     mongo.db.scripting.insert_one(
         final_data
     )
-    
     mongo.db.migration.update_one(
         datafind,
         {"$set": {"status": "Done"}}
     )
     
-    
-    
-    
-    
+
 @api.route("/uploadScripting", methods=["POST"])
 @token_required
 def uploadScripting_file():
