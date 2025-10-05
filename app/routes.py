@@ -2422,30 +2422,30 @@ def toggle_sidebar_link_role(link_id):
         return jsonify({"message": f"An internal server error occurred: {str(e)}"}), 500
 
 
-# @api.route("/sidebar-links", methods=["POST"])
-# @token_required
-# def create_sidebar_links(decoded_token):
-#     if decoded_token.get("role") != "admin":
-#         return jsonify({"message": "Unauthorized"}), 403
+@api.route("/sidebar-links", methods=["POST"])
+@token_required
+def create_sidebar_links(decoded_token):
+    if decoded_token.get("role") != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
 
-#     data = request.get_json()
+    data = request.get_json()
     
-#     if not isinstance(data, list):
-#         return jsonify({"message": "Expected a list of links"}), 400
+    if not isinstance(data, list):
+        return jsonify({"message": "Expected a list of links"}), 400
 
-#     inserted_ids = []
-#     for item in data:
-#         # Validate required fields
-#         required_fields = ["label", "href", "roles", "icon", "enabled"]
-#         for field in required_fields:
-#             if field not in item:
-#                 return jsonify({"message": f"{field} is required in one of the links"}), 400
+    inserted_ids = []
+    for item in data:
+        # Validate required fields
+        required_fields = ["label", "href", "roles", "icon", "enabled"]
+        for field in required_fields:
+            if field not in item:
+                return jsonify({"message": f"{field} is required in one of the links"}), 400
 
-#         result = mongo.db.sidebar_links.insert_one(item)
-#         inserted_ids.append(str(result.inserted_id))
+        result = mongo.db.sidebar_links.insert_one(item)
+        inserted_ids.append(str(result.inserted_id))
 
-#     return jsonify({
-#         "message": "Sidebar links created successfully",
-#         "inserted_ids": inserted_ids
-#     }), 201
+    return jsonify({
+        "message": "Sidebar links created successfully",
+        "inserted_ids": inserted_ids
+    }), 201
     
