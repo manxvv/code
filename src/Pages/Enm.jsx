@@ -1,7 +1,7 @@
 import { DataTableDemo } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
 import Urls from '@/config/urls';
-import { enms, getUsers, uploadenm, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
+import { enmCountData, enms, getUsers, uploadenm, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
 import { final_url } from '@/lib/http';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
@@ -31,6 +31,13 @@ function Enm() {
         queryFn: Urlenmmfiles
     });
 
+
+        const { data:enmcount } = useQuery({
+        queryKey: ["enmcount"],
+        queryFn: enmCountData
+    });
+
+    
 
 
 

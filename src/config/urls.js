@@ -1,12 +1,12 @@
 const Urls = {
     // baseURL: "",
     // baseURL: "https://cautionapi.mpulsenet.com",
-    baseURL: "http://127.0.0.1:5000",
+    // baseURL: "http://127.0.0.1:5000",
     downloadbaseURL: "http://127.0.0.1:5000",
-    // baseURL: "https://api.mpulsenet.dataplus.live",
+    baseURL: "https://api.mpulsenet.dataplus.live",
     // downloadbaseURL: "https://api.mpulsenet.dataplus.live",
     // baseURL: "https://api.vedang.dataplus.live",
-    downloadbaseURL: "https://api.vedang.dataplus.live",
+    // downloadbaseURL: "https://api.vedang.dataplus.live",
     signin: "/login",
     signup: "/register",
     getBCGCS: '/client/getBCGCS',
@@ -42,7 +42,12 @@ const Urls = {
     gplauditNokiaSetting:"/run_gpl_audit_nokia",
     gplaudituploadScripting:"/run_gpl_audit",
     emns:"/enms",
-    circles:"/circles"
+    circles:"/circles",
+    sidebarlinks:"/sidebar-links",
+    enmcount:"/user-enm-files/count",
+    mlistcount:"/migrationList/count",
+    uscriptcount:"/user-scripting-files/count",
+    userfilescount:"/user-files/count"
     
 
 

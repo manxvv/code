@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import Modal from "@/components/Modal";
 import { DataTableDemo } from "@/components/DataTable";
 import { Edit, Trash2, Download, X } from "lucide-react";
-import { enms, getuser_scripting_files, getUsers, gpl_audit_files_get, uploadgplauditScripting, uploadScripting, Urlenmmfiles } from "@/lib/api";
+import { deleteAuditData, enms, getuser_scripting_files, getUsers, gpl_audit_files_get, uploadgplauditScripting, uploadScripting, Urlenmmfiles } from "@/lib/api";
 import Urls from "@/config/urls";
 import { useSelector } from "react-redux";
 import { final_url } from "@/lib/http";
@@ -82,6 +82,7 @@ function Gpl() {
         },
     });
 
+    
     const onSubmit = (data) => {
         const formData = new FormData();
         formData.append("circle", data.circle);
@@ -102,6 +103,24 @@ function Gpl() {
         uploadFileMutation(formData);
     };
 
+
+      const { mutate: deleteEnmMutation } = useMutation({
+            mutationFn:  deleteAuditData,
+            onSuccess: () => {
+                queryClient.invalidateQueries(["gpl_audit_files"]);
+                // setDeleteModalOpen(false);
+                // setSelectedEnmId(null);
+            },
+            onError: (error) => {
+                console.error("Error deleting ENM:", error);
+            }
+        });
+
+   const handleDelete = (id) => {
+    console.log(id,"DDS");
+    
+    deleteEnmMutation(id)
+   }
 
     const downloadFile = async (url, token, filename) => {
         const response = await fetch(url, {
@@ -209,21 +228,15 @@ function Gpl() {
             header: "Actions",
             cell: ({ row }) => {
                 const user = row.original;
+console.log(user,"iser");
 
                 return (
                     <div className="flex gap-2">
+                      
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleEdit(user)}
-                        >
-
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(user._id)}
+                            onClick={() => handleDelete(user.uID)}
                         >
                             <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
@@ -267,7 +280,7 @@ function Gpl() {
                     placeholder="Search..."
                     value={globalFilter}
                     onChange={(e) => setGlobalFilter(e.target.value)}
-                    className="max-w-xs"
+                    className="w-fit"
                 />
                 <Button onClick={() => setIsModalOpen(true)}>New Audit</Button>
             </div>

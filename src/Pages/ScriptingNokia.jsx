@@ -12,7 +12,7 @@ import Urls from "@/config/urls";
 import { useSelector } from "react-redux";
 import { final_url } from "@/lib/http";
 
-function Scripting() {
+function ScriptingNokia() {
   const queryClient = useQueryClient();
   const [loadingRow, setLoadingRow] = useState(null);
   const { register, handleSubmit, watch } = useForm();
@@ -629,4 +629,4 @@ function Scripting() {
   );
 }
 
-export default Scripting;
+export default ScriptingNokia;

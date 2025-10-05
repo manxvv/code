@@ -20,6 +20,10 @@ import GplNokia from './Pages/GplNokia';
 import Gpl from './Pages/Gpl';
 import EDashboard from './Pages/EDashboard';
 import NDashboard from './Pages/NDashboard';
+import LinkSettings from './components/admin/LinkSetting';
+import Test from './Test';
+import ScriptingEric from './Pages/ScriptingEric';
+import ScriptingNokia from './Pages/ScriptingNokia';
 
 
 function GuestOnly({ children }) {
@@ -128,6 +132,10 @@ const router = createBrowserRouter([
         path: "scripting",
         element: <Scripting />
       },
+        {
+        path: "scripting-nokia",
+        element: <ScriptingNokia />
+      },
       {
         path: "gpl-audit-///",
         element: <Gpl />
@@ -151,6 +159,21 @@ const router = createBrowserRouter([
       {
         path: "enm-command",
         element: <Enm />
+      },
+
+        {
+        path: "admin/link-settings",
+        element: <LinkSettings />
+      },
+
+         {
+        path: "test",
+        element: <Test />
+      },
+
+               {
+        path: "scripting-ericson",
+        element: <ScriptingEric />
       },
 
     ],

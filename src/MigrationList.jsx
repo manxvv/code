@@ -1,129 +1,119 @@
 import { DataTableDemo } from '@/components/DataTable';
-import TabsHeader from '@/components/TabHeader';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getMigrationList, getUsers } from '@/lib/api';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Edit, Trash2 } from 'lucide-react';
-import React, { useState } from 'react'
-import { Outlet } from 'react-router-dom';
+import { getMigrationList } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
 
 function MigrationList() {
-    const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
+    const [page, setPage] = useState(1);
+    const [limit] = useState(10);
 
-    const { data } = useQuery({
-        queryKey: ["migrationList"],
-        queryFn: getMigrationList
-    })
+    // Fetch data with page, limit, search
+    // FIX: The useQuery hook now takes a single object as an argument.
+    const { data, isLoading } = useQuery({
+        queryKey: ["migrationList", page, globalFilter, limit], // Added limit to the query key for correctness
+        queryFn: () => getMigrationList({ page, limit, search: globalFilter }),
+        keepPreviousData: true, // This keeps old data visible while new data is fetching
+    });
 
-    let handleDelete
-    const handleEdit = (user) => {
-        reset(userData);
-        setEditingUserId(user?._id);
-        setIsModalOpen(true);
-    }; 
-    
-    
-    
-    
-    
+    // Handle page change
+    const handlePrev = () => {
+        if (page > 1) {
+            setPage(page - 1);
+        }
+    };
+    const handleNext = () => {
+        // Use optional chaining with data to prevent errors if data is not yet available
+        if (page < (data?.total_pages || 1)) {
+            setPage(page + 1);
+        }
+    };
+
     const columns = [
-        {
-            accessorKey: "task_id",
-            header: "Task Id",
-            cell: ({ row }) => row.getValue("task_id"),
-        },
-        {
-            accessorKey: "circle",
-            header: "Circle",
-            cell: ({ row }) => row.getValue("circle"),
-        },
-        {
-            accessorKey: "enms",
-            header: "ENM",
-            cell: ({ row }) => row.getValue("enms"),
-        },
-        {
-            accessorKey: "site_id",
-            header: "Site Id",
-            cell: ({ row }) => row.getValue("site_id"),
-        },
-        {
-            accessorKey: "nodes",
-            header: "Node Id",
-            cell: ({ row }) => row.getValue("nodes"),
-        },
+        { accessorKey: "task_id", header: "Task Id" },
+        { accessorKey: "circle", header: "Circle" },
+        { accessorKey: "enms", header: "ENM" },
+        { accessorKey: "site_id", header: "Site Id" },
+        { accessorKey: "nodes", header: "Node Id" },
         {
             accessorKey: "statusList",
             header: "Pre Check Status",
-            cell: ({ row }) => {
-                return row.getValue("statusList")?row.getValue("statusList")["pre_check_completed"] ? "Completed" : "N/A" : "N/A"
-
-                // return row ? row.getValue("statuses").indexOf("pre_check") != -1 ? "Completed" : "N/A" : "N/A"
-            },
+            cell: ({ row }) => row.getValue("statusList")?.pre_check_completed ? "Completed" : "N/A"
         },
         {
-            accessorKey: "status",
+            accessorKey: "statusList",
             header: "Scripting Status",
-            cell: ({ row }) => {
-                return row.getValue("statusList")?row.getValue("statusList")["scripting_completed_completed"] ? "Completed" : "N/A" : "N/A"
-                // return row ? row.getValue("statuses").indexOf("scripting_completed") != -1 ? "Completed" : "N/A" : "N/A"
-            },
+            cell: ({ row }) => row.getValue("statusList")?.scripting_completed ? "Completed" : "N/A"
         },
         {
-            accessorKey: "status",
+            accessorKey: "statusList",
             header: "Post Check Status",
-            cell: ({ row }) => {
-                return row.getValue("statusList")?row.getValue("statusList")["post_check_completed"] ? "Completed" : "N/A" : "N/A"
-                // return row ? row.getValue("statuses").indexOf("post_check") != -1 ? "Completed" : "N/A" : "N/A"
-            },
+            cell: ({ row }) => row.getValue("statusList")?.post_check_completed ? "Completed" : "N/A"
         },
         {
-            accessorKey: "status",
+            accessorKey: "statusList",
             header: "Migration Status",
-            cell: ({ row }) => {
-                return row.getValue("statusList")?row.getValue("statusList")["migration_completed"] ? "Completed" : "N/A" : "N/A"
-                // return row ? row.getValue("statuses").indexOf("Migration Completed") != -1 ? "Completed" : "N/A" : "N/A"
-            },
+            cell: ({ row }) => row.getValue("statusList")?.migration_completed ? "Completed" : "N/A"
         }
-
     ];
 
-
-    console.log(data,"datadatadatadatadatadatadatadata")
-
+    // Calculate if the next button should be disabled
+    const isNextDisabled = isLoading || page >= (data?.total_pages || 1);
 
     return (
-        <>
-            <div className="flex flex-1">
-                <div className="p-2 md:p-10 bg-white dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full">
-                    <Outlet />
-
-                    <div className="flex  flex-col md:flex-row md:items-center md:justify-end gap-4 py-4">
-
-
-                        <div className="flex flex-col sm:flex-row flex-end gap-2 w-full md:w-auto">
-                            <Input
-                                placeholder="Search..."
-                                value={globalFilter ?? ""}
-                                onChange={(event) => setGlobalFilter(event.target.value)}
-                                className="w-full sm:max-w-sm"
-                            />
-
-                        </div>
-                    </div>
-
-                    <DataTableDemo
-                        data={data || []}
-                        columns={columns}
-                        globalFilter={globalFilter}
-                        setGlobalFilter={setGlobalFilter}
-                    />
-                </div>
+        <div className="p-4 bg-white dark:bg-neutral-900 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <Input
+                    placeholder="Search..."
+                    value={globalFilter}
+                    onChange={(e) => {
+                        setGlobalFilter(e.target.value);
+                        setPage(1); // Reset to page 1 on new search
+                    }}
+                    className="w-full sm:max-w-sm"
+                />
             </div>
-        </>
-    )
+
+            <DataTableDemo
+                data={data?.data || []}
+                columns={columns}
+                // These props might not be necessary if your DataTableDemo doesn't use them directly
+                // globalFilter={globalFilter}
+                // setGlobalFilter={setGlobalFilter}
+                isLoading={isLoading}
+            />
+
+            {/* Pagination Controls */}
+            <div className="flex justify-between items-center mt-4">
+                <button
+                    onClick={handlePrev}
+                    disabled={page === 1}
+                    className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                >
+                    Prev
+                </button>
+                <span>Page {page} of {data?.total_pages || 1}</span>
+                <button
+                    onClick={handleNext}
+                    disabled={isNextDisabled}
+                    className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
 }
 
-export default MigrationList
+export default MigrationList;
+
+
+
+// import React from 'react'
+
+// export default function MigrationList() {
+//   return (
+//     <div>ello</div>
+//   )
+// }

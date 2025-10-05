@@ -3,7 +3,6 @@ import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
-
 // Redux persist configuration
 const persistConfig = {
   key: 'root',
@@ -14,6 +13,7 @@ const persistConfig = {
 // Combine reducers
 const rootReducer = combineReducers({
   auth: authReducer,
+  // settings:settingsReducer
   // Add other reducers here as your app grows
 });
 

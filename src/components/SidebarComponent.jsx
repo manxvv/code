@@ -17,8 +17,11 @@ import Header from "./Header";
 import { logout } from "@/features/auth/authSlice";
 import Modal from "./Modal";
 import { useSidebar } from "../components/ui/Sidebar";
+import { useQuery } from "@tanstack/react-query";
+import { sidebarList } from "@/lib/api";
+import { Settings } from "lucide-react";
 
-// Custom Logout Button Component
+
 const LogoutButton = ({ onClick, className }) => {
   const { open, animate } = useSidebar();
 
@@ -47,6 +50,21 @@ const LogoutButton = ({ onClick, className }) => {
   );
 };
 
+// Skeleton loader component for the sidebar
+const SidebarSkeleton = () => {
+  return (
+    <div className="mt-8 flex flex-col gap-2 animate-pulse">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center gap-3 group/sidebar py-3 px-2 rounded-lg">
+          <div className="h-5 w-5 bg-slate-700 rounded-md"></div>
+          <div className="h-4 w-28 bg-slate-700 rounded-md"></div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+
 export function SidebarDemo({ outlet }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -54,9 +72,36 @@ export function SidebarDemo({ outlet }) {
 
   const role = useSelector((state) => state.auth.user.role)
 
+  // 1. Destructure isLoading and isError from useQuery
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["sidebarlink"],
+    queryFn: sidebarList
+  });
 
-  let userEmail = JSON.parse(localStorage.getItem("authData"))["user"]["email"]
-  const user = useSelector((state) => state.auth.user);
+
+  const links = data
+    ? [
+      ...data
+        .filter(link => link.roles && link.roles.includes(role))
+        .map((link) => ({
+          ...link,
+          // icon: iconMap[link.icon] || <IconUsers className="h-5 w-5 flex-shrink-0" />
+        })),
+      ...(role === "admin"
+        ? [
+          {
+            label: "Settings",
+            href: "admin/link-settings",
+            // icon: <Settings className="h-5 w-5 flex-shrink-0" />,
+          },
+        ]
+        : []),
+    ]
+    : [];
+
+
+  // let userEmail = JSON.parse(localStorage.getItem("authData"))["user"]["email"]
+  // const user = useSelector((state) => state.auth.user);
   const handleLogout = () => {
     dispatch(logout());
     navigate("/auth/login");
@@ -82,7 +127,6 @@ export function SidebarDemo({ outlet }) {
         return "Circle - ENM";
       case "/app/enm-command":
         return "ENM Command";
-
       case "/app/gpl-audit-///":
         return "GPL Audit ///";
       case "/app/gpl-audit-nokia":
@@ -92,143 +136,6 @@ export function SidebarDemo({ outlet }) {
     }
   };
 
-  const links = [
-    {
-      label: "/// Dashboard",
-      href: "e-dashboard",
-      icon: (
-        <IconBrandTabler className="h-5 w-5 flex-shrink-0" />
-      ),
-    },{
-      label: "Nokia Dashboard",
-      href: "n-dashboard",
-      icon: (
-        <IconBrandTabler className="h-5 w-5 flex-shrink-0" />
-      ),
-    },
-    // ...(role === "user" || userName === "ß"
-    //   ? [
-    //       {
-    //         label: "Special Permission",
-    //         href: "/special-permission",
-    //         icon: <IconUsers className="h-5 w-5 flex-shrink-0" />,
-    //       },
-    //     ]
-    //   : []),
-    ...(role === "user"
-      ? [
-        // {
-        //   label: "Hazard Detector",
-        //   href: "hazard-detector",
-        //   icon: (
-        //     <IconAlertTriangle className="h-5 w-5 flex-shrink-0" />
-        //   ),
-        // },
-        {
-          label: "ENM Command",
-          href: "enm-command",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-
-        {
-          label: "Check IN/OUT",
-          href: "check-in-out",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-        {
-          label: "Scripting",
-          href: "scripting",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-        
-  
-      
-        {
-          label: "GPL-Audit ///",
-          href: "gpl-audit-///",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-          {
-          label: "GPL-Audit Nokia",
-          href: "gpl-audit-nokia",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-      ]
-      : []),
-     
-    ...(role === "admin"
-      ? [
-
-        {
-          label: "ENM Command",
-          href: "enm-command",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-
-        {
-          label: "Check IN/OUT",
-          href: "check-in-out",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-        {
-          label: "Scripting",
-          href: "scripting",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        }, 
-          {
-          label: "GPL-Audit ///",
-          href: "gpl-audit-///",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-          {
-          label: "GPL-Audit Nokia",
-          href: "gpl-audit-nokia",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-        {
-          label: "Migration List",
-          href: "migration-list",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-        {
-          label: "User Management",
-          href: "admin/users",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-        {
-          label: "Circle - ENM",
-          href: "admin/circle-enm",
-          icon: (
-            <IconUsers className="h-5 w-5 flex-shrink-0" />
-          ),
-        },
-      ]
-      : []),
-  ];
 
   const [open, setOpen] = useState(false);
 
@@ -241,24 +148,33 @@ export function SidebarDemo({ outlet }) {
       >
         <Sidebar open={open} setOpen={setOpen} animate={false}>
           <SidebarBody className="justify-between gap-3">
-              <div className=" flex justify-center ">
-                <Logo />
-              </div>
-            <div className="flex no-scrollbar border border-t-2  border-x-0 items-center flex-col flex-1 overflow-y-auto overflow-x-hidden">
-              <div className="mt-8 flex flex-col gap-2">
-                {links.map((link, idx) => (
-                  <SidebarLink
-                    key={idx}
-                    link={{
-                      label: link.label,
-                      href: link.href,
-                      icon: link.icon,
-                    }}
-                  />
-                ))}
-
-                {/* Custom Logout Button */}
-                <LogoutButton onClick={() => setModalOpen(true)} />
+            <div className=" flex justify-center ">
+              <Logo />
+            </div>
+            <div className="flex no-scrollbar border border-t-2  border-x-0 items-start flex-col flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="mt-8 flex flex-col gap-2 w-full">
+                {/* 2. Add conditional rendering for links */}
+                {isLoading ? (
+                  <SidebarSkeleton />
+                ) : isError ? (
+                  <div className="text-red-500 text-sm px-2">
+                    Failed to load links.
+                  </div>
+                ) : (
+                  <>
+                    {links.map((link, idx) => (
+                      <SidebarLink
+                        key={idx}
+                        link={{
+                          label: link.label,
+                          href: link.href,
+                          // icon: link.icon,
+                        }}
+                      />
+                    ))}
+                    <LogoutButton onClick={() => setModalOpen(true)} />
+                  </>
+                )}
               </div>
             </div>
             {/* <div>

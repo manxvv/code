@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { login, logout, setAuthToke } from "@/features/auth/authSlice";
 
 
-console.log(window.location.host,"dsadasdas")
+// console.log(window.location.host,"dsadasdas")
 
 
 let all_urls={

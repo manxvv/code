@@ -35,6 +35,11 @@ export const deleteEnm = async (id) => {
   return response.data;
 };
 
+export const deleteAuditData = async (id) => {
+  const response = await http.delete(`${Urls.get_gpl_audit_files}/${id}`);
+  return response.data;
+};
+
 
 export const createCircle = async (data) => {
   const response = await http.post(`${Urls.circles}`,data);
@@ -45,6 +50,14 @@ export const editUsers = async (id, data) => {
   const response = await http.put(`${Urls.users}/${id}`, data);
   return response.data;
 };
+
+export const toggleRoleForLink  = async ({ linkId, role }) => {
+    const payload = { role };
+
+  const response = await http.put(`/sidebar-links/${linkId}/toggle-role`, payload);
+  return response.data;
+};
+
 
 export const deleteUsers = async (id, data) => {
   const response = await http.delete(`${Urls.users}/${id}`, data);
@@ -88,15 +101,41 @@ export const uploadenm = async (data) => {
 
   const response = await http.post(`${Urls.uploadenm}`, data);
 
-  console.log(response,"responseresponseresponseresponseresponse")
   return response.data;
 };
 export const Urlfiles = async (data) => {
   const response = await http.get(`${Urls.urlfiles}`, data);
   return response.data;
 };
+
+export const sidebarList = async (data) => {
+  const response = await http.get(`${Urls.sidebarlinks}`, data);
+  return response.data;
+};
+
 export const Urlenmmfiles = async (data) => {
   const response = await http.get(`${Urls.urlenmfiles}`, data);
+  return response.data;
+};
+
+export const enmCountData = async (data) => {
+  const response = await http.get(`${Urls.enmcount}`, data);
+  return response.data;
+};
+
+
+export const userfilescountData = async (data) => {
+  const response = await http.get(`${Urls.userfilescount}`, data);
+  return response.data;
+};
+
+export const mListCountData = async (data) => {
+  const response = await http.get(`${Urls.mlistcount}`, data);
+  return response.data;
+};
+
+export const userScriptCount = async (data) => {
+  const response = await http.get(`${Urls.uscriptcount}`, data);
   return response.data;
 };
 
@@ -177,10 +216,10 @@ export const getUsers = async () => {
 
 
 
-export const getMigrationList = async () => {
-  const response = await http.get(`${Urls.migrationList}`);
-  return response.data;
-};
+// export const getMigrationList = async () => {
+//   const response = await http.get(`${Urls.migrationList}`);
+//   return response.data;
+// };
 
 
 export const analyzeData = async () => {
@@ -196,4 +235,18 @@ export const patchCampaign = async () => {
 export const userBlock = async (id) => {
   const response = await http.patch(`${Urls.isblocked}/${id}`);
   return response.data;
+};
+
+
+export const getMigrationList = async ({ page = 1, limit = 10, search = "" }) => {
+  const token = localStorage.getItem("token");
+  const query = new URLSearchParams({ page, limit, search }).toString();
+  const res = await fetch(`/migrationList?${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch migration list");
+  return res.json(); 
+
+  
 };

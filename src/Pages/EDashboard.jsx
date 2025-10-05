@@ -16,7 +16,7 @@ import {
 import { ChevronDown, Loader2 } from "lucide-react";
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { dashboard } from "@/lib/api";
+import { dashboard, enms, getUsers } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 const EDashboard = () => {
@@ -25,6 +25,16 @@ const EDashboard = () => {
   // const isLoading = false;
   const dashboardLoading = false;
 
+
+   const { data: circle,isLoading:circleLoading } = useQuery({
+         queryKey: ["enms"],
+         queryFn: enms
+     });
+
+
+      const uniqueCircles = [...new Set(circle?.map((item) => item.circle).filter(Boolean))];
+
+ 
 
   const { data_real, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -164,11 +174,11 @@ const EDashboard = () => {
                 <SelectValue placeholder="Choose Circle" />
               </SelectTrigger>
               <SelectContent>
-                {/* {uniqueCircles.map((circle) => (
-            <SelectItem key={circle} value={circle}>
-              {circle}
-            </SelectItem>
-          ))} */}
+               {uniqueCircles.map((circleName) => (
+          <SelectItem key={circleName} value={circleName}>
+            {circleName}
+          </SelectItem>
+        ))}
               </SelectContent>
             </Select>
           </div>
