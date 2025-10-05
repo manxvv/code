@@ -16,6 +16,8 @@ dump_list = [
     'TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandling,ipv6Address1,ipv6Address2,ipv4Address1,ipv4Address2)',
     'FieldReplaceableUnit.(administrativeState,operationalState,productData)',
     'SystemFunctions', 'Lm', 'FeatureState.(description,featureState,featureStateId,licenseState,serviceState)',
+    'NetworkElement.(lastSuccessfulSoftwareSync,neProductVersion,networkElementId,networkFunctions,nodeModelIdentity,ossModelIdentity,ossPrefix'
+    'radioAccessTechnology,release)',
     'CmFunction.(syncStatus)',
     'ManagedElement',
     'AnrFunction', 'AnrFunctionNR', 'AnrFunctionNRUeCfg', 'AnrFunctionEUtran', 'AnrFunctionEUtranUeCfg',
@@ -68,7 +70,6 @@ class USID:
         self.circle = circle
         self.enm = enm
         self.log_mos = ';'.join([F'{_}.<w>' if '(' not in _ else _ for _ in dump_list])
-        # print(self.log_mos)
         # DB Process
         self.db = self.db_data(nsa_sa_path=nsa_sa_path)
         # Site List Data
@@ -212,7 +213,19 @@ class USID:
                     'ssbPeriodicity': site.get_fdn_parameter(fdn=r, para='ssbPeriodicity'),
                     'ssbOffset': site.get_fdn_parameter(fdn=r, para='ssbOffset'),
                     'ssbDuration': site.get_fdn_parameter(fdn=r, para='ssbDuration'),
+                    'bw': None,
                 }
+                # NRSectorCarrier --- nRSectorCarrierRef, bSChannelBwDL
+                nr_sec = site.get_fdn_parameter(fdn=r, para='nRSectorCarrierRef')
+                if len(nr_sec) > 0:
+                    nr_sec = nr_sec[0]
+                    nr_sec = site.get_fdn_from_ldn(ldn=nr_sec)
+                    if nr_sec is not None:
+                        bw = site.get_fdn_parameter(fdn=nr_sec, para='bSChannelBwDL')
+                        if bw is not None:
+                            tmp_dict['bw'] = int(bw)
+
+                # NRCellCU
                 for s in sorted([_ for _ in site.fdns if re.match(".*GNBCUCPFunction=[^,]*,NRCellCU=([^,]*)$", _)]):
                     if site.get_fdn_parameter(fdn=r, para='cellLocalId') == site.get_fdn_parameter(fdn=s, para='cellLocalId'):
                         tmp_cu_cell_list.append(s.split('=')[-1])
@@ -278,12 +291,19 @@ class USID:
             node = r.__getattribute__('node')
             site = self.sites[node]
             tmp_dict = {}
+<<<<<<< HEAD
             if not hasattr(site, 'fdns') or len(site.fdns) < 1: tmp_dict |= {'status': False, 'remark': 'No Site Found in log File',
                                                                              'log': False, 'nr': False, 'lte': False}
+=======
+            if not hasattr(site, 'fdns') or len(site.fdns) < 1:
+                tmp_dict |= {'status': False, 'remark': 'No Site Found in log File',
+                             'log': False, 'nr': False, 'lte': False}
+>>>>>>> aj_backend
             else:
                 tmp_dict |= {
                     'status': False if siteid in site_with_cell_config_issue_sites else True,
                     'remark': 'Config Issue' if siteid in site_with_cell_config_issue_sites else None,
+                    'release': site.release,
                     'log': True if len(site.fdns) > 0 else False,
                     'nr': len(self.df_cell.loc[((self.df_cell['node'] == node) & (self.df_cell.type.isin(['NR'])))].index) > 0,
                     'lte': len(self.df_cell.loc[((self.df_cell['node'] == node) & (self.df_cell.type.isin(['FDD', 'TDD'])))].index) > 0,
@@ -324,7 +344,10 @@ class USID:
                 'xn_sctpendpoint', 'nr_du_Cells', 'nr_cu_Cells', 'fdd_Cells',
                 'tdd_Cells', 'bbu'
             ])
+<<<<<<< HEAD
         print(new_df.columns)
+=======
+>>>>>>> aj_backend
         return new_df
 
     def save_different_dataframe(self, *, data: dict = None) -> None:

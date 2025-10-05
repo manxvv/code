@@ -16,14 +16,16 @@ class aa_Command(Script):
 
         status_command = ';'.join([
             F'CmFunction.(syncStatus)',
-            F'NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState)',
             F'NRCellDU.(administrativeState,cellState,operationalState,serviceState,ssbDuration,ssbFrequency,ssbOffset,ssbPeriodicity)',
+            F'NRSectorCarrier.(arfcnDL,arfcnUL,bSChannelBwDL,bSChannelBwUL,configuredMaxTxPower,operationalState,massiveMimoSleepEnabled,massiveMimoSleepState,nRMicroSleepTxEnabled)',
             F'EUtranCellTDD.(administrativeState,cellSubscriptionCapacity,channelBandwidth,earfcn,operationalState)',
             F'EUtranCellFDD.(administrativeState,dlChannelBandwidth,earfcndl,earfcnul,operationalState,ulChannelBandwidth)',
             F'SectorCarrier.(SectorCarrierId,configuredMaxTxPower,operationalState,reservedBy,rfBranchRxRef,rfBranchTxRef)',
+            F'CellSleepFunction.(sleepMode,sleepState)',
             F'SectorEquipmentFunction.(administrativeState,operationalState,availableHwOutputPower,reservedBy,rfBranchRef)',
             F'FieldReplaceableUnit.(administrativeState,operationalState,productData)',
             F'TermPointToAmf.(administrativeState,operationalState,defaultAmf,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2,usedIpAddress)',
+
         ])
         self.s_dict['cli'] = [F"""
 ##########################- Pre Check -##########################
@@ -37,7 +39,7 @@ alarm get {all_nodes} --list
 
 ####---- MO Dump ----####
 pre_dump_{self.usid.circle}_{self.usid.enm}_{date_str}.txt
-cmedit export -n {all_nodes} filetype dynamic --filecompression gzip
+cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
 cmedit export --status --job jobid
 cmedit export --download --job jobid
 
@@ -60,14 +62,6 @@ cmedit set -n {nr_nodes} GNBCUCPFunction,NRCellCU,EUtranCellRelation isHoAllowed
 cmedit action -n {all_nodes} BrmBackupManager=1 createBackup.(name="post_NSA_SA_{date_str}")
 
 7. Restart the NR Nodes base on Circle/Market guidelines
-
-###############################################################################
-#### Restart Command for NR Nodes ####
-###############################################################################
-
-{nr_bb_reset}
-
-###############################################################################
 
 8. Validate and Check Status using get commands
 
@@ -93,7 +87,7 @@ alarm get {all_nodes} --list
 
 ####---- MO Dump ----####
 post_dump_{self.usid.circle}_{self.usid.enm}_{date_str}.txt
-cmedit export -n {all_nodes} filetype dynamic --filecompression gzip
+cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
 cmedit export --status --job jobid
 cmedit export --download --job jobid
 
@@ -101,23 +95,29 @@ cmedit export --download --job jobid
 ##########################- Run it at your Own Risk -##########################
 ##########################- Donot Run if you dont understand any of these commands -##########################
 ####---- Lock All NR Cells ----####
-cmedit set {nr_nodes} GNBDUFunction,NRCellDU administrativeState=LOCKED --force
-cmedit set {nr_nodes} GNBDUFunction,NRSectorCarrier administrativeState=LOCKED --force
+cmedit set -n {nr_nodes} GNBDUFunction,NRCellDU administrativeState=LOCKED --force
+cmedit set -n {nr_nodes} GNBDUFunction,NRSectorCarrier administrativeState=LOCKED --force
 
 ####---- Unlock All NR Cells ----####
-cmedit set {nr_nodes} GNBDUFunction,NRSectorCarrier administrativeState=UNLOCKED --force
-cmedit set {nr_nodes} GNBDUFunction,NRCellDU administrativeState=UNLOCKED --force
+cmedit set -n {nr_nodes} GNBDUFunction,NRSectorCarrier administrativeState=UNLOCKED --force
+cmedit set -n {nr_nodes} GNBDUFunction,NRCellDU administrativeState=UNLOCKED --force
 
 ####---- set NRCellCU cell Parameters for transmitSib----####
-cmedit set {nr_nodes} GNBDUFunction,NRCellCU transmitSib2=true --force
-cmedit set {nr_nodes} GNBDUFunction,NRCellCU transmitSib4=true --force
-cmedit set {nr_nodes} GNBDUFunction,NRCellCU transmitSib5=true --force
+cmedit set -n {nr_nodes} GNBDUFunction,NRCellCU transmitSib2=true --force
+cmedit set -n {nr_nodes} GNBDUFunction,NRCellCU transmitSib4=true --force
+cmedit set -n {nr_nodes} GNBDUFunction,NRCellCU transmitSib5=true --force
+
+###############################################################################
+###############################################################################
+#### Restart Command for NR Nodes ####
+###############################################################################
+
+{nr_bb_reset}
 
 ###############################################################################
 ###############################################################################
 
         """]
-
         self.write_script_file()
 
     def write_script_file(self):
@@ -132,10 +132,17 @@ cmedit set {nr_nodes} GNBDUFunction,NRCellCU transmitSib5=true --force
 
     def retart_commands_list(self):
         restart_commands_list = []
-        for node in self.usid.df_site.loc[(self.usid.df_site.nr)].node.unique():
+        for node in self.usid.df_site.loc[((self.usid.df_site.nr) & (self.usid.df_site.nr))].node.unique():
             self.set_node_site_and_para_for_dcgk(node=node)
             restart_commands_list.append(
                 F'cmedit action {self.site.me},Equipment=1,FieldReplaceableUnit={self.site.bbu} restartunit.('
                 F'restartrank=RESTART_COLD,restartreason=PLANNED_RECONFIGURATION,restartinfo=NSAtoSA) --force'
             )
+        if len(restart_commands_list) > 0:
+            merged_path = os.path.join(self.usid.base_dir, F'08_NR_Node_Restart_{self.usid.circle}_{self.usid.enm}.txt')
+            if not os.path.exists(os.path.dirname(merged_path)): os.makedirs(os.path.dirname(merged_path))
+            with open(merged_path, 'a+') as f:
+                f.write('\n')
+                f.write('\n'.join(restart_commands_list))
+
         return restart_commands_list

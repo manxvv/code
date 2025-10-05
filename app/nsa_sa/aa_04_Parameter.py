@@ -13,6 +13,16 @@ class aa_04_Parameter(Script):
         if not self.site_dict['nr']: return
         df_tmp = self.usid.db['MOC'].copy(deep=True)
         df_tmp = df_tmp.loc[(df_tmp.tech.isin(['NR']))]
+<<<<<<< HEAD
+=======
+        # Logically Implemented for feature
+        if len(self.site.get_fdd_cell() + self.site.get_tdd_cell()) > 0:
+            mo, = 'SystemFunctions=1,Lm=1,FeatureState=CXC4012503',
+            para, gpl = 'featureState', 'ACTIVATED'
+            self.mo_dict[F'{mo}_{para}-{gpl}'] = {'managedElementId': self.node}
+            self.mo_dict[F'{mo}_{para}-{gpl}'].update(self.create_mo_dict_from_mo(mo=mo, para_dict={para: gpl}))
+
+>>>>>>> aj_backend
         # Para setting for complete MOs
         for r in df_tmp.loc[(df_tmp.mo.str.contains('='))].itertuples():
             mo, para, gpl = r.__getattribute__('mo'), r.__getattribute__('parameter'), r.__getattribute__('value')

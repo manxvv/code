@@ -1,4 +1,7 @@
 import copy
+
+import numpy as np
+
 from Script import Script
 
 
@@ -35,15 +38,22 @@ class aa_01_5qiTable_BWP(Script):
                     tmp_dict |= {'attributes': {'xc:operation': 'create'}}
                 self.mo_dict['5qi'][F'GNB{mo_type}Function'][F'{mo_type}5qiTable'][F'{mo_type}5qi'].append(copy.deepcopy(tmp_dict))
 
-        # bwp_dict = {
-        #     '100': {'numberOfRBs': '273', 'bWPSetId': '1'},
-        #     '90': {'numberOfRBs': '245', 'bWPSetId': '2'},
-        #     '80': {'numberOfRBs': '217', 'bWPSetId': '3'},
-        #     '70': {'numberOfRBs': '189', 'bWPSetId': '4'},
-        #     '60': {'numberOfRBs': '162', 'bWPSetId': '5'},
-        #     '50': {'numberOfRBs': '133', 'bWPSetId': '6'},
-        #     '40': {'numberOfRBs': '106', 'bWPSetId': '7'},
-        # }
+        bwp_dict = {
+            '100': {'numberOfRBs': '273', 'bWPSetId': '1'},
+            '90': {'numberOfRBs': '245', 'bWPSetId': '2'},
+            '80': {'numberOfRBs': '217', 'bWPSetId': '3'},
+            '70': {'numberOfRBs': '189', 'bWPSetId': '4'},
+            '60': {'numberOfRBs': '162', 'bWPSetId': '5'},
+            '50': {'numberOfRBs': '133', 'bWPSetId': '6'},
+            '40': {'numberOfRBs': '106', 'bWPSetId': '7'},
+        }
+
+        numberOfRBs = '273'
+        bw = self.usid.df_cell.loc[(self.usid.df_cell.node == self.node)].bw.min()
+        if bw is not np.nan:
+            bw = str(int(bw))
+            numberOfRBs = bwp_dict.get(bw, {}).get('numberOfRBs', '273')
+
         # GNBDUFunction -- BWP & BWPSet & sNSSAIList
         self.mo_dict['GNBDUFunction_BWP'] = {
             'managedElementId': self.node,
@@ -51,17 +61,17 @@ class aa_01_5qiTable_BWP(Script):
                 'gNBDUFunctionId': '1',
                 'BWP': [
                     {'attributes': {'xc:operation': 'create'}, 'bWPId': 'Init_DL_100', 'bwpContext': 'DOWNLINK',
-                     'numberOfRBs': '273', 'isInitialBwp': 'true', },
+                     'numberOfRBs': numberOfRBs, 'isInitialBwp': 'true', },
                     {'attributes': {'xc:operation': 'create'}, 'bWPId': 'Init_UL_100', 'bwpContext': 'UPLINK',
-                     'numberOfRBs': '273', 'isInitialBwp': 'true', },
+                     'numberOfRBs': numberOfRBs, 'isInitialBwp': 'true', },
                     {'attributes': {'xc:operation': 'create'}, 'bWPId': 'DenseSS_DL_100', 'bwpContext': 'DOWNLINK',
-                     'numberOfRBs': '273', 'isInitialBwp': 'false', },
+                     'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false', },
                     {'attributes': {'xc:operation': 'create'}, 'bWPId': 'DenseSS_UL_100', 'bwpContext': 'UPLINK',
-                     'numberOfRBs': '273', 'isInitialBwp': 'false', },
+                     'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false', },
                     {'attributes': {'xc:operation': 'create'}, 'bWPId': 'SparseSS_DL_100', 'bwpContext': 'DOWNLINK',
-                     'numberOfRBs': '273', 'isInitialBwp': 'false', },
+                     'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false', },
                     {'attributes': {'xc:operation': 'create'}, 'bWPId': 'SparseSS_UL_100', 'bwpContext': 'UPLINK',
-                     'numberOfRBs': '273', 'isInitialBwp': 'false', },
+                     'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false', },
                 ],
                 'BWPSet': {
                     'attributes': {'xc:operation': 'create'}, 'bWPSetId': '100',
