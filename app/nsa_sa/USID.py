@@ -291,9 +291,14 @@ class USID:
             node = r.__getattribute__('node')
             site = self.sites[node]
             tmp_dict = {}
+<<<<<<< HEAD
             if not hasattr(site, 'fdns') or len(site.fdns) < 1:
                 tmp_dict |= {'status': False, 'remark': 'No Site Found in log File',
                              'log': False, 'nr': False, 'lte': False}
+=======
+            if not hasattr(site, 'fdns') or len(site.fdns) < 1: tmp_dict |= {'status': False, 'remark': 'No Site Found in log File',
+                                                                             'log': False, 'nr': False, 'lte': False}
+>>>>>>> backend
             else:
                 tmp_dict |= {
                     'status': False if siteid in site_with_cell_config_issue_sites else True,
@@ -339,6 +344,10 @@ class USID:
                 'xn_sctpendpoint', 'nr_du_Cells', 'nr_cu_Cells', 'fdd_Cells',
                 'tdd_Cells', 'bbu'
             ])
+<<<<<<< HEAD
+=======
+        print(new_df.columns)
+>>>>>>> backend
         return new_df
 
     def save_different_dataframe(self, *, data: dict = None) -> None:
