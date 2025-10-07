@@ -449,7 +449,7 @@ function ScriptingNokia() {
           placeholder="Search..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-xs"
+          className="w-fit"
         />
         <Button onClick={() => setIsModalOpen(true)}>Upload Script</Button>
       </div>

@@ -122,7 +122,7 @@ export function DataTableDemo({
       </div>
       
        {/* --- Pagination --- */}
-       {/* <div className="flex items-center justify-between px-2">
+       <div className="flex items-center justify-between px-2">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredRowModel().rows.length} row(s).
         </div>
@@ -170,7 +170,7 @@ export function DataTableDemo({
             </Button>
           </div>
         </div>
-      </div> */}
+      </div>
     </div>
   )
 }

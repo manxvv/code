@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { dashboard, enms, getUsers } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 const EDashboard = () => {
   // Simulating your existing state and queries with dummy data
@@ -26,22 +27,21 @@ const EDashboard = () => {
   const dashboardLoading = false;
 
 
-   const { data: circle,isLoading:circleLoading } = useQuery({
-         queryKey: ["enms"],
-         queryFn: enms
-     });
+  const { data: circle, isLoading: circleLoading } = useQuery({
+    queryKey: ["enms"],
+    queryFn: enms
+  });
 
 
-      const uniqueCircles = [...new Set(circle?.map((item) => item.circle).filter(Boolean))];
+  const uniqueCircles = [...new Set(circle?.map((item) => item.circle).filter(Boolean))];
 
- 
+
 
   const { data_real, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: dashboard
   });
 
-  // Dummy data structure matching your API structure
   const data = {
     data: [
       { _id: "file1", filename: "Site_Audit_2024_Q1.xlsx" },
@@ -58,7 +58,7 @@ const EDashboard = () => {
   };
 
 
-  console.log(data_real,"data_realdata_realdata_real")
+  console.log(data_real, "data_realdata_realdata_real")
 
   const dashboardData = {
     data: {
@@ -85,18 +85,12 @@ const EDashboard = () => {
     }
   };
 
-  // Auto-select first file when data loads
   useEffect(() => {
     if (!isLoading && data?.data?.length > 0 && !selectedFile) {
       setSelectedFile(data.data[0]._id);
     }
   }, [isLoading, selectedFile]);
 
-  // const uniqueCircles = useMemo(() => {
-  //       if (!enmData) return [];
-  //       const circles = enmData.map(item => item.circle);
-  //       return [...new Set(circles)];
-  //   }, [enmData]);
 
   // Process hazard data for bar chart
   const hazardData = dashboardData?.data?.final_result
@@ -113,10 +107,7 @@ const EDashboard = () => {
     { name: "Not OK MO", value: 50 }
   ];
 
-  const parameterStatusData = [
-    { name: "OK Parameters", value: 70000 },
-    { name: "Not OK Parameters", value: 1000 }
-  ];
+
 
   // Trends data
   const trendsData = [
@@ -128,88 +119,136 @@ const EDashboard = () => {
     { month: "Jun", value: 62 }
   ];
 
-  let list = [{
-    "value": "total",
-    "userValue": "Total Sites - ENM Commands",
-    "bgcolor": "bg-[#9606f8]",
-    "textcolor": "text-[#ffffff]"
-  }, {
-    "value": "pre_check_completed",
-    "userValue": "Total Sites - Pre Check",
-    "bgcolor": "bg-[#f14919]",
-    "textcolor": "text-[#ffffff]"
-  }, {
-    "value": "post_check_completed",
-    "userValue": "Total Sites - Post Check",
-    "bgcolor": "bg-[#26c885]",
-    "textcolor": "text-[#ffffff]"
-  }, {
-    "value": "scripting_completed_completed",
-    "userValue": "Total Sites - Scripting Done",
-    "bgcolor": "bg-[#26bec8]",
-    "textcolor": "text-[#ffffff]"
-  }, {
-    "value": "migration_completed",
-    "userValue": "Total Sites - Migration Done",
-    "bgcolor": "bg-[#f32cad]",
-    "textcolor": "text-[#ffffff]"
-  }];
+  let list = [
+    {
+      value: "total",
+      userValue: "Total Sites - ENM Commands",
+      bgcolor: "bg-[#9606f8]",
+      textcolor: "text-[#ffffff]",
+      link: "/app/enm-command",
+    },
+    {
+      value: "pre_check_completed",
+      userValue: "Total Sites - Pre Check",
+      bgcolor: "bg-[#f14919]",
+      textcolor: "text-[#ffffff]",
+      link: "/app/check-in-out",
+    },
+    {
+      value: "post_check_completed",
+      userValue: "Total Sites - Post Check",
+      bgcolor: "bg-[#26c885]",
+      textcolor: "text-[#ffffff]",
+      link: "/app/check-in-out",
+    },
+    {
+      value: "scripting_completed_completed",
+      userValue: "Total Sites - Scripting Done",
+      bgcolor: "bg-[#26bec8]",
+      textcolor: "text-[#ffffff]",
+      link: "/app/scripting",
+    },
+    {
+      value: "migration_completed",
+      userValue: "Total Sites - Migration Done",
+      bgcolor: "bg-[#f32cad]",
+      textcolor: "text-[#ffffff]",
+      link: "/app/migration-list",
+    },
+  ];
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto p-8 space-y-8">
 
-        {/* Header */}
+        {/* Header with global circle filter */}
         <div className="flex gap-2 justify-end">
-
-
-
           <div className="w-fit flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Select Circle:
             </label>
-
             <Select>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Choose Circle" />
               </SelectTrigger>
               <SelectContent>
-               {uniqueCircles.map((circleName) => (
-          <SelectItem key={circleName} value={circleName}>
-            {circleName}
-          </SelectItem>
-        ))}
+                <SelectItem value="all">All Circle</SelectItem>
+                {uniqueCircles.map((circleName) => (
+                  <SelectItem key={circleName} value={circleName}>
+                    {circleName}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-
         </div>
 
-
-
-        {/* Original Status Cards - Simplified */}
         <div className="grid grid-cols-1 md:grid-cols-5 xl:grid-cols-5 gap-4">
           {list.map((oneValueOfBoard, index) => (
-            <Card key={index} className={`border text-white border-gray-200 dark:border-gray-700 ${oneValueOfBoard.bgcolor} dark:${oneValueOfBoard.bgcolor}`}>
-              <CardContent className="p-4">
-                <div className="">
-                  <p className="text-xl text-black dark:text-white leading-tight">
-                    {oneValueOfBoard.userValue || "N/A"}
-                  </p>
-                  <p className="text-2xl  font-bold text-black dark:text-white">
-                    {data?.site_id_status?.[oneValueOfBoard.value] || 0}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <Link key={index} to={oneValueOfBoard.link}>
+              <Card
+                className={`cursor-pointer border text-white border-gray-200 dark:border-gray-700 ${oneValueOfBoard.bgcolor} dark:${oneValueOfBoard.bgcolor}`}
+              >
+                <CardContent className="p-4">
+                  <div>
+                    <p className="text-xl text-black dark:text-white leading-tight">
+                      {oneValueOfBoard.userValue || "N/A"}
+                    </p>
+                    <p className="text-2xl font-bold text-black dark:text-white">
+                      {data?.site_id_status?.[oneValueOfBoard.value] || 0}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
+
+        {/* Filters for the metrics cards below */}
+        <div className="flex gap-4 justify-end pt-4">
+          <div className="w-fit flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Circle:
+            </label>
+            <Select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Choose Circle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Circle</SelectItem>
+                {uniqueCircles.map((circleName) => (
+                  <SelectItem key={circleName} value={circleName}>
+                    {circleName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-fit flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Task ID:
+            </label>
+            <Select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Choose Task ID" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Task ID</SelectItem>
+                {/* Individual Task IDs would be mapped here */}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Top Metrics - Minimalist Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="text-center space-y-1">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Total Site Audits</div>
-            <div className="text-4xl font-light text-gray-900 dark:text-gray-100">100</div>
-          </div>
+          <Link to={"/app/gpl-audit-///"}>
+            <div className="text-center space-y-1">
+              <div className="text-sm text-gray-500 dark:text-gray-400">Total Site Audits</div>
+              <div className="text-4xl font-light text-gray-900 dark:text-gray-100">100</div>
+            </div>
+          </Link>
           <div className="text-center space-y-1">
             <div className="text-sm text-gray-500 dark:text-gray-400">MO Checked</div>
             <div className="text-4xl font-light text-gray-900 dark:text-gray-100">500</div>
@@ -225,7 +264,7 @@ const EDashboard = () => {
         </div>
 
         {/* Charts Grid - Clean and Minimal */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pt-8">
 
           {/* MO Status */}
           <Card className="border-0 shadow-none bg-white dark:bg-gray-800">

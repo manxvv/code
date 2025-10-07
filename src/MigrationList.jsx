@@ -34,6 +34,8 @@ function MigrationList() {
         { accessorKey: "task_id", header: "Task Id" },
         { accessorKey: "circle", header: "Circle" },
         { accessorKey: "enms", header: "ENM" },
+        { accessorKey: "enms-command-status", header: "ENM Command Status" },
+
         { accessorKey: "site_id", header: "Site Id" },
         { accessorKey: "nodes", header: "Node Id" },
         {
@@ -71,7 +73,7 @@ function MigrationList() {
                         setGlobalFilter(e.target.value);
                         setPage(1); // Reset to page 1 on new search
                     }}
-                    className="w-full sm:max-w-sm"
+                    className="w-fit sm:max-w-sm"
                 />
             </div>
 

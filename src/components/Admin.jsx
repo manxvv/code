@@ -78,15 +78,15 @@ function Admin() {
 
     const columns = [
         {
-            accessorKey: "vendor",
+            accessorKey: "oem",
             header: "OEM",
             cell: ({ row }) => {
-                const vendorValue = row.getValue("vendor") || "-";
+                const vendorValue = row.getValue("oem") || "-";
                 if (vendorValue === "-") return vendorValue;
                 return vendorValue
-                    .split(" ")
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                    .join(" ");
+                    // .split(" ")
+                    // .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    // .join(" ");
             }
         },
         {

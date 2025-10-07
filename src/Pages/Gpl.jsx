@@ -161,11 +161,23 @@ function Gpl() {
             header: "Circle",
             cell: ({ row }) => row.getValue("circle"),
         },
-        // {
-        //     accessorKey: "enms",
-        //     header: "ENM",
-        //     cell: ({ row }) => row.getValue("enms"),
-        // },
+        
+        {
+            
+            accessorKey: "enms",
+            header: "ENM",
+            cell: ({ row }) => row.getValue("enms"),
+        },
+               {
+            accessorKey: "username",
+            header: "User Name",
+            cell: ({ row }) => row.getValue("username"),
+        },
+        {
+            accessorKey: "timestamp",
+            header: "Time Stamp",
+            cell: ({ row }) => row.getValue("timestamp"),
+        },
         // {
         //     accessorKey: "site_id",
         //     header: "Site Id",

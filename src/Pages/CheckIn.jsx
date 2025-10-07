@@ -15,6 +15,8 @@ function CheckIn() {
     const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
     const [a_name, set_a_name] = useState("");
+    const [b_name, set_b_name] = useState("");
+
     const [selectedFilter, setSelectedFilter] = useState("precheck");
     const [uploadedFiles1, setUploadedFiles1] = useState([]);
     const [uploadedFiles2, setUploadedFiles2] = useState([]);
@@ -514,6 +516,9 @@ function CheckIn() {
                             Select ENM:
                         </label>
                         <select
+                           onChange={(e) => {
+                                set_b_name(e.target.value)
+                            }}
                             className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
                         >
                             <option value="">Choose ENM</option>
@@ -546,10 +551,10 @@ function CheckIn() {
 
                 <DataTableDemo
                     data={data ? data.filter((itt) => {
-                        if (a_name == "") {
+                        if (a_name == "" || b_name) {
                             return true
                         } else {
-                            if (itt.activity_type == a_name) {
+                            if (itt.activity_type == a_name || itt.enms == b_name) {
                                 return true
                             } else {
                                 return false

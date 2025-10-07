@@ -11,7 +11,7 @@ import { login, logout, setAuthToke } from "@/features/auth/authSlice";
 let all_urls={
   "vedang.dataplus.live":"https://api.vedang.dataplus.live",
   "dataplus.mpulsenet.com":"https://api.mpulsenet.dataplus.live",
-  "localhost:5174":"http://localhost:5000",
+  "localhost:5174":"https://api.mpulsenet.dataplus.live",
   "localhost:5175":"http://localhost:5000"
 }
 

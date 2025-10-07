@@ -131,6 +131,10 @@ export function SidebarDemo({ outlet }) {
         return "GPL Audit ///";
       case "/app/gpl-audit-nokia":
         return "GPL Audit Nokia";
+             case "/app/scripting-nokia":
+        return "Scripting Nokia";
+             case "/app/admin/link-settings":
+        return "Settings";
       default:
         return "DataYog";
     }

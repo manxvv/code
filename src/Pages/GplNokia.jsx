@@ -259,7 +259,7 @@ function GplNokia() {
           placeholder="Search..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-xs"
+          className="w-fit"
         />
         <Button onClick={() => setIsModalOpen(true)}>New Audit</Button>
         <Button onClick={() => setIsModal2Open(true)}>Upload Setting</Button>
