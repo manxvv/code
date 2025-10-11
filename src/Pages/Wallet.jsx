@@ -43,7 +43,7 @@ const Users = () => {
     });
 
     const handleApprovalToggle = (id, newValue) => {
-        console.log("Toggled approval for:", id, "New Value:", newValue);
+        // console.log("Toggled approval for:", id, "New Value:", newValue);
         blockMutation.mutate(id)
     };
 
@@ -132,7 +132,7 @@ const Users = () => {
         });
     };
     const handleFilterClick = () => {
-        console.log("Filter clicked");
+        // console.log("Filter clicked");
     };
 
     const handleDelete = (user) => {

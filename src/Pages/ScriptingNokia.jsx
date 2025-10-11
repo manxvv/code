@@ -14,22 +14,14 @@ import { final_url } from "@/lib/http";
 
 function ScriptingNokia() {
   const queryClient = useQueryClient();
-  const [loadingRow, setLoadingRow] = useState(null);
   const { register, handleSubmit, watch } = useForm();
-  const [downloading, setDownloading] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [rowStates, setRowStates] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [commonisModalOpen, setCommonIsModalOpen] = useState(false);
   const [commonisModalData, setCommonIsModalData] = useState(false);
   const [commonisModalHead, setCommonIsModalHead] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [error, setError] = useState(null);
-  const [uploading, setUploading] = useState(false);
   
-  const [uploadingId, setUploadingId] = useState(null);
-  const [uploadErrorId, setUploadErrorId] = useState(null);
-  const [uploadErrorMsg, setUploadErrorMsg] = useState("");
   
   const [taskId, setTaskId] = useState("");
   const { data: enms_list } = useQuery({
@@ -54,34 +46,7 @@ function ScriptingNokia() {
     queryKey: ["enms"],
     queryFn: enms
   });
-  // const { mutate: uploadFileMutation } = useMutation({
-  //   mutationFn: async ({ rowId, formData }) => {
-  //     // mark row uploading
-  //     setRowStates((prev) => ({
-  //       ...prev,
-  //       [rowId]: { uploading: true, error: null },
-  //     }));
-  
-  //     return uploadScripting(formData);
-  //   },
-  //   onSuccess: (res, { rowId }) => {
-  //     setRowStates((prev) => ({
-  //       ...prev,
-  //       [rowId]: { uploading: false, error: null },
-  //     }));
-  //     queryClient.invalidateQueries(["user_scripting_files"]);
-  //     setIsModalOpen(false);
-  //   },
-  //   onError: (err, { rowId }) => {
-  //     setRowStates((prev) => ({
-  //       ...prev,
-  //       [rowId]: {
-  //         uploading: false,
-  //         error: err?.response?.data?.message || "Something went wrong during file upload",
-  //       },
-  //     }));
-  //   },
-  // });
+ 
   const { mutate: uploadFileMutation } = useMutation({
     mutationFn: async ({ rowId, formData }) => {
       // Set row status to uploading
@@ -106,46 +71,6 @@ function ScriptingNokia() {
       }));
     },
   });
-  // const onSubmit = async (data) => {
-  //   const formData = new FormData();
-  //   formData.append("taskId", taskId);
-  //   formData.append("softwareRelease", data.softwareRelease);
-  
-  //   if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
-  
-  //   try {
-  //     await uploadFileMutation(formData);
-  //     setIsModalOpen(false); 
-  //   } catch (error) {
-
-  //     console.error(error);
-  //   }
-  // };
-  
-  // const onSubmit = async (data) => {
-  //   const formData = new FormData();
-  //   formData.append("taskId", taskId);
-  //   formData.append("softwareRelease", data.softwareRelease);
-  //   if (data.Efile?.length) formData.append("eFile", data.Efile[0]);
-  
-  //   // Set row to pending first
-  //   setRowStates((prev) => ({
-  //     ...prev,
-  //     [taskId]: { status: "pending", errorMsg: "" },
-  //   }));
-  
-  //   try {
-  //     await new Promise((resolve, reject) => {
-  //       uploadFileMutation({ rowId: taskId, formData }, {
-  //         onSuccess: resolve,
-  //         onError: reject,
-  //       });
-  //     });
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
   const onSubmit = async (data) => {
     const formData = new FormData();
     formData.append("taskId", taskId);
@@ -353,39 +278,7 @@ function ScriptingNokia() {
       header: "Processing",
       cell: ({ row }) => row.getValue("status"),
     },
-    // {
-    //   id: "status",
-    //   header: "Processing",
-    //   cell: ({ row }) => {
-
-
-
-        
-    //     return row.getValue("status")
-
-    //     // return row.status
-    //     // const rowState = rowStates[row.original.taskId] || { status: "pending", errorMsg: "" };
-    
-    //     // return (
-    //     //   <div className="flex flex-col gap-1">
-    //     //     {rowState.status === "pending" && <span className="text-gray-500 text-sm">Pending</span>}
-    //     //     {rowState.status === "uploading" && (
-    //     //       <div className="flex items-center gap-2">
-    //     //         <svg className="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
-    //     //           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-    //     //           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-    //     //         </svg>
-    //     //         <span className="text-blue-500 text-sm">Uploading...</span>
-    //     //       </div>
-    //     //     )}
-    //     //     {rowState.status === "completed" && <span className="text-green-600 text-sm">Completed</span>}
-    //     //     {rowState.status === "error" && <span className="text-red-500 text-sm">{rowState.errorMsg}</span>}
-    //     //   </div>
-    //     // );
-    //   },
-    //   enableSorting: false,
-    //   enableHiding: false,
-    // },
+   
     {
       id: "actions",
       header: "Actions",
@@ -394,14 +287,7 @@ function ScriptingNokia() {
 
         return (
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleEdit(user)}
-            >
-
-              <Edit className="h-4 w-4" />
-            </Button>
+          
             <Button
               variant="ghost"
               size="icon"
@@ -419,27 +305,8 @@ function ScriptingNokia() {
   ];
 
 
-  const selectedCircle = watch("circle") || "";
-  const selectedEnm = watch("enm") || "";
 
-  // Filter options based on selections
-  const filteredCircles = useMemo(() => {
-    if (!selectedEnm) return [...new Set(enmsdata && enmsdata.map((e) => e.circle))];
-    return [
-      ...new Set(
-        enmsdata.filter((e) => e.enm === selectedEnm).map((e) => e.circle)
-      ),
-    ];
-  }, [enmsdata, selectedEnm]);
 
-  const filteredEnms = useMemo(() => {
-    if (!selectedCircle) return [...new Set(enmsdata && enmsdata.map((e) => e.enm))];
-    return [
-      ...new Set(
-        enmsdata.filter((e) => e.circle === selectedCircle).map((e) => e.enm)
-      ),
-    ];
-  }, [enmsdata, selectedCircle]);
 
 
   return (
@@ -530,43 +397,8 @@ function ScriptingNokia() {
                 }
 
 
-                {/* </select> */}
               </div>
-              {/* <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
-                  Circle
-                </label>
-                <select
-                  {...register("circle")}
-                  className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
-                >
-                  <option value="">Select</option>
-                  {filteredCircles.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
-
-              {/* ENM */}
-              {/* <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
-                  ENM
-                </label>
-                <select
-                  {...register("enm")}
-                  className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
-                >
-                  <option value="">Select</option>
-                  {filteredEnms.map((e) => (
-                    <option key={e} value={e}>
-                      {e}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
-
+             
               {/* Software Release */}
               <div className="flex flex-col">
                 <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
@@ -585,19 +417,7 @@ function ScriptingNokia() {
                 </select>
               </div>
 
-              {/* Site List */}
-              {/* <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
-                  Site List
-                </label>
-                <input
-                  type="file"
-                  {...register("siteList")}
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setValue("siteList", e.target.files[0])}
-                  className="p-1.5 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
-                />
-              </div> */}
+            
 
               {/* ENM Logs */}
               <div className="flex flex-col">

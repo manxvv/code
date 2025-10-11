@@ -2,9 +2,9 @@ const Urls = {
     // baseURL: "",
     // baseURL: "https://cautionapi.mpulsenet.com",
     // baseURL: "http://127.0.0.1:5000",
-    downloadbaseURL: "http://127.0.0.1:5000",
+    downloadbaseURL: "https://api.mpulsenet.dataplus.live",
+    // baseURL: "https://0da4be62c9ad.ngrok-free.app",
     baseURL: "https://api.mpulsenet.dataplus.live",
-    // downloadbaseURL: "https://api.mpulsenet.dataplus.live",
     // baseURL: "https://api.vedang.dataplus.live",
     // downloadbaseURL: "https://api.vedang.dataplus.live",
     signin: "/login",
@@ -44,10 +44,10 @@ const Urls = {
     emns:"/enms",
     circles:"/circles",
     sidebarlinks:"/sidebar-links",
-    enmcount:"/user-enm-files/count",
     mlistcount:"/migrationList/count",
     uscriptcount:"/user-scripting-files/count",
-    userfilescount:"/user-files/count"
+    userfilescount:"/user-files/count",
+    migration:"/migrationlist"
     
 
 

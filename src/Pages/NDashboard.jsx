@@ -48,7 +48,7 @@ const NDashboard = () => {
   };
 
 
-  console.log(data_real,"data_realdata_realdata_real")
+  // console.log(data_real,"data_realdata_realdata_real")
 
   const dashboardData = {
     data: {

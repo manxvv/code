@@ -12,23 +12,26 @@ import {
 } from "@/components/ui/select";
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import Swal from 'sweetalert2';
-import { Edit, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 import Modal from './Modal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { enms, createEnms, deleteEnm } from '@/lib/api';
+import { Toaster, toast } from 'sonner';
 
 function Admin() {
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset, setValue } = useForm();
 
     // --- STATE CHANGES ---
-    // State for the text search input
     const [globalFilter, setGlobalFilter] = useState("");
-    // NEW: State specifically for the vendor dropdown filter
     const [columnFilters, setColumnFilters] = useState([]);
+    // --- !! FIX: ADD PAGINATION STATE !! ---
+    const [pagination, setPagination] = useState({
+        pageIndex: 0, // initial page index
+        pageSize: 10, // initial page size
+    });
     // --- END OF STATE CHANGES ---
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,7 +39,7 @@ function Admin() {
     const [selectedEnmId, setSelectedEnmId] = useState(null);
     const [vendor, setVendor] = useState("");
 
-    const { data } = useQuery({
+    const { data, isLoading } = useQuery({ // Added isLoading
         queryKey: ["enms"],
         queryFn: enms,
     });
@@ -44,25 +47,28 @@ function Admin() {
     const { mutate } = useMutation({
         mutationFn: createEnms,
         onSuccess: () => {
-            Swal.fire("", "Successful", "success");
+            toast.success("Circle created successfully.");
             queryClient.invalidateQueries(["enms"]);
             setIsModalOpen(false);
+            reset();
         },
         onError: (error) => {
-            Swal.fire("", error?.response?.data?.message || "Error", "error");
+            toast.error(error?.response?.data?.message || "Error creating circle.");
             console.error("Error creating ENM:", error);
         }
     });
 
     const { mutate: deleteEnmMutation } = useMutation({
         mutationFn: deleteEnm,
-        onSuccess: () => {
+        onSuccess: (response) => {
             queryClient.invalidateQueries(["enms"]);
             setDeleteModalOpen(false);
             setSelectedEnmId(null);
+            toast.success(response.message);
         },
         onError: (error) => {
             console.error("Error deleting ENM:", error);
+            toast.error(error.message);
         }
     });
 
@@ -83,10 +89,7 @@ function Admin() {
             cell: ({ row }) => {
                 const vendorValue = row.getValue("oem") || "-";
                 if (vendorValue === "-") return vendorValue;
-                return vendorValue
-                    // .split(" ")
-                    // .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                    // .join(" ");
+                return vendorValue.charAt(0).toUpperCase() + vendorValue.slice(1);
             }
         },
         {
@@ -108,7 +111,6 @@ function Admin() {
                         variant="destructive"
                         size="icon"
                         onClick={() => {
-                            // Make sure you're getting the correct ID field from your data
                             setSelectedEnmId(row.original._id || row.original.id);
                             setDeleteModalOpen(true);
                         }}
@@ -122,39 +124,29 @@ function Admin() {
 
     return (
         <>
+            <Toaster position="top-right" richColors />
             <div className="flex flex-1">
                 <div className="p-2 md:p-10 bg-white dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full">
                     <Outlet />
                     <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4 py-2">
                         <div className="flex items-center justify-between w-full ">
-                            {/* Left: Search Bar */}
                             <div className="flex-1 max-w-sm">
                                 <Input
                                     placeholder="Search anything..."
                                     value={globalFilter ?? ""}
                                     onChange={(event) => setGlobalFilter(event.target.value)}
-                                    className="w-fit" // Changed from w-fit for better responsiveness
+                                    className="w-full"
                                 />
                             </div>
-
-                            {/* Right: Vendor Dropdown + Button */}
                             <div className="flex items-center gap-2">
                                 <div className="w-48">
-                                    {/* --- MODIFIED VENDOR SELECT --- */}
                                     <Select
                                         onValueChange={(value) => {
-                                            if (value === "all") {
-                                                // If "All" is selected, clear the filter for the 'vendor' column
-                                                setColumnFilters(
-                                                    columnFilters.filter((f) => f.id !== "vendor")
-                                                );
-                                            } else {
-                                                // Set the filter for the 'vendor' column
-                                                setColumnFilters([
-                                                    ...columnFilters.filter((f) => f.id !== "vendor"), // Remove old vendor filter
-                                                    { id: "vendor", value: value }, // Add new one
-                                                ]);
+                                            const newColumnFilters = columnFilters.filter((f) => f.id !== "oem");
+                                            if (value !== "all") {
+                                                newColumnFilters.push({ id: "oem", value: value });
                                             }
+                                            setColumnFilters(newColumnFilters);
                                         }}
                                     >
                                         <SelectTrigger className="w-full">
@@ -166,12 +158,11 @@ function Admin() {
                                             <SelectItem value="ericsson">Ericsson</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    {/* --- END OF MODIFICATION --- */}
                                 </div>
                                 <Button
                                     onClick={() => {
                                         reset();
-                                        setVendor(""); // Reset vendor selection in modal
+                                        setVendor("");
                                         setIsModalOpen(true);
                                     }}
                                 >
@@ -180,21 +171,26 @@ function Admin() {
                             </div>
                         </div>
                     </div>
-                    {/* --- MODIFIED DATATABLE PROPS --- */}
+                    
+                    {/* --- !! FIX: PASS ALL REQUIRED PROPS TO DATATABLE !! --- */}
                     <DataTableDemo
-                        data={data || []}
                         columns={columns}
+                        data={data || []}
+                        isLoading={isLoading}
+                        pagination={pagination}
+                        setPagination={setPagination}
                         globalFilter={globalFilter}
                         setGlobalFilter={setGlobalFilter}
-                        columnFilters={columnFilters}      // Pass the new state
-                        setColumnFilters={setColumnFilters}  // Pass the setter
+                        columnFilters={columnFilters}
+                        setColumnFilters={setColumnFilters}
+                        // totalCount is derived from data length for client-side pagination
+                        totalCount={(data || []).length} 
                     />
-                    {/* --- END OF MODIFICATION --- */}
+                    {/* --- END OF FIX --- */}
                 </div>
             </div>
 
-            {/* --- Modals remain the same, ensure you have them here --- */}
-            {/* Create ENM Modal */}
+            {/* Modals remain unchanged */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -213,7 +209,7 @@ function Admin() {
                         <Select
                             onValueChange={(value) => {
                                 setVendor(value)
-                                setValue("vendor", value)
+                                setValue("oem", value)
                             }}
                         >
                             <SelectTrigger className="w-full">
@@ -251,8 +247,6 @@ function Admin() {
                     </div>
                 </form>
             </Modal>
-
-            {/* Delete Confirmation Modal */}
             <Modal
                 isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}

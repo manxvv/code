@@ -14,9 +14,11 @@ import { final_url } from "@/lib/http";
 
 function Gpl() {
     const queryClient = useQueryClient();
-    const { register, handleSubmit, watch } = useForm();
+    const { register, handleSubmit, watch, setValue } = useForm();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState(null);
     const [commonisModalOpen, setCommonIsModalOpen] = useState(false);
     const [commonisModalData, setCommonIsModalData] = useState(false);
     const [commonisModalHead, setCommonIsModalHead] = useState(false);
@@ -24,7 +26,6 @@ function Gpl() {
     const [error, setError] = useState(null);
     const [uploading, setUploading] = useState(false);
 
-    const [taskId, setTaskId] = useState("");
     const { data: enms_list } = useQuery({
         queryKey: ["enmfiles"],
         queryFn: Urlenmmfiles
@@ -63,7 +64,7 @@ function Gpl() {
             });
 
 
-            console.log(formData, "formDataformDataformData")
+            // console.log(formData, "formDataformDataformData")
             return uploadgplauditScripting(formData);
         },
         onSuccess: (res) => {
@@ -71,7 +72,7 @@ function Gpl() {
             setUploading(false);
             setError(null);
             queryClient.invalidateQueries(["user_scripting_files"]);
-            console.log("File uploaded successfully:", res);
+            // console.log("File uploaded successfully:", res);
             setIsModalOpen(false)
         },
         onError: (err) => {
@@ -88,11 +89,11 @@ function Gpl() {
         formData.append("circle", data.circle);
         // formData.append("enm", data.enm);
 
-        console.log(data, "datadatadatadatadatadatadata")
+        // console.log(data, "datadatadatadatadatadatadata")
 
         if (data.Efile) {
 
-            console.log(data.Efile, "data.Efiledata.Efiledata.Efile")
+            // console.log(data.Efile, "data.Efiledata.Efiledata.Efile")
             const efiles = Array.from(data.Efile); // convert {"0":file,"1":file,...} → [file,file,...]
             efiles.forEach((file) => {
                 formData.append("Efile", file);
@@ -102,6 +103,8 @@ function Gpl() {
 
         uploadFileMutation(formData);
     };
+
+     
 
 
       const { mutate: deleteEnmMutation } = useMutation({
@@ -117,9 +120,16 @@ function Gpl() {
         });
 
    const handleDelete = (id) => {
-    console.log(id,"DDS");
-    
-    deleteEnmMutation(id)
+    setSelectedUserId(id);
+    setIsDeleteModalOpen(true);
+   }
+
+   const confirmDelete = () => {
+    if (selectedUserId) {
+        deleteEnmMutation(selectedUserId);
+        setIsDeleteModalOpen(false);
+        setSelectedUserId(null);
+    }
    }
 
     const downloadFile = async (url, token, filename) => {
@@ -162,59 +172,18 @@ function Gpl() {
             cell: ({ row }) => row.getValue("circle"),
         },
         
-        {
-            
-            accessorKey: "enms",
-            header: "ENM",
-            cell: ({ row }) => row.getValue("enms"),
-        },
+      
                {
-            accessorKey: "username",
-            header: "User Name",
-            cell: ({ row }) => row.getValue("username"),
+            accessorKey: "email",
+            header: "Email",
+            cell: ({ row }) => row.getValue("email"),
         },
         {
             accessorKey: "timestamp",
             header: "Time Stamp",
             cell: ({ row }) => row.getValue("timestamp"),
         },
-        // {
-        //     accessorKey: "site_id",
-        //     header: "Site Id",
-        //     cell: ({ row }) => {
-
-        //         row.getValue("site_id")
-
-
-        //         return <p className="cursor-pointer text-blue-600" onClick={() => {
-        //             setCommonIsModalOpen(true)
-
-        //             setCommonIsModalHead("View Sites")
-        //             setCommonIsModalData(<><ul>{row.getValue("site_id").split("/").map((oneVal) => {
-        //                 return <li>{oneVal}</li>
-        //             })}</ul></>)
-        //         }}>View Sites</p>
-        //     },
-        // },
-        // {
-        //     accessorKey: "nodes",
-        //     header: "Node Id",
-        //     cell: ({ row }) => {
-
-        //         row.getValue("nodes")
-
-
-        //         return <p className="cursor-pointer text-blue-600" onClick={() => {
-        //             setCommonIsModalOpen(true)
-
-        //             setCommonIsModalHead("View Nodes")
-        //             setCommonIsModalData(<><ul>{row.getValue("nodes").split("/").map((oneVal) => {
-        //                 return <li>{oneVal}</li>
-        //             })}</ul></>)
-        //         }}>View Nodes</p>
-        //     },
-        // },
-
+  
 
         {
             accessorKey: "zip_path",
@@ -223,7 +192,7 @@ function Gpl() {
                 const file = row.original;
                 const token = useSelector((state) => state.auth.access_token);
 
-                console.log(row, "rowrowrowrowrowrowrowrowrowrowrowrow")
+                // console.log(row, "rowrowrowrowrowrowrowrowrowrowrowrow")
                 return (
                     <Button
                         onClick={() =>
@@ -240,17 +209,17 @@ function Gpl() {
             header: "Actions",
             cell: ({ row }) => {
                 const user = row.original;
-console.log(user,"iser");
+// console.log(user,"iser");
 
                 return (
-                    <div className="flex gap-2">
+                    <div className="flex  gap-2">
                       
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(user.uID)}
                         >
-                            <Trash2 className="h-4 w-4 text-red-600" />
+                            <Trash2 className="h-4 w-4 cursor-pointer text-red-600" />
                         </Button>
                     </div>
                 );
@@ -298,6 +267,7 @@ console.log(user,"iser");
             </div>
 
             <DataTableDemo
+            
                 columns={columns}
                 data={gpl_audit_files || []}
                 globalFilter={globalFilter}
@@ -319,7 +289,7 @@ console.log(user,"iser");
                     {commonisModalData}
                 </div>
 
-            </Modal>
+            </Modal>    
 
             <Modal
                 isOpen={isModalOpen}
@@ -333,48 +303,7 @@ console.log(user,"iser");
                 <div className="max-h-[70vh] overflow-y-auto p-6">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Circle */}
-                            {/* <div className='flex flex-col'>
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
-                  Task Id
-                </label>
-                <input
-
-                  {...register("taskId", {
-                    onChange: (e) => {
-                      setTaskId(e.target.value)
-                    }
-                  })}
-                  autoComplete={false} placeholder='Task Id' type='text' value={taskId} list='task_ids' onChange={(e) => {
-                    setTaskId(e.target.value)
-                  }}
-                  className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700" />
-
-                <datalist id='task_ids'>
-                  <option>Task Id</option>
-
-                  {JSON.stringify(enms_list)}
-
-                  {
-                    enms_list && enms_list.map((one_enm) => {
-                      return <option>{one_enm.task_id}</option>
-                    })
-                  }
-                </datalist>
-
-                {
-                  enms_list && enms_list.filter((oneenm) => {
-
-                    if (taskId == "") {
-                      return false
-                    } else {
-                      return oneenm.task_id == taskId
-                    }
-                  }).length == 0 && taskId != "" && <p>Please select valid Task Id</p>
-                }
-
-
-              </div> */}
+                          
                             <div className="flex flex-col">
                                 <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
                                     Circle
@@ -392,55 +321,6 @@ console.log(user,"iser");
                                 </select>
                             </div>
 
-                            {/* ENM */}
-                            {/* <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
-                  ENM
-                </label>
-                <select
-                  {...register("enm")}
-                  className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
-                >
-                  <option value="">Select</option>
-                  {filteredEnms.map((e) => (
-                    <option key={e} value={e}>
-                      {e}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
-
-                            {/* Software Release */}
-                            {/* <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
-                  Software Release
-                </label>
-                <select
-                  {...register("softwareRelease")}
-                  className="p-2 border rounded-md bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700"
-                >
-                  <option value="">Select</option>
-                  {["24Q2"].map((op) => (
-                    <option key={op} value={op}>
-                      {op}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
-
-                            {/* Site List */}
-                            {/* <div className="flex flex-col">
-                <label className="mb-2 font-medium text-gray-700 dark:text-gray-300">
-                  Site List
-                </label>
-                <input
-                  type="file"
-                  {...register("siteList")}
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setValue("siteList", e.target.files[0])}
-                  className="p-1.5 border rounded-md text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-neutral-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-200 dark:hover:file:bg-neutral-600"
-                />
-              </div> */}
 
                             {/* ENM Logs */}
                             <div className="flex flex-col">
@@ -481,6 +361,27 @@ console.log(user,"iser");
                             </button>
                         </div>
                     </form>
+                </div>
+            </Modal>
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                title="Confirm Deletion"
+                size="sm"
+                showCloseButton
+                closeOnBackdrop
+                closeOnEscape
+            >
+                <div className="p-6">
+                    <p>Are you sure you want to delete this item?</p>
+                    <div className="flex justify-end gap-4 mt-4">
+                        <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            Delete
+                        </Button>
+                    </div>
                 </div>
             </Modal>
         </div>

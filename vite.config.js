@@ -6,6 +6,8 @@ import path from "path"
 export default defineConfig({
    server: {
     host: true, 
+        allowedHosts: ['.trycloudflare.com'], // allows all trycloudflare URLs
+
     port: 5174,   // project 2
 
   },

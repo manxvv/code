@@ -122,7 +122,7 @@ const Users = () => {
     });
 
     const handleFilterClick = () => {
-        console.log("Filter clicked");
+        // console.log("Filter clicked");
     };
 
 

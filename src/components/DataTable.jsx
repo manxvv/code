@@ -73,7 +73,7 @@ export function DataTableDemo({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="border-b bg-primary hover:bg-primary/90"
+                className="border-b bg-primary w-full hover:bg-primary/90"
               >
                 {headerGroup.headers.map((header) => {
                   return (

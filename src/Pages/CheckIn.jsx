@@ -1,4 +1,5 @@
 import { DataTableDemo } from '@/components/DataTable';
+import { DataTableSkeleton } from '@/components/DataTableSkeleton';
 import { Button } from '@/components/ui/button';
 import Urls from '@/config/urls';
 import { enms, getUsers, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
@@ -14,9 +15,9 @@ import Swal from 'sweetalert2';
 function CheckIn() {
     const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
-    const [a_name, set_a_name] = useState("");
-    const [b_name, set_b_name] = useState("");
-
+    const [selectedActivity, setSelectedActivity] = useState("");
+    const [selectedEnm, setSelectedEnm] = useState("");
+    const [selectedCircle, setSelectedCircle] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("precheck");
     const [uploadedFiles1, setUploadedFiles1] = useState([]);
     const [uploadedFiles2, setUploadedFiles2] = useState([]);
@@ -24,10 +25,11 @@ function CheckIn() {
     const fileInputRef2 = useRef(null);
     const [error, setError] = useState(null);
     const [taskId, setTaskId] = useState("");
+    
     const [upload, setUpload] = useState(false);
 
     const [showDiv, setShowDiv] = useState(false);
-    const { data } = useQuery({
+    const { data, isLoading: isTableDataLoading } = useQuery({
         queryKey: ["files"],
         queryFn: Urlfiles
     });
@@ -65,7 +67,7 @@ function CheckIn() {
         },
         onSuccess: (res) => {
             Swal.close(); // hide loader
-            console.log("File uploaded successfully:", res);
+            // console.log("File uploaded successfully:", res);
             queryClient.invalidateQueries(["datatable"]);
             setUploadedFiles1([]);
             setUploadedFiles2([]);
@@ -86,7 +88,7 @@ function CheckIn() {
     const handleFileUpload = (event, fileNumber) => {
         const files = Array.from(event.target.files);
         if (files.length > 0) {
-            console.log("Files selected:", files.map(f => f.name));
+            // console.log("Files selected:", files.map(f => f.name));
             if (fileNumber === 1) {
                 setUploadedFiles1(prev => [...prev, ...files]);
             } else if (fileNumber === 2) {
@@ -109,7 +111,7 @@ function CheckIn() {
     };
 
     const handleUpload = () => {
-        console.log("Upload button clicked for:", selectedFilter, uploadedFiles1, uploadedFiles2);
+        // console.log("Upload button clicked for:", selectedFilter, uploadedFiles1, uploadedFiles2);
 
         if (enms_list) {
             let enms_list_len = enms_list.filter((oneenm) => {
@@ -162,7 +164,7 @@ function CheckIn() {
 
         } else {
             const errorMessage = "Please select the required file(s) before uploading.";
-            console.log(errorMessage);
+            // console.log(errorMessage);
             setError(errorMessage);
         }
 
@@ -170,9 +172,11 @@ function CheckIn() {
         uploadFileMutation(formData);
     };
 
-    const handleGenerate = () => {
-        console.log("Generate Report button clicked.");
-    };
+    // const handleGenerate = () => {
+    //     console.log("Generate Report button clicked.");
+    // };
+
+
 
 
     const columns = [
@@ -237,6 +241,36 @@ function CheckIn() {
                 );
             },
         },
+          {
+              id: "actions",
+              header: "Actions",
+              cell: ({ row }) => {
+                const user = row.original;
+        
+                return (
+                  <div className="flex gap-2">
+                    {/* <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(user)}
+                    >
+        
+                      <Edit className="h-4 w-4" />
+                    </Button> */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(user._id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                );
+              },
+              enableSorting: false,
+              enableHiding: false,
+            }
+        
     ];
 
     const downloadFile = async (url, token, filename) => {
@@ -338,7 +372,23 @@ function CheckIn() {
     }, [enmData]);
 
 
-    console.log(enms_list, "enms_listenms_listenms_listenms_list")
+const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data?.filter(item => {
+        const circleMatch = selectedCircle ? item.taskIdresult?.circle === selectedCircle : true;
+        const enmMatch = selectedEnm ? item.taskIdresult?.enms === selectedEnm : true;
+        
+        // Corrected activityMatch logic
+        const activityMatch = selectedActivity 
+            ? item.activity_type=== selectedActivity
+            : true;
+
+            
+
+        return circleMatch && enmMatch && activityMatch;
+    });
+}, [data, selectedCircle, selectedEnm, selectedActivity]);
+
 
     return (
         <div className="flex flex-1">
@@ -477,13 +527,13 @@ function CheckIn() {
                                 )}
                             </Button>
 
-                            <Button
+                            {/* <Button
                                 onClick={handleGenerate}
                                 className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-lg shadow-sm transition-all duration-200"
                             >
                                 <FileText className="h-4 w-4 mr-2" />
                                 Generate Report
-                            </Button>
+                            </Button> */}
                         </div>
 
                         {error && (
@@ -501,6 +551,8 @@ function CheckIn() {
                             Select Circle:
                         </label>
                         <select
+                            value={selectedCircle}
+                            onChange={(e) => setSelectedCircle(e.target.value)}
                             className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
                         >
                             <option value="">Choose Circle</option>
@@ -516,9 +568,8 @@ function CheckIn() {
                             Select ENM:
                         </label>
                         <select
-                           onChange={(e) => {
-                                set_b_name(e.target.value)
-                            }}
+                           value={selectedEnm}
+                           onChange={(e) => setSelectedEnm(e.target.value)}
                             className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
                         >
                             <option value="">Choose ENM</option>
@@ -533,15 +584,13 @@ function CheckIn() {
                             Activity Name:
                         </label>
                         <select
-
-                            onChange={(e) => {
-                                set_a_name(e.target.value)
-                            }}
+                            value={selectedActivity}
+                            onChange={(e) => setSelectedActivity(e.target.value)}
                             className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
                         >
                             <option value="">Both</option>
-                            {[{ "acivity_name": "Pre Check" }, { "acivity_name": "Post Check" }]?.map((item) => (
-                                <option key={item.acivity_name} value={item.acivity_name}>{item.acivity_name}</option>
+                            {[{ "activity_type": "Pre Check" }, { "activity_type": "Post Check" }]?.map((item) => (
+                                <option key={item.activity_type} value={item.activity_type}>{item.activity_type}</option>
                             ))}
                         </select>
                     </div>
@@ -549,22 +598,18 @@ function CheckIn() {
 
 
 
-                <DataTableDemo
-                    data={data ? data.filter((itt) => {
-                        if (a_name == "" || b_name) {
-                            return true
-                        } else {
-                            if (itt.activity_type == a_name || itt.enms == b_name) {
-                                return true
-                            } else {
-                                return false
-                            }
-                        }
-                    }) : []}
-                    columns={columns}
-                    globalFilter={globalFilter}
-                    setGlobalFilter={setGlobalFilter}
-                />
+                {isTableDataLoading ? (
+                    <DataTableSkeleton />
+                ) : (
+                    <DataTableDemo
+                        data={filteredData}
+                         
+
+                        columns={columns}
+                        globalFilter={globalFilter}
+                        setGlobalFilter={setGlobalFilter}
+                    />
+                )}
             </div>
         </div>
     );

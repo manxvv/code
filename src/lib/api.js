@@ -1,5 +1,5 @@
 import Urls from "../config/urls";
-import http from "./http";
+import http, { final_url } from "./http";
 export const fetchUsers = async (role = null) => {
   try {
     let url = Urls.users;
@@ -118,10 +118,7 @@ export const Urlenmmfiles = async (data) => {
   return response.data;
 };
 
-export const enmCountData = async (data) => {
-  const response = await http.get(`${Urls.enmcount}`, data);
-  return response.data;
-};
+
 
 
 export const userfilescountData = async (data) => {
@@ -240,13 +237,57 @@ export const userBlock = async (id) => {
 
 export const getMigrationList = async ({ page = 1, limit = 10, search = "" }) => {
   const token = localStorage.getItem("token");
-  const query = new URLSearchParams({ page, limit, search }).toString();
-  const res = await fetch(`/migrationList?${query}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  
+  // Create a URLSearchParams object and remove the search param if it's empty
+  const params = new URLSearchParams({ 
+    page: page.toString(), 
+    limit: limit.toString() 
+  });
+  if (search) {
+    params.append('search', search);
+  }
+
+  const res = await fetch(`${final_url}/migrationList?${params.toString()}`, {
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json' // It's good practice to include this header
+    },
   });
 
-  if (!res.ok) throw new Error("Failed to fetch migration list");
-  return res.json(); 
+  // --- THIS IS THE CRITICAL CHANGE ---
+  // You must check if the response was successful and then parse the JSON body.
+  if (!res.ok) {
+    // If the server responded with an error, throw an error
+    // to let React Query know the request failed.
+    throw new Error('Network response was not ok');
+  }
 
+  const data = await res.json(); // <-- Add this line to parse the JSON response
   
+  // Make sure your API returns an object like: { data: [...], total_pages: ... }
+  // If your API returns a different structure, you might need to adapt it here.
+  // For example, if it returns an array directly and a header for total pages:
+  // const totalPages = res.headers.get('X-Total-Pages');
+  // return { data: data, total_pages: Number(totalPages) };
+  
+  return data; // <-- Return the parsed data
 };
+
+
+export const migData = async ({ page = 1, limit = 10, search = "" }) => {
+  const token = localStorage.getItem("token");
+
+  const params = {
+    page,
+    limit,
+  };
+  if (search) params.search = search;
+
+  const response = await http.get(Urls.migrationList, {
+    headers: { Authorization: `Bearer ${token}` },
+    params, // Axios automatically encodes this as ?page=...&limit=...
+  });
+
+  return response.data;
+};
+

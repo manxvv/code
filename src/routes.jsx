@@ -28,7 +28,7 @@ import ScriptingNokia from './Pages/ScriptingNokia';
 
 function GuestOnly({ children }) {
   const authenticated = useSelector((state) => state.auth.isAuthenticated);
-  console.log(authenticated, "time");
+  // console.log(authenticated, "time");
 
   const hasStoredAuth = () => {
     try {
@@ -50,7 +50,7 @@ function AuthRequired({ requiredRoles = [], children }) {
   if (requiredRoles.length) {
     rolePermitted = requiredRoles.includes(user?.role);
   }
-  console.log(rolePermitted, "sdsd", authenticated);
+  // console.log(rolePermitted, "sdsd", authenticated);
   return authenticated && rolePermitted ? children : <Navigate to="/auth/login" />;
 }
 

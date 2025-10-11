@@ -77,7 +77,7 @@ export default function Campaign() {
 
     if (openState === "Stay" && openPayment === "Payment") {
       // Allow
-      console.log("Form submitted:", data);
+      // console.log("Form submitted:", data);
     } else if (openState === "Approval" || openPayment === "None") {
       alert("Error: Cannot open with current settings.");
       setError("openState", { message: "Invalid combination" });
@@ -92,7 +92,7 @@ export default function Campaign() {
 
 
     const handleFilterClick = () => {
-        console.log("Filter clicked");
+        // console.log("Filter clicked");
     };
 
     
@@ -106,7 +106,7 @@ export default function Campaign() {
   
 const handleApprovalToggle = (id, newValue) => {
     // Update approval status
-    console.log("Toggled approval for:", id, "New Value:", newValue);
+    // console.log("Toggled approval for:", id, "New Value:", newValue);
     // Add API call or mutation logic here
 };
 
@@ -330,6 +330,9 @@ const handleApprovalToggle = (id, newValue) => {
                         </div>
                     </div>
                     <DataTableDemo
+                        pagination={pagination}
+    setPagination={setPagination}
+
                         columns={columns || []}
                         data={campaign?.data || []}
                         globalFilter={globalFilter}

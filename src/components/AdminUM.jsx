@@ -10,6 +10,7 @@ import { Outlet } from 'react-router-dom';
 import Modal from './Modal';
 import { useForm } from 'react-hook-form';
 import Swal from 'sweetalert2';
+import { toast } from 'sonner';
 
 function AdminUM() {
     const queryClient = useQueryClient();
@@ -18,7 +19,7 @@ function AdminUM() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [selectedEnmId, setSelectedEnmId] = useState(null);
-    console.log(selectedEnmId, "fdff");
+    // console.log(selectedEnmId, "fdff");
 
     const { data } = useQuery({
         queryKey: ["users"],
@@ -26,36 +27,36 @@ function AdminUM() {
     });
 
 
+const { mutate } = useMutation({
+    mutationFn: createUsers,
+    onSuccess: (res) => {
+        // This was already correct, notifies on success
+        toast.success(res.message || "User created successfully!");
+        queryClient.invalidateQueries(["enms"]); // Assuming you might want to refetch a list of users, adjust query key if needed
+        setIsModalOpen(false);
+    },
+    onError: (error) => {
+        // Updated to correctly display the error message
+        toast.error(error?.response?.data?.error || "An error occurred while creating the user.");
+        console.error("Error creating user:", error);
+    }
+});
 
-    const { mutate } = useMutation({
-        mutationFn: createUsers,
-        onSuccess: () => {
-
-            Swal.fire("", "Successful", "success");
-            queryClient.invalidateQueries(["enms"]);
-            setIsModalOpen(false);
-        },
-        onError: (error) => {
-
-            Swal.fire("", error?.response?.data?.error || "Error", "error");
-            // setError(error.message || "Something went wrong during file upload");
-
-            console.error("Error creating ENM:", error);
-        }
-    });
-
-    const { mutate: deleteEnmMutation } = useMutation({
-        mutationFn: deleteUsers,
-        onSuccess: () => {
-            queryClient.invalidateQueries(["enms"]);
-            setDeleteModalOpen(false);
-            setSelectedEnmId(null);
-        },
-        onError: (error) => {
-            console.error("Error deleting ENM:", error);
-        }
-    });
-
+const { mutate: deleteEnmMutation } = useMutation({
+    mutationFn: deleteUsers,
+    onSuccess: () => {
+        // ADDED: Success toast on deletion
+        toast.success("User deleted successfully.");
+        queryClient.invalidateQueries(["enms"]); // Adjust query key if needed
+        setDeleteModalOpen(false);
+        setSelectedEnmId(null);
+    },
+    onError: (error) => {
+        // ADDED: Error toast on deletion failure
+        toast.error(error?.response?.data?.error || "Failed to delete the user.");
+        console.error("Error deleting user:", error);
+    }
+});
 
     const onSubmit = (formData) => {
         mutate(formData);

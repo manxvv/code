@@ -1,7 +1,7 @@
 import { DataTableDemo } from '@/components/DataTable';
 import { Button } from '@/components/ui/button';
 import Urls from '@/config/urls';
-import { enmCountData, enms, getUsers, uploadenm, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
+import {  enms, getUsers, uploadenm, uploadPdf, Urlenmmfiles, Urlfiles } from '@/lib/api';
 import { final_url } from '@/lib/http';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit, Trash2, Upload, FileText, FolderSearch, X, File, CheckCircle } from 'lucide-react';
@@ -25,6 +25,8 @@ function Enm() {
     const fileInputRef2 = useRef(null);
     const [error, setError] = useState(null);
     const [userDetails, setUserDetails] = useState(userEmail);
+    const [selectedCircle, setSelectedCircle] = useState("");
+const [selectedEnm, setSelectedEnm] = useState("");
 
     const { data } = useQuery({
         queryKey: ["files"],
@@ -32,10 +34,6 @@ function Enm() {
     });
 
 
-        const { data:enmcount } = useQuery({
-        queryKey: ["enmcount"],
-        queryFn: enmCountData
-    });
 
     
 
@@ -52,7 +50,7 @@ function Enm() {
     const { mutate: uploadFileMutation, isLoading: isUploading } = useMutation({
         mutationFn: (formData) => uploadenm(formData),
         onSuccess: (res) => {
-            console.log("File uploaded successfully:", res);
+            // console.log("File uploaded successfully:", res);
             queryClient.invalidateQueries(['datatable']);
             setUploadedFiles1([]);
             setUploadedFiles2([]);
@@ -70,7 +68,7 @@ function Enm() {
     const handleFileUpload = (event, fileNumber) => {
         const files = Array.from(event.target.files);
         if (files.length > 0) {
-            console.log("Files selected:", files.map(f => f.name));
+            // console.log("Files selected:", files.map(f => f.name));
             if (fileNumber === 1) {
                 setUploadedFiles1(prev => [...prev, ...files]);
             } else if (fileNumber === 2) {
@@ -93,7 +91,7 @@ function Enm() {
     };
 
     const handleUpload = () => {
-        console.log("Upload button clicked for:", selectedFilter);
+        // console.log("Upload button clicked for:", selectedFilter);
         setError(null);
 
         if (selectedFilter === "precheck" && uploadedFiles1.length > 0) {
@@ -116,15 +114,27 @@ function Enm() {
             });
         } else {
             const errorMessage = "Please select the required file(s) before uploading.";
-            console.log(errorMessage);
+            // console.log(errorMessage);
             setError(errorMessage);
         }
     };
 
-    const handleGenerate = () => {
-        console.log("Generate Report button clicked.");
-    };
+    // console.log(selectedEnm,"saekfsew");
+    
 
+const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter(item => {
+        // console.log(item,"item1244");
+        
+        const userFilter = userDetails ? item?.userresult?.email === userDetails : true;
+        const circleFilter = selectedCircle ? item.circle === selectedCircle : true;
+        const enmFilter = selectedEnm ? item.enm === selectedEnm : true;
+        // console.log(enmFilter,"enmfiltersasa");
+        
+        return userFilter && circleFilter && enmFilter;
+    });
+}, [data, userDetails, selectedCircle, selectedEnm]);
 
     const columns = [
         {
@@ -176,6 +186,36 @@ function Enm() {
                 );
             },
         },
+          {
+              id: "actions",
+              header: "Actions",
+              cell: ({ row }) => {
+                const user = row.original;
+        
+                return (
+                  <div className="flex gap-2">
+                    {/* <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(user)}
+                    >
+        
+                      <Edit className="h-4 w-4" />
+                    </Button> */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(user._id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                );
+              },
+              enableSorting: false,
+              enableHiding: false,
+            }
+        
     ];
 
     const downloadFile = async (url, token, filename) => {
@@ -388,13 +428,7 @@ function Enm() {
                                 )}
                             </Button>
 
-                            {/* <Button
-                                onClick={handleGenerate}
-                                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-lg shadow-sm transition-all duration-200"
-                            >
-                                <FileText className="h-4 w-4 mr-2" />
-                                Generate Command
-                            </Button> */}
+                    
                         </div>
 
                         {error && (
@@ -413,7 +447,7 @@ function Enm() {
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Select Circle:
                         </label>
-                        <select
+                        <select value={selectedCircle} onChange={(e)=>setSelectedCircle(e.target.value)}
                             className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
                         >
                             <option value="">Choose Circle</option>
@@ -428,7 +462,9 @@ function Enm() {
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Select ENM:
                         </label>
-                        <select
+                        <select     value={selectedEnm}
+    onChange={(e) => setSelectedEnm(e.target.value)}
+
                             className="p-2 border rounded-md text-sm bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
                         >
                             <option value="">Choose ENM</option>
@@ -468,17 +504,8 @@ function Enm() {
 
 
                 <DataTableDemo
-                    data={data?.filter(oneUser => {
-                        if(userDetails==""){
-                            return true
-                        }else{
-                            if(oneUser?.userresult?.email == userDetails){
-                                return true
-                            }else{
-                                return false
-                            }
-                        }
-                    }) || []}
+                
+                    data={filteredData}
                     columns={columns}
                     globalFilter={globalFilter}
                     setGlobalFilter={setGlobalFilter}

@@ -71,7 +71,7 @@ function GplNokia() {
       setUploading(false);
       setError(null);
       queryClient.invalidateQueries(["user_scripting_files"]);
-      console.log("File uploaded successfully:", res);
+      // console.log("File uploaded successfully:", res);
       setIsModalOpen(false)
     },
     onError: (err) => {
@@ -84,7 +84,7 @@ function GplNokia() {
 
   const onSubmit = (data) => {
 
-    console.log(data,"datadatasettings")
+    // console.log(data,"datadatasettings")
     const formData = new FormData();
     formData.append("circle", data.circle);
     if (data.Ufile?.length) formData.append("settings", data.Ufile[0]);
@@ -184,7 +184,7 @@ function GplNokia() {
         const file = row.original;
         const token = useSelector((state) => state.auth.access_token);
 
-        console.log(row, "rowrowrowrowrowrowrowrowrowrowrowrow")
+        // console.log(row, "rowrowrowrowrowrowrowrowrowrowrowrow")
         return (
           <Button
             onClick={() =>
