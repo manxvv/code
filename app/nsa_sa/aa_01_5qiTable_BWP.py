@@ -48,13 +48,13 @@ class aa_01_5qiTable_BWP(Script):
             '40': {'numberOfRBs': '106', 'bWPSetId': '7'},
         }
 
+        # GNBDUFunction -- BWP & BWPSet & sNSSAIList
         numberOfRBs = '273'
         bw = self.usid.df_cell.loc[(self.usid.df_cell.node == self.node)].bw.min()
         if bw is not np.nan:
             bw = str(int(bw))
             numberOfRBs = bwp_dict.get(bw, {}).get('numberOfRBs', '273')
 
-        # GNBDUFunction -- BWP & BWPSet & sNSSAIList
         self.mo_dict['GNBDUFunction_BWP'] = {
             'managedElementId': self.node,
             'GNBDUFunction': {
@@ -115,3 +115,86 @@ class aa_01_5qiTable_BWP(Script):
                 # 'bWPRef': ['GNBDUFunction=1,BWP=Init_DL_100', 'GNBDUFunction=1,BWP=Init_UL_100'],
                 # 'bWPSetRef': 'GNBDUFunction=1,BWPSet=100'
             })
+
+    def get_bwp_dict(self, bw: str) -> dict:
+        bwp_dict = {
+            '100': {'numberOfRBs': '273', 'bWPSetId': '1'},
+            '90': {'numberOfRBs': '245', 'bWPSetId': '2'},
+            '80': {'numberOfRBs': '217', 'bWPSetId': '3'},
+            '70': {'numberOfRBs': '189', 'bWPSetId': '4'},
+            '60': {'numberOfRBs': '162', 'bWPSetId': '5'},
+            '50': {'numberOfRBs': '133', 'bWPSetId': '6'},
+            '40': {'numberOfRBs': '106', 'bWPSetId': '7'},
+        }
+        if bw not in bwp_dict.keys():
+            self.custom_log.log.exception(f"{bw} not in bwp_dict!!!! Please check the site!!!")
+            return {}
+
+        # GNBDUFunction -- BWP & BWPSet & sNSSAIList
+        numberOfRBs = '273'
+        bw = self.usid.df_cell.loc[(self.usid.df_cell.node == self.node)].bw.min()
+        if bw is not np.nan:
+            bw = str(int(bw))
+            numberOfRBs = bwp_dict.get(bw, {}).get('numberOfRBs', '273')
+
+        tmp_bwp_dict = {
+            'managedElementId': self.node,
+            'GNBDUFunction': {
+                'gNBDUFunctionId': '1',
+                'BWP': [
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': F'Init_DL_{bw}',
+                     'bwpContext': 'DOWNLINK', 'numberOfRBs': numberOfRBs, 'isInitialBwp': 'true'},
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': F'Init_UL_{bw}',
+                     'bwpContext': 'UPLINK', 'numberOfRBs': numberOfRBs, 'isInitialBwp': 'true'},
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': F'DenseSS_DL_{bw}',
+                     'bwpContext': 'DOWNLINK', 'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false'},
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': F'DenseSS_UL_{bw}',
+                     'bwpContext': 'UPLINK', 'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false'},
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': F'SparseSS_DL_{bw}',
+                     'bwpContext': 'DOWNLINK', 'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false'},
+                    {'attributes': {'xc:operation': 'create'}, 'bWPId': F'SparseSS_UL_{bw}',
+                     'bwpContext': 'UPLINK', 'numberOfRBs': numberOfRBs, 'isInitialBwp': 'false'},
+                ],
+                'BWPSet': {
+                    'attributes': {'xc:operation': 'create'}, 'bWPSetId': F'{bw}',
+                    'allBWPRegularRef': [F'GNBDUFunction=1,BWP=DenseSS_DL_{bw}', F'GNBDUFunction=1,BWP=DenseSS_UL_{bw}',
+                                         F'GNBDUFunction=1,BWP=SparseSS_DL_{bw}', F'GNBDUFunction=1,BWP=SparseSS_UL_{bw}'],
+                    'startBWPDlRef': F'GNBDUFunction=1,BWP=DenseSS_DL_{bw}',
+                    'startBWPUlRef': F'GNBDUFunction=1,BWP=DenseSS_UL_{bw}',
+                    'DynPowerOpt': [
+                        {'attributes': {'xc:operation': 'create'}, 'dynPowerOptId': '1',
+                         'downDlThreshold': '200', 'downUlThreshold': '200',
+                         'upDlThreshold': '300', 'upUlThreshold': '300'},
+                        {'attributes': {'xc:operation': 'create'}, 'dynPowerOptId': 'VoNR',
+                         'downDlThreshold': '10', 'downUlThreshold': '10',
+                         'upDlThreshold': '30', 'upUlThreshold': '30'}
+                    ],
+                    'BWPSetUeCfg': [
+                        {'attributes': {'xc:operation': 'create'}, 'bWPSetUeCfgId': '1',
+                         'BWPSetCfg': [
+                             {'attributes': {'xc:operation': 'create'}, 'bWPSetCfgId': '0',
+                              'bWPDlRef': F'GNBDUFunction=1,BWP=DenseSS_DL_{bw}',
+                              'bWPUlRef': 'GNBDUFunction=1,BWP=DenseSS_UL_{bw}'},
+                             {'attributes': {'xc:operation': 'create'}, 'bWPSetCfgId': '1',
+                              'bWPDlRef': F'GNBDUFunction=1,BWP=SparseSS_DL_{bw}',
+                              'bWPUlRef': F'GNBDUFunction=1,BWP=SparseSS_UL_{bw}',
+                              'dynPowerOptRef': F'GNBDUFunction=1,BWPSet={bw},DynPowerOpt=1'}]
+                         },
+                        {'attributes': {'xc:operation': 'create'}, 'bWPSetUeCfgId': 'VoNR',
+                         'ueConfGroupList': ['1'], 'bwpSwitchingFilterRelaxation': 'false',
+                         'BWPSetCfg': [
+                             {'attributes': {'xc:operation': 'create'}, 'bWPSetCfgId': '0',
+                              'bWPDlRef': 'GNBDUFunction=1,BWP=DenseSS_DL_{bw}',
+                              'bWPUlRef': 'GNBDUFunction=1,BWP=DenseSS_UL_{bw}'},
+                             {'attributes': {'xc:operation': 'create'}, 'bWPSetCfgId': '1',
+                              'bWPDlRef': 'GNBDUFunction=1,BWP=SparseSS_DL_{bw}',
+                              'bWPUlRef': 'GNBDUFunction=1,BWP=SparseSS_UL_{bw}',
+                              'dynPowerOptRef': 'GNBDUFunction=1,BWPSet={bw},DynPowerOpt=VoNR'}
+                         ]
+                         },
+                    ],
+
+                },
+                'NRCellDU': [],
+            },
+        }

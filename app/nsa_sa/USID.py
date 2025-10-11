@@ -280,6 +280,7 @@ class USID:
                 'circle', 'enm', 'siteid', 'node', 'type', 'gnbid_enbid', 'cellid', 'tac', 'cell', 'cu', 'sib2', 'sib4',
                 'sib5', 'nr_intra_rel', 'nr_inter_rel', 'ssbFrequency', 'ssbSubCarrierSpacing', 'ssbPeriodicity', 'ssbOffset',
                 'ssbDuration', 'intra_rel', 'inter_rel', 'transmitSib2', 'transmitSib4', 'transmitSib5', 'earfcn'])
+        if 'cu' not in df_cell.columns: df_cell['cu'] = None
         return df_cell
 
     def process_df_site_with_logs_data(self) -> pd.DataFrame:

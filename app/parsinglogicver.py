@@ -63,7 +63,7 @@ class Calculator:
     def count_states(self, df, celltype,status):
         
         subset = df[df["CellType"] == celltype]
-        # print("subset",subset,"subsetsubsetsubset")
+        # #print("subset",subset,"subsetsubsetsubset")
         enabled = (subset["operationalState"] == "ENABLED").sum()
         disabled = (subset["operationalState"] == "DISABLED").sum()
         
@@ -219,12 +219,12 @@ class Calculator:
         
 
 
-        # print(",".join(summary_df["NodeId"].to_list()),"resultresultresultresult")
+        # #print(",".join(summary_df["NodeId"].to_list()),"resultresultresultresult")
         # for node, node_df in FINAL_STATUS_df.groupby("NodeId"):
-        #     print("Node:", node)
+        #     #print("Node:", node)
         #     for celltype, ct_df in node_df.groupby("CellType"):
-        #         print("   CellType:", celltype)
-        #         print(ct_df, "\n")
+        #         #print("   CellType:", celltype)
+        #         #print(ct_df, "\n")
                 
                 
         list_of_sheet.insert(0, summary_df)
@@ -356,7 +356,7 @@ class Calculator:
                     
                     
                     # for i in df.iterrows():
-                    #     print(i["NodeName"],"sadmnasjdnasndsajdkjasdnsajkdjkas")
+                    #     #print(i["NodeName"],"sadmnasjdnasndsajdkjasdnsajkdjkas")
                      
                     
                     # filtered_data = df[
@@ -368,7 +368,7 @@ class Calculator:
                     
                     
                  
-            # print(df_list,"df_listdf_listdf_listdf_list")
+            # #print(df_list,"df_listdf_listdf_listdf_list")
             merged_df = pd.concat(df_list, ignore_index=True)
             
             rename_map = {
@@ -377,31 +377,31 @@ class Calculator:
                 "FieldReplaceableUnit": {"col": "FieldReplaceableUnitId", "type": "NR"}
             }
             
-            # print(df_list,"df_listdf_listdf_listdf_list")
+            # #print(df_list,"df_listdf_listdf_listdf_list")
 
             merged_df = pd.concat(df_list, ignore_index=True)
 
-            # print(name_only, "name_only")
+            # #print(name_only, "name_only")
             
             
             if name_only in rename_map:
                 merged_df = merged_df.rename(columns={rename_map[name_only]["col"]: "CellName"})
                 merged_df["CellType"] = rename_map[name_only]["type"]
-                # print(name_only, "processed")
+                # #print(name_only, "processed")
                 
                 list_of_sheet_same_col.append(merged_df)
                 
             
                 
 
-            # print(merged_df.columns)
+            # #print(merged_df.columns)
 
             list_of_sheet.append(merged_df)
             list_of_sheet_name.append(name_only)
             
             
             
-        # print(len(list_of_sheet),"list_of_sheetlist_of_sheet")
+        # #print(len(list_of_sheet),"list_of_sheetlist_of_sheet")
         file_name = "alarmsss"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
         with pd.ExcelWriter(os.path.join("downloads",file_name), engine="xlsxwriter") as writer:
             
@@ -417,7 +417,7 @@ class Calculator:
 
                 disableformat1 = workbook.add_format({'bg_color': 'red'})
                 
-                # print(df.columns,"df.columnsdf.columns")
+                # #print(df.columns,"df.columnsdf.columns")
                 # col_idx = df.columns.get_loc("operationalState")
                 # start_row = 1 
                 # stop_row = len(df)
@@ -444,7 +444,7 @@ class Calculator:
 
     
     def startdiffCalc(self,pre_files,post_files):
-        # print(pre_files,post_files,"pre_files,post_filespre_files,post_files")
+        # #print(pre_files,post_files,"pre_files,post_filespre_files,post_files")
                 
 
         pre_df = pd.read_excel(pre_files,sheet_name="CellStatus")
@@ -461,22 +461,22 @@ class Calculator:
         # post_df["administrativeStatePost"] = post_df["administrativeState"]
         
         
-        # print(pre_df["merged_data"].to_string())
-        # print(post_df["merged_data"].to_string())
+        # #print(pre_df["merged_data"].to_string())
+        # #print(post_df["merged_data"].to_string())
         
         
         
-        # print(pre_df.keys())
-        # print(post_df.keys())
+        # #print(pre_df.keys())
+        # #print(post_df.keys())
         
         
         merged = pre_df.merge(post_df, on=["merged_data"], how="outer",indicator=True,suffixes=("_pre", "_post"))
-        # print(merged[["operationalState_post","operationalState_post","_merge"]])
+        # #print(merged[["operationalState_post","operationalState_post","_merge"]])
         
         # filtered_data = merged[(merged["operationalState_pre"] != merged["operationalState_post"]) | (merged["_merge"] != "both")]
         
                 
-        # print(filtered_data)
+        # #print(filtered_data)
         
         filtered_data = merged
         filtered_data["status"] = np.where(
@@ -531,8 +531,8 @@ class Calculator:
     def alarm_checker(self,file_parsed,file_sitess):
 
 
-        # print(self.alarm_data)
-        # print(self.file_parsed)
+        # #print(self.alarm_data)
+        # #print(self.file_parsed)
         
         
         
@@ -540,12 +540,12 @@ class Calculator:
         
         all_sheets = pd.read_excel(file_parsed, sheet_name=None)
         list_of_sheet_name = list(all_sheets.keys())
-        print(list_of_sheet_name,"pd.read_excel(file_parsed)")
+        #print(list_of_sheet_name,"pd.read_excel(file_parsed)")
         df = pd.DataFrame([])
         amfdf = pd.DataFrame([])
         syncStatus_data = pd.DataFrame([])
         
-        print(df,amfdf,syncStatus_data,list_of_sheet_name,"list_of_sheet_namelist_of_sheet_namelist_of_sheet_name")
+        #print(df,amfdf,syncStatus_data,list_of_sheet_name,"list_of_sheet_namelist_of_sheet_namelist_of_sheet_name")
 
         if("CellStatus" in list_of_sheet_name):
             df = pd.read_excel(file_parsed, sheet_name="CellStatus")
@@ -560,13 +560,13 @@ class Calculator:
             syncStatus_data = pd.read_excel(self.file_parsed, sheet_name="CmFunction")
        
 
-        # print(amfdf,"amfdfamfdfamfdfamfdf")
+        # #print(amfdf,"amfdfamfdfamfdfamfdf")
         
             
         summary_rows = []
         for node, group in df.groupby("NodeId"):
             
-            # print(node,group)
+            # #print(node,group)
             
             
         
@@ -577,7 +577,7 @@ class Calculator:
                 node_alarms = self.alarm_data[self.alarm_data["NodeName"] == node]
             
             
-            # print(self.alarm_data[self.alarm_data["NodeName"] == node],"NodeNameNodeName")
+            # #print(self.alarm_data[self.alarm_data["NodeName"] == node],"NodeNameNodeName")
             
             row = {
                 "NodeId": node,
@@ -601,7 +601,7 @@ class Calculator:
 
         
         
-        print(self.alarm_data,"sites_datasites_data",sites_data,"summary_dfsummary_df")
+        #print(self.alarm_data,"sites_datasites_data",sites_data,"summary_dfsummary_df")
         
         
         if("NodeName" in self.alarm_data.columns):
@@ -609,14 +609,14 @@ class Calculator:
         
         
         
-        if("NodeId" in syncStatus_data.columns):
-            print(summary_df,"summary_dfsummary_df")
+        if("NodeId" in syncStatus_data.columns and "NodeId" in summary_df.columns):
+            #print(summary_df,"summary_dfsummary_df")
             summary_df["Syncstatus"] = summary_df["NodeId"].map(
                 syncStatus_data.set_index("NodeId")["syncStatus"]
             ).fillna("NA")
         
         summary_df.fillna("NA", inplace=True)
-        print(summary_df,"summary_dfsummary_dfsummary_df")
+        #print(summary_df,"summary_dfsummary_dfsummary_df")
         with pd.ExcelWriter(self.file_parsed, engine="openpyxl", mode="a") as writer:
             summary_df.to_excel(writer, sheet_name="NodeStatus", index=False)
             self.alarm_data.to_excel(writer, sheet_name="AlarmStatus", index=False)
@@ -685,7 +685,7 @@ class Calculator:
                 ignore_index=True
             )
 
-            print(new_df, "new_dfnew_dfnew_dfnew_dfnew_df")
+            #print(new_df, "new_dfnew_dfnew_dfnew_dfnew_df")
             
             
             wb = load_workbook(filename)
@@ -770,7 +770,7 @@ class Calculator:
 
                 # Alarm Count
                 
-                print(row[10].value,"rowrowrowrowrow")
+                #print(row[10].value,"rowrowrowrowrow")
                 critical = row[10].value  # adjust indices
                 major = row[11].value
                 
@@ -792,7 +792,7 @@ class Calculator:
     def coloring_formatting(self, filename):
         
         
-        # print(filename,"filename")
+        # #print(filename,"filename")
         
         
         # Load existing workbook
@@ -821,7 +821,7 @@ class Calculator:
         # Loop through all sheets
         for sheet in wb.sheetnames:
             ws = wb[sheet]
-            # print("Formatting:", sheet)
+            # #print("Formatting:", sheet)
 
             # find headers row (assuming first row is header)
             headers = {cell.value: idx for idx, cell in enumerate(ws[1], start=1)}
@@ -874,15 +874,15 @@ class Calculator:
                         os_cell.fill = gray
                         as_cell.fill = gray
                         
-                    print(os_cell.value,"amit os_cell.value")
-                    print(as_cell.value,"amit as_cell.value")
+                    #print(os_cell.value,"amit os_cell.value")
+                    #print(as_cell.value,"amit as_cell.value")
                     
                     if(pre_os_col_idx and pre_as_col_idx):
                         pre_os_cell = ws.cell(row=row, column=pre_os_col_idx)
                         pre_as_cell = ws.cell(row=row, column=pre_as_col_idx)
                         
-                        print(pre_os_cell.value,"amit pre_os_cell.value")
-                        print(pre_as_cell.value,"amit pre_as_cell.value")
+                        #print(pre_os_cell.value,"amit pre_os_cell.value")
+                        #print(pre_as_cell.value,"amit pre_as_cell.value")
                         
                         if pre_os_cell.value == "ENABLED":
                             pre_os_cell.fill = green
@@ -901,8 +901,8 @@ class Calculator:
                     if(post_os_col_idx and post_as_col_idx):
                         post_os_cell = ws.cell(row=row, column=post_os_col_idx)
                         post_as_cell = ws.cell(row=row, column=post_as_col_idx)
-                        print(post_os_cell.value,"amit post_os_cell.value")
-                        print(post_as_cell.value,"amit post_as_cell.value")
+                        #print(post_os_cell.value,"amit post_os_cell.value")
+                        #print(post_as_cell.value,"amit post_as_cell.value")
                         
                         if post_os_cell.value == "ENABLED":
                             post_os_cell.fill = green
@@ -920,14 +920,14 @@ class Calculator:
                        
                  
             if "status" in headers:
-                print(headers,"headersheadersheadersheaders")
+                #print(headers,"headersheadersheadersheaders")
                 
                 status_col_idx = headers["status"]
                 operationalState_post_col_idx = headers["operationalState_post"]
                 for row in range(2, ws.max_row + 1):  
                     status_cell = ws.cell(row=row, column=status_col_idx)
                     operationalState_post_cell = ws.cell(row=row, column=operationalState_post_col_idx)
-                    # print(operationalState_post_cell.value,status_cell.value == "Status Changes")
+                    # #print(operationalState_post_cell.value,status_cell.value == "Status Changes")
                     if status_cell.value == "Status Changes" and operationalState_post_cell.value == "DISABLED":
                         for col in range(1, ws.max_column + 1):
                             ws.cell(row=row, column=col).fill = red
@@ -982,7 +982,7 @@ class Calculator:
         
     def filtering_header(self, filename,file_sitess):
         
-        print(filename)
+        #print(filename)
         xls = pd.ExcelFile(filename)
         sites_data = pd.read_excel(file_sitess)
         sites_data["NodeId"] = sites_data["Node"]
@@ -1002,7 +1002,7 @@ class Calculator:
             
             df_filtered = df[df["NodeId"].isin(sites_data["NodeId"])]
             
-            print(df_filtered,sites_data["NodeId"],"df_filtereddf_filtereddf_filtered")
+            #print(df_filtered,sites_data["NodeId"],"df_filtereddf_filtereddf_filtered")
 
             updated_sheets[sheet] = df_filtered
         with pd.ExcelWriter(filename, engine='openpyxl', mode='w') as writer:
@@ -1068,7 +1068,7 @@ class Calculator:
         with pd.ExcelWriter(file_name, engine="xlsxwriter") as writer:
             
             for one_sheet in listof:
-                # print(sheet_dfs.keys(),"sheet_dfssheet_dfs")
+                # #print(sheet_dfs.keys(),"sheet_dfssheet_dfs")
                 if(one_sheet in sheet_dfs.keys()):
                     sheet_dfs[one_sheet].to_excel(writer, sheet_name=one_sheet, index=False)
     
@@ -1109,7 +1109,7 @@ class Calculator:
         
     #     final_file = os.path.join("downloads",p_type+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx")
         
-    #     # print(file_name)
+    #     # #print(file_name)
     #     with open(os.path.join(os.getcwd(),file_name)) as file:
     #         file_data = file.read()
     #         raw_text = ""
@@ -1123,8 +1123,8 @@ class Calculator:
     #         for j, line in enumerate(file_data.splitlines(), start=1):
                 
                 
-    #             # print(all_d,"dashndkjashdkjsakdkjasdsadaskdnsa")
-    #             print(line,all_d,"linelinelinelinelineall_dall_dall_dall_dall_dall_d")
+    #             # #print(all_d,"dashndkjashdkjsakdkjasdsadaskdnsa")
+    #             #print(line,all_d,"linelinelinelinelineall_dall_dall_dall_dall_dall_d")
     #             if("FDN" in line): 
     #                 if(mo_name not in file_d_list):
     #                     file_d_list[mo_name] = ", ".join(all_d).replace("FDN :","")
@@ -1142,7 +1142,7 @@ class Calculator:
                         
     #                     lcl_val = []
     #                     if("{" in line):
-    #                         # print(line,"Dasjndkjasndkja")
+    #                         # #print(line,"Dasjndkjasndkja")
     #                         val_self = self.str_to_json(line)
     #                         for oneHeadValkey,oneHeadValVal in val_self.items():
     #                             for koneHeadValkey,voneHeadValVal in oneHeadValVal.items():
@@ -1189,7 +1189,7 @@ class Calculator:
                         
     #                     rows = []
                         
-    #                     # print(values)
+    #                     # #print(values)
     #                     for line in values.split("\n"):
     #                         parsed = {}
     #                         for part in line.split(","):
@@ -1197,7 +1197,7 @@ class Calculator:
     #                                 k, v = part.split("=", 1)
     #                                 parsed[k.strip()] = v.strip()
     #                             elif ":" in part:
-    #                                 # print(part,"partpartpartpartpartpartpart")
+    #                                 # #print(part,"partpartpartpartpartpartpart")
                                     
                                     
                                     
@@ -1210,13 +1210,13 @@ class Calculator:
                         
     #                     df.to_excel(writer, sheet_name=key, index=False)  
     #                     if("post" in file_name and key == "TermPointToAmf"):
-    #                         print(df,len(rows),"keykeykeykey",key,"final_filefinal_filefinal_filefinal_filefinal_filefinal_file")
+    #                         #print(df,len(rows),"keykeykeykey",key,"final_filefinal_filefinal_filefinal_filefinal_filefinal_file")
         
                 
                 
     #     if("post" in file_name):
     #         cedledmcl
-    #         print(final_file,"final_filefinal_filefinal_filefinal_filefinal_filefinal_file")
+    #         #print(final_file,"final_filefinal_filefinal_filefinal_filefinal_filefinal_file")
     #     return final_file
     
     
@@ -1313,6 +1313,7 @@ class Calculator:
                             print(df, len(rows), "keykeykeykey", key, "final_filefinal_file")
                             
         if "post" in file_name:
+            
             print(final_file, "final_filefinal_filefinal_file")
 
         return final_file
@@ -1330,23 +1331,23 @@ class Calculator:
         
         file_parsed = ""
         for one_file in files:
-            # print(one_file)
+            # #print(one_file)
             with open(os.path.join(os.getcwd(),one_file)) as file:
                 file_data = file.read()
                 if("FDN : " in file_data):
-                    # print("FDN in filedat")
+                    # #print("FDN in filedat")
                     file_parsed = self.txt_to_csv(one_file,p_type)
                     self.file_parsed = file_parsed
                     
                     self.renaming_header(file_parsed)
                     self.filtering_header(file_parsed,file_sitess)
                     
-                    print()
+                    #print()
                     self.merge_row_tdd_fdd_nr(file_parsed)
                     self.coloring_formatting(file_parsed)
                     
                     self.remove_extra_col(file_parsed)
-                    # print("FDNX in filedat")
+                    # #print("FDNX in filedat")
                     
                 
                 if("Total number of alarms fetched for the given query" in file_data):
@@ -1358,7 +1359,7 @@ class Calculator:
                     
             
                     
-            # print(alarms_data,"alarms_data")
+            # #print(alarms_data,"alarms_data")
             
         if(alarm_check):
             self.alarm_checker(file_parsed,file_sitess)

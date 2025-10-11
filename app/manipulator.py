@@ -21,13 +21,13 @@ a = [
 def checkISListOrDict(string_data):
     
     stripped_text = string_data
-    print(stripped_text)
+    #print(stripped_text)
     if(stripped_text.startswith("[") and stripped_text.endswith("]")):
-        print("isStartWithList")
+        #print("isStartWithList")
     
     
     if(stripped_text.startswith("{") and stripped_text.endswith("}")):
-        print("isStartWithDict")
+        #print("isStartWithDict")
     
     return string_data
 
@@ -36,11 +36,11 @@ def data_type_id(stripped_text,set_of_list):
     
     
     
-    print("++++++++++++++++++++++++++++++++++")
+    #print("++++++++++++++++++++++++++++++++++")
     
-    print(stripped_text)
+    #print(stripped_text)
     
-    print("++++++++++++++++++++++++++++++++++")
+    #print("++++++++++++++++++++++++++++++++++")
     
     if(stripped_text.startswith("[") and stripped_text.endswith("]")):
         matches = re.findall(r'\{.*?\}', stripped_text)
@@ -51,46 +51,46 @@ def data_type_id(stripped_text,set_of_list):
                 
             
             if("=" in onematch or ":" in onematch):
-                print(yaml.safe_load(onematch.replace("=",":")),set_of_list)
+                #print(yaml.safe_load(onematch.replace("=",":")),set_of_list)
             
             
     elif(stripped_text.startswith("{") and stripped_text.endswith("}")):
-        # print("Dict Capture"+stripped_text)
+        # #print("Dict Capture"+stripped_text)
         data_type_id(stripped_text[1:-1],set_of_list)
     
     else:
         splitted_val = stripped_text.split(", ")
         
-        print(splitted_val,"frc kfnkcjfr")
+        #print(splitted_val,"frc kfnkcjfr")
         
         # for oneval in splitted_val:
-        #     print(oneval,"oneval")
+        #     #print(oneval,"oneval")
         #     if("=" in oneval or ":" in oneval):
         #         set_of_list[oneval.split("=")[0]] = oneval.split("=")[1]
         #     else:
-        #         print(oneval)
-        # print("string")
+        #         #print(oneval)
+        # #print("string")
         
     
 final_arr = []
 
 for oneText in a:
-    print("-----------------------------")
+    #print("-----------------------------")
     checkISListOrDict(oneText)
-    print("-----------------------------")
+    #print("-----------------------------")
     
 # for oneText in a:
     
 # ss    checkISListOrDict(a)
     
-#     print("=========================================================")
+#     #print("=========================================================")
     
 #     set_of_list={}
 #     stripped_oneText = oneText.strip()
 #     data_type_id(stripped_oneText,set_of_list)
 #     final_arr.append(set_of_list)
-#     # print(set_of_list)
+#     # #print(set_of_list)
 
-#     print("=========================================================")
+#     #print("=========================================================")
 
-# # print(set_of_list)
+# # #print(set_of_list)

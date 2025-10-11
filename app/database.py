@@ -11,10 +11,10 @@ def init_db(app):
         try:
             client = pymongo.MongoClient(mongo_uri)
             client.admin.command("ping")
-            print("✅ Connected to MongoDB")
+            #print("✅ Connected to MongoDB")
             break
         except Exception:
-            print("Waiting for MongoDB...")
+            #print("Waiting for MongoDB...")
             time.sleep(2)
     else:
         raise RuntimeError("Could not connect to MongoDB")

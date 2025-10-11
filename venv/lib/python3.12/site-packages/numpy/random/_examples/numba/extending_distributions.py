@@ -64,4 +64,4 @@ normalsj = nb.jit(normals, nopython=True)
 bit_generator_address = int(ffi.cast('uintptr_t', bit_generator))
 
 norm = normalsj(1000, bit_generator_address)
-print(norm[:12])
+#print(norm[:12])

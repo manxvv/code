@@ -3,11 +3,21 @@ version: "3.9"
 services:
   backend:
     build: .
-    container_name: mobilecomm-backend
+    container_name: datyog-backend
     ports:
-      - "5000:5000"
+      - "9000:9000"
     env_file:
       - .env
     volumes:
       - ./uploads:/app/uploads
       - ./downloads:/app/downloads
+
+  nginx:
+    image: nginx:alpine
+    container_name: datyog-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend

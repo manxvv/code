@@ -32,56 +32,55 @@ mssql_db   = "MCOM_India"
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ssh.connect(ssh_host, username=ssh_user, password=ssh_pass)
-print("SSH Connected ✅")
 
 # ================== Step 0: Upload Python script ==================
 sftp = ssh.open_sftp()
 if not os.path.isfile(local_script):
-    print(f"Error: Local Python script {local_script} not found!")
+    #print(f"Error: Local Python script {local_script} not found!")
     exit(1)
 sftp.put(local_script, remote_script)
 sftp.close()
-print(f"Uploaded Python script: {local_script} -> {remote_script}")
+#print(f"Uploaded Python script: {local_script} -> {remote_script}")
 
 # ================== Step 1: Delete old folder ==================
 ssh.exec_command(f"rm -rf {data_path}")
-print(f"Deleted old folder: {data_path}")
+#print(f"Deleted old folder: {data_path}")
 time.sleep(1)
 
 # ================== Step 2: Create XML folder ==================
 ssh.exec_command(f"mkdir -p {xml_path}")
-print(f"Created folder: {xml_path}")
+#print(f"Created folder: {xml_path}")
 time.sleep(1)
 
 # ================== Step 3: Upload & unzip files ==================
 if not os.path.isfile(local_zip):
-    print(f"Error: Local zip file {local_zip} not found!")
+    #print(f"Error: Local zip file {local_zip} not found!")
     exit(1)
 
 sftp = ssh.open_sftp()
 sftp.put(local_zip, remote_zip)
 sftp.close()
-print(f"Uploaded zip: {local_zip} -> {remote_zip}")
+#print(f"Uploaded zip: {local_zip} -> {remote_zip}")
 
 stdin, stdout, stderr = ssh.exec_command(f"unzip -o {remote_zip} -d {xml_path}")
-print(stdout.read().decode())
-print(stderr.read().decode())
-print("Unzip completed ✅")
+#print(stdout.read().decode())
+#print(stderr.read().decode())
+#print("Unzip completed ✅")
 time.sleep(1)
 
 # ================== Step 4: Run Java command ==================
 stdin, stdout, stderr = ssh.exec_command(f"java -jar /var/opt/sarfraz/ncm.jar {xml_path} /var/opt/sarfraz/Nokia_CM.txt read 1")
-print("Running Java command...")
-print(stdout.read().decode())
-print(stderr.read().decode())
-print("Java process completed ✅")
+#print("Running Java command...")
+#print(stdout.read().decode())
+#print(stderr.read().decode())
+#print("Java process completed ✅")
 
 # ================== Step 5: Run remote Python script (optional) ==================
 stdin, stdout, stderr = ssh.exec_command(f"python3 {remote_script}")
-print("Running remote Python script...")
-print(stdout.read().decode())
-print(stderr.read().decode())
-print("Remote Python script executed ✅")
+#print("Running remote Python script...")
+#print(stdout.read().decode())
+#print(stderr.read().decode())
+#print("Remote Python script executed ✅")
 
 ssh.close()
 
@@ -89,7 +88,7 @@ ssh.close()
 try:
     conn = pymssql.connect(server=mssql_host, user=mssql_user, password=mssql_pass, database=mssql_db)
     cursor = conn.cursor()
-    print("Executing MSSQL stored procedures...")
+    #print("Executing MSSQL stored procedures...")
 
     cursor.execute("exec [dbo].[clean_data]")
     cursor.execute(f"exec [dbo].[load_csv] '{data_path}output/'")
@@ -108,12 +107,12 @@ try:
         df = pd.read_sql(query, conn)
         file_path = os.path.join(output_path, filename)
         df.to_csv(file_path, index=False)
-        print(f"Saved CSV: {file_path} ✅")
+        #print(f"Saved CSV: {file_path} ✅")
 
     conn.close()
-    print("All MSSQL data exported to CSV successfully! 🎉")
-    print("MSSQL procedures executed ✅")
+    #print("All MSSQL data exported to CSV successfully! 🎉")
+    #print("MSSQL procedures executed ✅")
 except Exception as e:
-    print(f"Error connecting to MSSQL: {e}")
+    #print(f"Error connecting to MSSQL: {e}")
 
-print("All process completed successfully! 🎉")
+#print("All process completed successfully! 🎉")

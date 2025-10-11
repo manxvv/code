@@ -56,7 +56,7 @@
 #             g.user = decoded  # store user info in g
 
 
-#             print(decoded,"decodeddecodeddecodeddecodeddecoded")
+#             #print(decoded,"decodeddecodeddecodeddecodeddecoded")
 #             token = jwt.encode(
 #                 {
 #                     "sub": str(decoded["sub"]),

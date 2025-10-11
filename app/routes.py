@@ -206,15 +206,15 @@ def get_users():
     
     
 #     precheckfile = request.files.getlist("precheck")
-#     print(precheckfile!=0)
+#     #print(precheckfile!=0)
 #     postcheckfile = request.files.getlist("postcheck")
-#     print(len(postcheckfile) != 0 and len(precheckfile) != 0)
+#     #print(len(postcheckfile) != 0 and len(precheckfile) != 0)
 #     if (len(precheckfile) == 0 and len(postcheckfile) != 0) or (len(postcheckfile) == 0 and len(precheckfile) == 0):
 #         return jsonify({"message": "No selected file"}), 400
 
 
 
-#     print(postcheckfile,precheckfile,"filefilefilefile=>>>>>>filefilefilefile")
+#     #print(postcheckfile,precheckfile,"filefilefilefile=>>>>>>filefilefilefile")
     
     
 #     precheck_files = []
@@ -256,7 +256,7 @@ def get_users():
 #     if(len(postcheckfile) > 0):
 #         postfiledata = cal.startCalc(postcheck_files,"post","","")
     
-#     print(prefiledata,"prefiledataprefiledataprefiledata")
+#     #print(prefiledata,"prefiledataprefiledataprefiledata")
     
     
 #     file_path_final = prefiledata["file_name_all"]
@@ -275,7 +275,7 @@ def get_users():
         
     
     
-#     print(file_path_final,"file_path_finalfile_path_finalfile_path_finalfile_path_final")
+#     #print(file_path_final,"file_path_finalfile_path_finalfile_path_finalfile_path_final")
     
         
     
@@ -308,7 +308,7 @@ def get_users():
 
 def db_update_migration(uid,task,tno, file_path, taskId):
     
-    print(task, file_path, taskId,"task, pre_filetask, pre_filetask, pre_file")
+    #print(task, file_path, taskId,"task, pre_filetask, pre_filetask, pre_file")
     
     read_df = []
     sec_read_df = []
@@ -325,7 +325,7 @@ def db_update_migration(uid,task,tno, file_path, taskId):
         read_df["NodeId"] = read_df["node"]
         sec_read_df["NodeId"] = sec_read_df["node"]
     
-    print(read_df["NodeId"].unique(),"read_dfread_dfread_df")
+    #print(read_df["NodeId"].unique(),"read_dfread_dfread_df")
     
     node_id_df = read_df["NodeId"].dropna().unique()
     node_id_list = read_df["NodeId"].dropna().unique().tolist()
@@ -379,7 +379,7 @@ def db_update_migration(uid,task,tno, file_path, taskId):
     
     for i,one_data in sec_read_df.iterrows():
         if pd.to_numeric(pd.Series(one_data["ttmamf"]), errors="coerce").notna().iloc[0]:
-            print(i, one_data["ttmamf"], "✅ number")
+            #print(i, one_data["ttmamf"], "✅ number")
             
             
             # final_status = {
@@ -429,15 +429,15 @@ def upload_file():
     precheckfile = request.files.getlist("precheck")
     
     taskId = request.form.get("taskId")
-    print(precheckfile!=0)
+    #print(precheckfile!=0)
     postcheckfile = request.files.getlist("postcheck")
-    print(len(postcheckfile) != 0 and len(precheckfile) != 0)
+    #print(len(postcheckfile) != 0 and len(precheckfile) != 0)
     if (len(precheckfile) == 0 and len(postcheckfile) != 0) or (len(postcheckfile) == 0 and len(precheckfile) == 0):
         return jsonify({"message": "No selected file"}), 400
 
 
 
-    print(postcheckfile,precheckfile,"filefilefilefile=>>>>>>filefilefilefile")
+    #print(postcheckfile,precheckfile,"filefilefilefile=>>>>>>filefilefilefile")
     
     
     precheck_files = []
@@ -468,12 +468,12 @@ def upload_file():
             "original_filename":original_filename,
             "unique_filename":unique_filename
         })
-    print(postcheck_files,taskId,precheck_files)
-    print("taskIdtaskId",taskId,"taskIdtaskId")
+    #print(postcheck_files,taskId,precheck_files)
+    #print("taskIdtaskId",taskId,"taskIdtaskId")
     one_task_data = mongo.db.enmfiles.find_one({"task_id":taskId})
 
     try:    
-        print(one_task_data,"one_task_dataone_task_data")
+        #print(one_task_data,"one_task_dataone_task_data")
         clc = Calculator()
         
         pre_file = ""
@@ -580,8 +580,8 @@ def upload_file():
         }), 201
 
     except Exception as e:
-        print(e,"eeeeeeeeeeeeeeeeeee")
-        print(traceback.print_exc())
+        #print(e,"eeeeeeeeeeeeeeeeeee")
+        #print(traceback.print_exc())
         return jsonify({"message": "Please check the file again"}), 400
 
 
@@ -676,7 +676,7 @@ def dashboard():
     site_id_status_list = []
     for f in site_id_status_cursor:
         
-        print(f)
+        #print(f)
         
         
         site_id_status_list.append(f)
@@ -750,89 +750,184 @@ def uploadenm_file():
             F'FieldReplaceableUnit.(administrativeState,operationalState,productData)',
             F'TermPointToAmf.(administrativeState,operationalState,defaultAmf,ipv4Address1,ipv4Address2,ipv6Address1,ipv6Address2,usedIpAddress)',
         ])
-        scripting_commands = ';'.join([
-            'TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandling,'
-            'ipv6Address1,ipv6Address2,ipv4Address1,ipv4Address2)',
+        scripting_commands = [
+            'TermPointToAmf.(termPointToAmfId,administrativeState,defaultAmf,pwsRestartHandling,ipv6Address1,ipv6Address2,ipv4Address1,ipv4Address2)',
             'FieldReplaceableUnit.(administrativeState,operationalState,productData)',
-            'SystemFunctions', 'Lm', 'FeatureState.(description,featureState,featureStateId,licenseState,serviceState)',
-            'NetworkElement.(lastSuccessfulSoftwareSync,neProductVersion,networkElementId,networkFunctions,nodeModelIdentity,'
-            'ossModelIdentity,ossPrefix,radioAccessTechnology,release)',
+            'FeatureState.(description,featureState,featureStateId,licenseState,serviceState)',
+            'NetworkElement.(lastSuccessfulSoftwareSync,neProductVersion,networkElementId,networkFunctions,nodeModelIdentity,ossModelIdentity,ossPrefix,radioAccessTechnology,release)',
             'CmFunction.(syncStatus)',
+            'SystemFunctions',
+            'Lm',
             'ManagedElement',
-            'AnrFunction', 'AnrFunctionNR', 'AnrFunctionNRUeCfg', 'AnrFunctionEUtran', 'AnrFunctionEUtranUeCfg',
-            'Transport', 'SctpProfile', 'Sctp', 'SctpEndpoint', 'AddressIPv4', 'AddressIPv6',
-            'EndpointResource', 'LocalSctpEndpoint', 'LocalIpEndpoint',
+            'AnrFunction',
+            'AnrFunctionNR',
+            'AnrFunctionNRUeCfg',
+            'AnrFunctionEUtran',
+            'AnrFunctionEUtranUeCfg',
+            'Transport',
+            'SctpProfile',
+            'Sctp',
+            'SctpEndpoint',
+            'AddressIPv4',
+            'AddressIPv6',
+            'EndpointResource',
+            'LocalSctpEndpoint',
+            'LocalIpEndpoint',
 
-            'GNBDUFunction', 'NRCellDU', 'NRSectorCarrier', 'DU5qiTable', 'DU5qi', 'Paging', 'Rrc',
-            'RadioBearerTable', 'SignalingRadioBearer',
-            'BWP', 'BWPSet', 'DynPowerOpt', 'BWPSetUeCfg', 'BWPSetCfg',
-            'UeCC', 'UeBb', 'UeBbProfile', 'UeBbProfileUeCfg', 'Rach', 'RachUeCfg',
-            'RadioLinkControl', 'DrbRlc', 'DrbRlcUeCfg', 'UeAdaptiveRlc', 'UeAdaptiveRlcUeCfg',
-            'QosPriorityMapping', 'PriorityDomainMapping', 'DrxProfile', 'DrxProfileUeCfg', 'PuschRepRel16Drx',
+            'GNBDUFunction',
+            'NRCellDU',
+            'NRSectorCarrier',
+            'DU5qiTable',
+            'DU5qi',
+            'Paging',
+            'Rrc',
+            'RadioBearerTable',
+            'SignalingRadioBearer',
+            'BWP',
+            'BWPSet',
+            'DynPowerOpt',
+            'BWPSetUeCfg',
+            'BWPSetCfg',
+            'UeCC',
+            'UeBb',
+            'UeBbProfile',
+            'UeBbProfileUeCfg',
+            'Rach',
+            'RachUeCfg',
+            'RadioLinkControl',
+            'DrbRlc',
+            'DrbRlcUeCfg',
+            'UeAdaptiveRlc',
+            'UeAdaptiveRlcUeCfg',
+            'QosPriorityMapping',
+            'PriorityDomainMapping',
+            'DrxProfile',
+            'DrxProfileUeCfg',
+            'PuschRepRel16Drx',
 
-            'GNBCUCPFunction', 'NRCellCU', 'EmCall', 'SecurityHandling', 'CUCP5qiTable', 'CUCP5qi',
-            'NRNetwork', 'NRFrequency', 'NRFreqRelation', 'EUtraNetwork', 'EUtranFrequency', 'EUtranFreqRelation', 'NRCellRelation',
-            'Mcpc', 'McpcPCellEUtranFreqRelProfile', 'McpcPCellEUtranFreqRelProfileUeCfg',
-            'McpcPCellProfile', 'McpcPCellProfileUeCfg',
-            'UeCC', 'InactivityProfile', 'InactivityProfileUeCfg', 'SrHandling', 'SrHandlingUeCfg',
-            'DrbRlc', 'DrbRlcUeCfg', 'UserPlaneProfile', 'UserPlaneProfileUeCfg',
-            'RrcInactiveProfile', 'RrcInactiveProfileUeCfg',
-            'Rohc', 'RohcUeCfg',
-            'Mcfb', 'McfbCellProfile', 'McfbCellProfileUeCfg',
-            'TrafficSteering', 'TrStPSCellNrFreqRelProfile', 'TrStPSCellNrFreqRelProfileUeCfg',
-            'TrStPSCellProfile', 'TrStPSCellProfileUeCfg', 'TrStSaCellProfile', 'TrStSaCellProfileUeCfg',
-            'TrStSaEUtranFreqRelProfile', 'TrStSaEUtranFreqRelProfileUeCfg', 'TrStSaNrFreqRelProfile', 'TrStSaNrFreqRelProfileUeCfg',
-            'UeMC', 'UeMCNrFreqRelProfile', 'UeMCNrFreqRelProfileUeCfg', 'UeMCCellProfile', 'UeMCCellProfileUeCfg',
-            'UeMCEUtranFreqRelProfile', 'UeMCEUtranFreqRelProfileUeCfg',
-            'UeCovMeas', 'UcmCellProfile', 'UcmCellProfileUeCfg', 'UcmNrFreqRelProfile',
+            'GNBCUCPFunction',
+            'NRCellCU',
+            'EmCall',
+            'SecurityHandling',
+            'CUCP5qiTable',
+            'CUCP5qi',
+            'NRNetwork',
+            'NRFrequency',
+            'NRFreqRelation',
+            'NRCellRelation',
+            'EUtraNetwork',
+            'EUtranFrequency',
+            'EUtranFreqRelation',
+            'Mcpc',
+            'McpcPCellEUtranFreqRelProfile',
+            'McpcPCellEUtranFreqRelProfileUeCfg',
+            'McpcPCellProfile',
+            'McpcPCellProfileUeCfg',
+            'UeCC',
+            'InactivityProfile',
+            'InactivityProfileUeCfg',
+            'SrHandling',
+            'SrHandlingUeCfg',
+            'DrbRlc',
+            'DrbRlcUeCfg',
+            'UserPlaneProfile',
+            'UserPlaneProfileUeCfg',
+            'RrcInactiveProfile',
+            'RrcInactiveProfileUeCfg',
+            'Rohc',
+            'RohcUeCfg',
+            'Mcfb',
+            'McfbCellProfile',
+            'McfbCellProfileUeCfg',
+            'TrafficSteering',
+            'TrStPSCellNrFreqRelProfile',
+            'TrStPSCellNrFreqRelProfileUeCfg',
+            'TrStPSCellProfile',
+            'TrStPSCellProfileUeCfg',
+            'TrStSaCellProfile',
+            'TrStSaCellProfileUeCfg',
+            'TrStSaEUtranFreqRelProfile',
+            'TrStSaEUtranFreqRelProfileUeCfg',
+            'TrStSaNrFreqRelProfile',
+            'TrStSaNrFreqRelProfileUeCfg',
+            'UeMC',
+            'UeMCNrFreqRelProfile',
+            'UeMCNrFreqRelProfileUeCfg',
+            'UeMCCellProfile',
+            'UeMCCellProfileUeCfg',
+            'UeMCEUtranFreqRelProfile',
+            'UeMCEUtranFreqRelProfileUeCfg',
+            'UeCovMeas',
+            'UcmCellProfile',
+            'UcmCellProfileUeCfg',
+            'UcmNrFreqRelProfile',
 
-            'UeGroupSelection', 'PrefUeGroupSelectionProfile', 'UeAdmissionGroupDefinition', 'UeGroupSelectionProfile',
-            'UeMobilityGroupDefinition', 'UeServiceGroupDefinition',
+            'UeGroupSelection',
+            'PrefUeGroupSelectionProfile',
+            'UeAdmissionGroupDefinition',
+            'UeGroupSelectionProfile',
+            'UeMobilityGroupDefinition',
+            'UeServiceGroupDefinition',
 
-            'GNBCUUPFunction', 'CUUP5qiTable', 'CUUP5qi', 'UeCC', 'DcDlCfg', 'GtpuSupervision', 'GtpuSupervisionProfile',
-            'ENodeBFunction', 'UePolicyOptimization', 'EUtranCellFDD', 'EUtranCellTDD', 'UeMeasControl', 'ReportConfigB1NR',
-            'GUtranSyncSignalFrequency', 'GUtranFreqRelation', 'GUtranCellRelation',
-            'McpcPCellNrFreqRelProfileUeCfg', 'McpcPSCellNrFreqRelProfileUeCfg'
+            'GNBCUUPFunction',
+            'CUUP5qiTable',
+            'CUUP5qi',
+            'UeCC',
+            'DcDlCfg',
+            'GtpuSupervision',
+            'GtpuSupervisionProfile',
 
-        ])
+            'ENodeBFunction',
+            'UePolicyOptimization',
+            'EUtranCellFDD',
+            'EUtranCellTDD',
+            'UeMeasControl',
+            'ReportConfigB1NR',
+            'GUtranSyncSignalFrequency',
+            'GUtranFreqRelation',
+            'GUtranCellRelation',
+            'McpcPCellNrFreqRelProfileUeCfg',
+            'McpcPSCellNrFreqRelProfileUeCfg'
+        ]
+        scripting_commands = ';'.join([F'{_}.<w>' if '.(' not in _ else _ for _ in scripting_commands])
         file_text_content = [F"""
-##########################- Pre Check -##########################
-####---- NodeStatus ----####
-pre_status_{circle_activity}_{enm_activity}_{date_str}.txt
-cmedit get -n {all_nodes} {status_command} --list
+            ##########################- Pre Check -##########################
+            ####---- NodeStatus ----####
+            pre_status_{circle_activity}_{enm_activity}_{date_str}.txt
+            cmedit get -n {all_nodes} {status_command} --list
 
-####---- NodeAlarms ----####
-pre_alarms_{circle_activity}_{enm_activity}_{date_str}.txt
-alarm get -n {all_nodes} --list
+            ####---- NodeAlarms ----####
+            pre_alarms_{circle_activity}_{enm_activity}_{date_str}.txt
+            alarm get {all_nodes} --list
 
-####---- MO Dump ----####
-pre_dump_{circle_activity}_{enm_activity}_{date_str}.txt
-cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
-cmedit export --status --job jobid
-cmedit export --download --job jobid
+            ####---- MO Dump ----####
+            pre_dump_{circle_activity}_{enm_activity}_{date_str}.txt
+            cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
+            cmedit export --status --job jobid
+            cmedit export --download --job jobid
 
-############################################################################
-##########################- Scripting Input Logs -##########################
-############################################################################
+            ############################################################################
+            ##########################- Scripting Input Logs -##########################
+            ############################################################################
 
-cmedit get -n {all_nodes} {scripting_commands} --dynamic
+            cmedit get -n {all_nodes} {scripting_commands} --dynamic
 
-######################################################################
+            ######################################################################
 
-##########################- Post Check -##########################
-####---- NodeStatus ----####
-post_status_{circle_activity}_{enm_activity}_{date_str}.txt
-cmedit get -n {all_nodes} {status_command} --list
+            ##########################- Post Check -##########################
+            ####---- NodeStatus ----####
+            post_status_{circle_activity}_{enm_activity}_{date_str}.txt
+            cmedit get -n {all_nodes} {status_command} --list
 
-####---- NodeAlarms ----####
-post_alarms_{circle_activity}_{enm_activity}_{date_str}.txt
-alarm get -n {all_nodes} --list
+            ####---- NodeAlarms ----####
+            post_alarms_{circle_activity}_{enm_activity}_{date_str}.txt
+            alarm get {all_nodes} --list
 
-####---- MO Dump ----####
-post_dump_{circle_activity}_{enm_activity}_{date_str}.txt
-cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
-cmedit export --status --job jobid
-cmedit export --download --job jobid
+            ####---- MO Dump ----####
+            post_dump_{circle_activity}_{enm_activity}_{date_str}.txt
+            cmedit export -n {all_nodes} --filetype dynamic --filecompression gzip
+            cmedit export --status --job jobid
+            cmedit export --download --job jobid
 
         """]
 
@@ -841,7 +936,7 @@ cmedit export --download --job jobid
             file.write('\n'.join(file_text_content))
         fileNameList.append(ffnme)
         
-    print(read_df, "read_dfread_dfread_df")
+    #print(read_df, "read_dfread_dfread_df")
     circle_list = read_df["circle"].unique().tolist()
     enm_list = read_df["ENM"].unique().tolist()
     SiteID_list = read_df["SiteID"].unique().tolist()
@@ -882,7 +977,7 @@ cmedit export --download --job jobid
     result = mongo.db.enmfiles.insert_one(file_doc)
 
     for index, oneValDf in read_df.iterrows():
-        print(oneValDf["ENM"],"sajdsakdaskjdsak")
+        #print(oneValDf["ENM"],"sajdsakdaskjdsak")
         final_data = {
             "enms": oneValDf["ENM"],
             "circle":oneValDf["circle"],
@@ -920,6 +1015,7 @@ def script_entry_migration(request_user,taskId,file_con,file_path,inserted_id):
         "ts":datetime.now().timestamp(),
         "updated":request_user 
     }
+    
 
     final_data = {**file_con,**datafind}
     
@@ -958,15 +1054,16 @@ def process_scripting_task(request_user,task_data, eFile_original_filename, eFil
             curr_dir
         )
 
-
+        print("qwertytrewqwerty")
 
 
         mongo.db.scripting.update_one(
             {"_id": inserted_id},
             {"$set": {"status": "Processing Completed", "ts": datetime.now().timestamp()}}
         )
-        
+        print("dhsgjhfgjsgfhjsgfjsgfjgsfjhsdfg")
         list_dirr = os.listdir(nsa_op_folder)
+        print(list_dirr,"list_dirrlist_dirr")
         excel_file = ""
         script_file = ""
         for i in list_dirr:
@@ -975,7 +1072,7 @@ def process_scripting_task(request_user,task_data, eFile_original_filename, eFil
                 script_file = i
 
         shutil.make_archive(nsa_op_folder, 'zip', nsa_op_folder)
-
+        print("sdkjfhksjdfhjksdhfjsdhf")
         file_con = {
             "siteList_original_filename": task_data["original_filename"],
             "siteList_unique_filename": task_data["filename"],
@@ -984,10 +1081,10 @@ def process_scripting_task(request_user,task_data, eFile_original_filename, eFil
             "nsa_op_folder": nsa_op_folder.replace(os.getcwd(), "") + ".zip",
             "taskId": task_data["task_id"]
         }
-
+        print("dsfjhskjdfhjsdhfjsdhfjds")
         script_entry_migration(request_user, task_data["task_id"], file_con, os.path.join(nsa_op_folder, excel_file),inserted_id)
-
-        print(inserted_id,"inserted_idinserted_idinserted_idinserted_id973")
+        print("skjfhkjsdhfkjshdfjkhsdjfhskjdfhskfhksf")
+        #print(inserted_id,"inserted_idinserted_idinserted_idinserted_id973")
         mongo.db.site_id_status.update_one(
             {"task_id": task_data["task_id"]},
             {"$set": {
@@ -997,17 +1094,18 @@ def process_scripting_task(request_user,task_data, eFile_original_filename, eFil
                 "scripting_updated": uid
             }}
         )
-
+        print("sdfkhskfjhskjfhksjfhksjdfhjsdhf")
         db_update_migration(uid, "scripting_completed", 3, os.path.join(nsa_op_folder, script_file), task_data["task_id"])
-    
+        print("sdkfhjsdhfjhsdfkjhskfjhskdfjhf")
     except Exception as e:
-        print("Error in background task:", str(e))
-        print(traceback.print_exc())
+        #print("Error in background task:", str(e))
+        #print(traceback.print_exc())
         mongo.db.scripting.update_one(
             {"_id": inserted_id},
             {"$set": {"status": "Failed", "error": str(e), "ts": datetime.now().timestamp()},
             "$inc": {"retry_count": 1}}
         )
+        print("Exception:---",e)
         
         
 
@@ -1051,7 +1149,7 @@ def uploadScripting_file():
     
     one_task_data = mongo.db.enmfiles.find_one({"task_id":taskId})
     
-    print(one_task_data["filename"],"one_task_dataone_task_dataone_task_data")
+    #print(one_task_data["filename"],"one_task_dataone_task_dataone_task_data")
     
     siteList_file_path = os.path.join(UPLOAD_FOLDER,"enm",one_task_data["filename"])
     
@@ -1068,7 +1166,7 @@ def uploadScripting_file():
     
     result = mongo.db.scripting.insert_one(final_data)
     inserted_id = result.inserted_id
-    print("Inserted document ID:", inserted_id)
+    #print("Inserted document ID:", inserted_id)
     
     
     
@@ -1086,7 +1184,7 @@ def uploadScripting_file():
     
     sys.path.append(nsa_sa_path)
     
-    print(sys.path,"sys.pathsys.pathsys.pathsys.path")
+    #print(sys.path,"sys.pathsys.pathsys.pathsys.path")
     
     nsa_op_folder = scripting_nsa_sa(one_task_data["original_filename"],eFile_original_filename,nsa_sa_path,one_task_data["circle"],one_task_data["enms"],os.path.join(curr_dir,siteList_file_path),os.path.join(curr_dir,eFile_file_path),curr_dir)
 
@@ -1139,17 +1237,17 @@ def uploadScripting_file():
     
     # with zipfile.ZipFile(nsa_op_folder+".zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
     #     for root, _, files in os.walk(nsa_op_folder):
-    #         print(file,"filefilefile")
+    #         #print(file,"filefilefile")
     #         for file in files:
                 
-    #             print(file,"filefilefile")
+    #             #print(file,"filefilefile")
     #         deoijejdi3e
                 
     #             # file_path = os.path.join(root, file)
     #             # arcname = os.path.basename(file_path)  # just filename inside zip
     #             # zipf.write(file_path, arcname)
 
-    # print(os.path.abspath(nsa_op_folder),"abspathabspathabspath")
+    # #print(os.path.abspath(nsa_op_folder),"abspathabspathabspath")
     
     
     
@@ -1238,7 +1336,7 @@ def get_user_files():
     files_list = []
     for f in files_cursor:
         
-        print(f)
+        # #print(f)
         
         
         files_list.append(f)
@@ -1304,7 +1402,7 @@ def get_user_enm_files():
     files_list = []
     for f in files_cursor:
         
-        print(f)
+        #print(f)
         
         
         files_list.append(f)
@@ -1326,7 +1424,7 @@ def get_user_scripting_files():
             '$addFields': {
                 'user_id_obj': {
                     '$convert': {
-                        'input': '$user_id', 
+                        'input': '$updated', 
                         'to': 'objectId'
                     }
                 }, 
@@ -1353,7 +1451,27 @@ def get_user_scripting_files():
             '$sort': {
                 '_id': -1
             }
-        }, {
+        }, 
+        {
+        '$addFields': {
+            'email': '$userresult.email', 
+            'timestamp': {
+                '$dateToString': {
+                    'date': {
+                        '$toDate': {
+                            '$multiply': [
+                                '$ts', 1000
+                            ]
+                        }
+                    }, 
+                    'timezone': 'Asia/Kolkata', 
+                    'format': '%Y-%m-%d %H:%M'
+                }
+            }, 
+            
+        }
+    },
+        {
             '$project': {
                 'user_id_obj': 0, 
                 'userresult.hashed_password': 0, 
@@ -1452,54 +1570,339 @@ def migrationList():
     # ]
     
     
-    aggr = [
-        {
-            '$lookup': {
-                'from': 'status_log_node', 
-                'let': {
-                    'node': '$nodes', 
-                    'task': '$task_id'
-                }, 
-                'pipeline': [
-                    {
-                        '$match': {
-                            '$expr': {
-                                '$and': [
-                                    {
-                                        '$eq': [
-                                            '$node_id', '$$node'
-                                        ]
-                                    }, {
-                                        '$eq': [
-                                            '$taskId', '$$task'
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    }, {
-                        '$project': {
-                            '_id': 0
-                        }
-                    }
-                ], 
-                'as': 'statusList'
-            }
-        }, {
-            '$unwind': {
-                'path': '$statusList', 
-                'preserveNullAndEmptyArrays': True
-            }
-        },{
-            '$sort': {
-                '_id': -1
+    # aggr = [
+    #     {
+    #         "$limit":20
+    #     },
+    #     {
+    #         '$lookup': {
+    #             'from': 'status_log_node', 
+    #             'let': {
+    #                 'node': '$nodes', 
+    #                 'task': '$task_id'
+    #             }, 
+    #             'pipeline': [
+    #                 {
+    #                     '$match': {
+    #                         '$expr': {
+    #                             '$and': [
+    #                                 {
+    #                                     '$eq': [
+    #                                         '$node_id', '$$node'
+    #                                     ]
+    #                                 }, {
+    #                                     '$eq': [
+    #                                         '$taskId', '$$task'
+    #                                     ]
+    #                                 }
+    #                             ]
+    #                         }
+    #                     }
+    #                 }, {
+    #                     '$project': {
+    #                         '_id': 0
+    #                     }
+    #                 }
+    #             ], 
+    #             'as': 'statusList'
+    #         }
+    #     }, {
+    #         '$unwind': {
+    #             'path': '$statusList', 
+    #             'preserveNullAndEmptyArrays': True
+    #         }
+    #     },{
+    #         '$sort': {
+    #             '_id': -1
+    #         }
+    #     }
+    # ]
+    search = request.args.get("search", "")
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 20))
+    skip = (page - 1) * limit
+    aggr=[
+    {
+        '$sort': {
+            '_id': -1
+        }
+    }, {
+        '$group': {
+            '_id': {
+                'task_id': '$task_id', 
+                'circle': '$circle', 
+                'enms': '$enms', 
+                'site_id': '$site_id'
+            }, 
+            'data': {
+                '$first': '$$ROOT'
             }
         }
+    }, 
+     {"$skip": skip},
+        {"$limit": limit},
+      {
+        '$replaceRoot': {
+            'newRoot': '$data'
+        }
+    }, {
+        '$lookup': {
+            'from': 'site_id_status', 
+            'localField': 'task_id', 
+            'foreignField': 'task_id', 
+            'pipeline': [
+                {
+                    '$addFields': {
+                        'statusNumber': {
+                            '$switch': {
+                                'branches': [
+                                    {
+                                        'case': {
+                                            '$eq': [
+                                                '$status', 'ENM Command Executed'
+                                            ]
+                                        }, 
+                                        'then': 1
+                                    }, {
+                                        'case': {
+                                            '$eq': [
+                                                '$status', 'Pre Check Completed'
+                                            ]
+                                        }, 
+                                        'then': 2
+                                    }, {
+                                        'case': {
+                                            '$eq': [
+                                                '$status', 'Scripting Completed'
+                                            ]
+                                        }, 
+                                        'then': 3
+                                    }, {
+                                        'case': {
+                                            '$eq': [
+                                                '$status', 'Post Check Completed'
+                                            ]
+                                        }, 
+                                        'then': 4
+                                    }
+                                ], 
+                                'default': 0
+                            }
+                        }
+                    }
+                }
+            ], 
+            'as': 'site_id_status'
+        }
+    }, {
+        '$lookup': {
+            'from': 'enmfiles', 
+            'localField': 'task_id', 
+            'foreignField': 'task_id', 
+            'pipeline': [
+                {
+                    '$sort': {
+                        '_id': -1
+                    }
+                }, {
+                    '$limit': 1
+                }, {
+                    '$addFields': {
+                        'site_id': {
+                            '$split': [
+                                '$site_id', '/'
+                            ]
+                        }, 
+                        'nodes': {
+                            '$split': [
+                                '$nodes', '/'
+                            ]
+                        }
+                    }
+                }, {
+                    '$unwind': {
+                        'path': '$site_id', 
+                        'preserveNullAndEmptyArrays': True
+                    }
+                }, {
+                    '$addFields': {
+                        'nodes': {
+                            '$filter': {
+                                'input': '$nodes', 
+                                'as': 'n', 
+                                'cond': {
+                                    '$regexMatch': {
+                                        'input': '$$n', 
+                                        'regex': '$site_id'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ], 
+            'as': 'enmfiles'
+        }
+    }, {
+        '$addFields': {
+            'nodes': {
+                '$arrayElemAt': [
+                    '$enmfiles.nodes', 0
+                ]
+            }
+        }
+    }, {
+        '$lookup': {
+            'from': 'status_log_node', 
+            'let': {
+                'node': '$nodes', 
+                'task': '$task_id'
+            }, 
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': {
+                            '$and': [
+                                {
+                                    '$in': [
+                                        '$node_id', '$$node'
+                                    ]
+                                }, {
+                                    '$eq': [
+                                        '$taskId', '$$task'
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0
+                    }
+                }
+            ], 
+            'as': 'statusList'
+        }
+    }, {
+        '$addFields': {
+            '_id': {
+                '$toString': '$_id'
+            }, 
+            'enm_command_status': {
+                '$cond': {
+                    'if': {
+                        '$gte': [
+                            {
+                                '$arrayElemAt': [
+                                    '$site_id_status.statusNumber', 0
+                                ]
+                            }, 1
+                        ]
+                    }, 
+                    'then': True, 
+                    'else': False
+                }
+            }, 
+            'pre_check_completed': {
+                '$cond': {
+                    'if': {
+                        '$gte': [
+                            {
+                                '$arrayElemAt': [
+                                    '$site_id_status.statusNumber', 0
+                                ]
+                            }, 2
+                        ]
+                    }, 
+                    'then': True, 
+                    'else': False
+                }
+            }, 
+            'scripting_completed': {
+                '$cond': {
+                    'if': {
+                        '$gte': [
+                            {
+                                '$arrayElemAt': [
+                                    '$site_id_status.statusNumber', 0
+                                ]
+                            }, 3
+                        ]
+                    }, 
+                    'then': True, 
+                    'else': False
+                }
+            }, 
+            'post_check_completed': {
+                '$cond': {
+                    'if': {
+                        '$gte': [
+                            {
+                                '$arrayElemAt': [
+                                    '$site_id_status.statusNumber', 0
+                                ]
+                            }, 4
+                        ]
+                    }, 
+                    'then': True, 
+                    'else': False
+                }
+            }, 
+            'migration_completed': {
+                '$cond': {
+                    'if': {
+                        '$gte': [
+                            {
+                                '$arrayElemAt': [
+                                    '$statusList.migration_tno', -1
+                                ]
+                            }, 5
+                        ]
+                    }, 
+                    'then': True, 
+                    'else': False
+                }
+            }
+        }
+    }, {
+        '$project': {
+            'site_id_status': 0, 
+            'enmfiles': 0, 
+            'statusList': 0, 
+            'status': 0, 
+            'scripting': 0
+        }
+    }
+]
+    aggrForDocCount=[ {
+        '$group': {
+            '_id': {
+                'task_id': '$task_id', 
+                'circle': '$circle', 
+                'enms': '$enms', 
+                'site_id': '$site_id'
+            }, 
+            
+        }
+    }, 
+    {"$count": "total_count"} 
     ]
-
+    forSearch={
+        '$match': {
+            'task_id': ''
+        }
+    }
+    if search and  search.strip() != "":
+        forSearch['$match']['task_id'] =search.strip()
+        aggr.insert(0,forSearch)
+        aggrForDocCount.insert(0,forSearch)
     # files_cursor = mongo.db.files.find({"user_id": user_id})
+    docCount = mongo.db.migration.aggregate(aggrForDocCount)
     files_cursor = mongo.db.migration.aggregate(aggr)
-    
+    count_doc = next(docCount, None)  # ek hi document aata hai
+    total_count = count_doc["total_count"] if count_doc else 0
+
+    print("Total Count:", total_count)
     
     files_list = []
     for f in files_cursor:
@@ -1509,7 +1912,7 @@ def migrationList():
         
         files_list.append(f)
     
-    return jsonify(files_list), 200
+    return jsonify({"data":files_list,"total_count":total_count}), 200
 
 @api.route("/downloads/<file_id>", methods=["GET"])
 @token_required
@@ -1529,11 +1932,11 @@ def download_file(file_id):
     #     content_type = mimetypes.guess_type(file_path)
 
     
-    # print(download_name,"download_namedownload_namedownload_name")
+    # #print(download_name,"download_namedownload_namedownload_name")
     final_file = os.path.join(os.getcwd(),"downloads",file_id)
     content_type = mimetypes.guess_type(final_file)
     
-    print(content_type,"content_typecontent_type")
+    #print(content_type,"content_typecontent_type")
     return send_file(
         final_file,
         as_attachment=True
@@ -1555,7 +1958,7 @@ def download_file_nsa_sa(file_id):
     final_file = os.path.join(os.getcwd(),"downloads","nsa_sa",file_id)
     content_type = mimetypes.guess_type(final_file)
     
-    print(content_type,"content_typecontent_type")
+    #print(content_type,"content_typecontent_type")
     return send_file(
         final_file,
         as_attachment=True
@@ -1569,7 +1972,7 @@ def download_file_gpl_audit(file_id):
     final_file = os.path.join(os.getcwd(),"downloads","gpl_audit",file_id)
     content_type = mimetypes.guess_type(final_file)
     
-    print(content_type,"content_typecontent_type")
+    #print(content_type,"content_typecontent_type")
     return send_file(
         final_file,
         as_attachment=True
@@ -1580,13 +1983,13 @@ def download_file_gpl_audit(file_id):
 def enm_download_file(file_id):
     
     
-    print(file_id,"file_idfile_idfile_id")
+    #print(file_id,"file_idfile_idfile_id")
     
     enm_listt = mongo.db.enmfiles.find_one({
         "_id": ObjectId(file_id)
     })
     
-    print(enm_listt["enm_file_name"],"enm_listtenm_listtenm_listt")
+    #print(enm_listt["enm_file_name"],"enm_listtenm_listtenm_listt")
     
     enm_zip_file = []
     for enmfilei in enm_listt["enm_file_name"].split(","):
@@ -1594,7 +1997,7 @@ def enm_download_file(file_id):
         enm_zip_file.append(os.path.join(os.getcwd(),enmfilei))
         
     if(len(enm_zip_file) == 1):
-        print(enm_zip_file)
+        #print(enm_zip_file)
         
         return send_file(
             enm_zip_file[0],
@@ -1603,7 +2006,7 @@ def enm_download_file(file_id):
     
 
     zip_path = create_zip_from_files(enm_zip_file, os.path.join("downloads","enm_output.zip"))
-    print("ZIP created at:", zip_path)
+    #print("ZIP created at:", zip_path)
     return send_file(
         zip_path,
         as_attachment=True
@@ -1675,7 +2078,7 @@ def create_enm():
 
     result = mongo.db.enms.insert_one(enm_record)
 
-    print(enm_record, "enmenmenm")
+    #print(enm_record, "enmenmenm")
     return jsonify({
         "message": "ENM created successfully",
         "id": str(result.inserted_id)
@@ -1707,7 +2110,7 @@ def create_users():
 
     result = mongo.db.enms.insert_one(enm)
 
-    print(enm,"enmenmenm")
+    #print(enm,"enmenmenm")
     return jsonify({
         "message": "ENM created successfully",
         "id": str(result.inserted_id)
@@ -1766,7 +2169,7 @@ def get_enms():
             "id": str(e["_id"]),
             "enm": e.get("enm"),
             "circle": e.get("circle"),
-            "vendor":e.get("vendor")
+            "oem":e.get("oem")
         })
 
 
@@ -1797,11 +2200,11 @@ def check_conn():
     temp_client = pymongo.MongoClient(mongo_uri)
     try:
         temp_client.admin.command('ping')
-        print("✅ Connected to MongoDB")
+        #print("✅ Connected to MongoDB")
         
         return "✅ Connected to MongoDB"
     except Exception as e:
-        print("❌ Connection failed:", e)
+        #print("❌ Connection failed:", e)
         return "❌ Connection failed:" + str(e)
 
 
@@ -1866,7 +2269,7 @@ def run_gpl_audit_api():
         return jsonify({"message": "No selected siteList file"}), 400
 
 
-    print(siteList,eFile)
+    #print(siteList,eFile)
 
     siteList_original_filename = secure_filename(siteList.filename)
     siteList_unique_filename = f"{uuid.uuid4().hex}_{siteList_original_filename}"
@@ -1902,7 +2305,7 @@ def run_gpl_audit_api():
         
     
     
-    print(eFile_original_filename_list,siteList_file_path)
+    #print(eFile_original_filename_list,siteList_file_path)
         
         
     one_last_data = mongo.db.audit_files.find_one(sort=[('_id', -1)])
@@ -1920,7 +2323,7 @@ def run_gpl_audit_api():
         aud_task_id = "AUD"+(6-str_new_id)*"0"+str(new_id)
         
         
-    print(aud_task_id)
+    #print(aud_task_id)
         
         
         
@@ -1935,7 +2338,7 @@ def run_gpl_audit_api():
     
     curr_dir = os.getcwd()
     
-    print(enmFile_list,siteList_file_path)
+    #print(enmFile_list,siteList_file_path)
     
     final_file_path = run_gpl_audit(curr_dir,circle_name,enmFile_list,siteList_file_path,aud_task_id)
     
@@ -1955,7 +2358,7 @@ def run_gpl_audit_api():
     
     zip_path = create_zip_from_folder(final_file_path, final_file_path+".zip")
     
-    print(final_file_path,"final_file_pathfinal_file_path")
+    #print(final_file_path,"final_file_pathfinal_file_path")
     
     
     
@@ -1985,6 +2388,7 @@ def run_gpl_audit_api():
     
     
 
+
 @api.route("/gpl_audit_files", methods=["GET"])
 @token_required
 def get_gpl_audit_files():
@@ -1992,6 +2396,11 @@ def get_gpl_audit_files():
     
     
     aggr = [
+        {
+            "$match":{
+                "deleteStatus":{"$ne":1}
+            }
+        },
         {
             '$addFields': {
                 'user_id_obj': {
@@ -2023,12 +2432,31 @@ def get_gpl_audit_files():
             '$sort': {
                 '_id': -1
             }
-        }, {
+        },
+         {
+        '$addFields': {
+            'email': '$userresult.email', 
+            'timestamp': {
+                '$dateToString': {
+                    'date': {
+                        '$toDate': {
+                            '$multiply': [
+                                '$tss', 1000
+                            ]
+                        }
+                    }, 
+                    'timezone': 'Asia/Kolkata', 
+                    'format': '%Y-%m-%d %H:%M'
+                }
+            }, 
+        }
+    },
+          {
             '$project': {
                 'user_id_obj': 0, 
                 'userresult.hashed_password': 0, 
                 'userresult._id': 0, 
-                '_id': 0
+                # '_id': 0
             }
         }
     ]
@@ -2047,3 +2475,137 @@ def get_gpl_audit_files():
         files_list.append(f)
     
     return jsonify(files_list), 200
+
+@api.route("/gpl_audit_files/<uID>", methods=["DELETE"])
+@token_required
+def delete_gpl_audit_file(uID):
+    user_id = request.user.get("sub") 
+
+    try:
+        
+        obj_id = ObjectId(uID)
+    except Exception as e:
+        return jsonify({"message": "Invalid document ID"}), 400
+
+    
+    result = mongo.db.audit_files.update_one({
+        "_id": obj_id,
+        
+    
+    },{"$set":{"deleteStatus":1,"deletedBy":user_id}})
+    return jsonify({"message": "Deleted successfully"}), 200
+
+
+
+@api.route("/sidebar-links", methods=["GET"])
+@token_required
+def get_sidebar_links():
+    user_role = request.user.get("role")
+    links = mongo.db.sidebar_links.find({"roles": {"$in": [user_role]}})
+    
+    link_list = []
+    for link in links:
+        link_list.append({
+            "id": str(link["_id"]),
+            "label": link.get("label"),
+            "href": link.get("href"),
+            "icon": link.get("icon"),
+            "roles":link.get("roles")
+        })
+
+    return jsonify(link_list), 200
+
+
+@api.route("/sidebar-links/<link_id>/toggle-role", methods=["PUT"])
+@token_required
+def toggle_sidebar_link_role(link_id):
+    """
+    Toggles a specific role's access for a given sidebar link.
+    If the role exists in the array, it's removed.
+    If it doesn't exist, it's added.
+    This endpoint is for admins only.
+    """
+    # 1. Authorization: Ensure user is an admin
+    if request.user.get("role") != "admin":
+        return jsonify({"message": "Forbidden: Admin access required"}), 403
+
+    # 2. Get the role to toggle from the request body
+    try:
+        data = request.get_json()
+        role_to_toggle = data.get("role")
+        if not role_to_toggle:
+            raise ValueError("'role' key is required in the request body.")
+    except Exception as e:
+        return jsonify({"message": f"Bad Request: Invalid JSON or data format. {str(e)}"}), 400
+
+    # 3. Database Operation
+    try:
+        object_id = ObjectId(link_id)
+
+        # First, find the link to see its current roles
+        link = mongo.db.sidebar_links.find_one({"_id": object_id})
+
+        if not link:
+            return jsonify({"message": "Link not found"}), 404
+
+        current_roles = link.get("roles", [])
+        
+        # This is the core "toggle" logic
+        if role_to_toggle in current_roles:
+            # If role exists, REMOVE it using the $pull operator
+            mongo.db.sidebar_links.update_one(
+                {"_id": object_id},
+                {"$pull": {"roles": role_to_toggle}}
+            )
+            action_taken = "disabled"
+        else:
+            # If role does not exist, ADD it using the $addToSet operator
+            # $addToSet is safer than $push as it prevents duplicates
+            mongo.db.sidebar_links.update_one(
+                {"_id": object_id},
+                {"$addToSet": {"roles": role_to_toggle}}
+            )
+            action_taken = "enabled"
+        
+        # 4. Fetch the updated document to return it
+        updated_link = mongo.db.sidebar_links.find_one({"_id": object_id})
+        updated_link["_id"] = str(updated_link["_id"]) # Convert ObjectId for JSON
+
+        return jsonify({
+            "message": f"Role '{role_to_toggle}' has been {action_taken} for link '{updated_link['label']}'.",
+            "link": updated_link
+        }), 200
+
+    except InvalidId:
+        return jsonify({"message": "Invalid link ID format"}), 400
+    except Exception as e:
+        return jsonify({"message": f"An internal server error occurred: {str(e)}"}), 500
+
+
+@api.route("/sidebar-links", methods=["POST"])
+@token_required
+def create_sidebar_links():
+    if request.user.get("role") != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    data = request.get_json()
+    
+    if not isinstance(data, list):
+        return jsonify({"message": "Expected a list of links"}), 400
+
+    inserted_ids = []
+    for item in data:
+        # Validate required fields
+        required_fields = ["label", "href", "roles", "icon", "enabled"]
+        for field in required_fields:
+            if field not in item:
+                return jsonify({"message": f"{field} is required in one of the links"}), 400
+
+        result = mongo.db.sidebar_links.insert_one(item)
+        inserted_ids.append(str(result.inserted_id))
+
+    return jsonify({
+        "message": "Sidebar links created successfully",
+        "inserted_ids": inserted_ids
+    }), 201
+    

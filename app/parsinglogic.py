@@ -52,7 +52,7 @@ class Calculator:
         
         sync_raw_data = raw_data[raw_data.find("NodeId"):]
         
-        print(raw_data,"raw_dataraw_dataraw_data")
+        #print(raw_data,"raw_dataraw_dataraw_data")
             
         df_sync = pd.read_csv(StringIO(sync_raw_data), sep="\t")
         
@@ -115,12 +115,12 @@ class Calculator:
         for i in file_list:
             
             name_only = os.path.splitext(os.path.basename(i))[0]
-            print(i)
+            # #print(i)
             
             fname = ""
             df_list = []
             with open(os.path.join(path,i)) as file:
-                print(file.name," file.name()")
+                #print(file.name," file.name()")
                 
                 file_data = file.read()
                 fname = self.file_name_maker(file_data)
@@ -132,14 +132,14 @@ class Calculator:
                     
                     alarms_data = self.alarm(file_data)
                     
-                    print("alarms_dataalarms_dataalarms_data","alarms_dataalarms_data",alarms_data)
+                    #print("alarms_dataalarms_dataalarms_data","alarms_dataalarms_data",alarms_data)
                     
                     
                 if("syncStatus" in file_data):
                     
                     syncStatus_data = self.sync(file_data)
                     
-                    print("syncStatus_datasyncStatus_datasyncStatus_data","alarms_dataalarms_data",syncStatus_data)
+                    #print("syncStatus_datasyncStatus_datasyncStatus_data","alarms_dataalarms_data",syncStatus_data)
                     
                 else:
                     
@@ -187,19 +187,19 @@ class Calculator:
 
                 merged_df = pd.concat(df_list, ignore_index=True)
 
-                print(name_only, "name_only")
+                #print(name_only, "name_only")
                 
                 
                 if name_only in rename_map:
                     merged_df = merged_df.rename(columns={rename_map[name_only]["col"]: "CellName"})
                     merged_df["CellType"] = rename_map[name_only]["type"]
-                    print(name_only, "processed")
+                    #print(name_only, "processed")
                     
                     list_of_sheet_same_col.append(merged_df)
                     
                     
 
-                print(merged_df.columns)
+                #print(merged_df.columns)
 
                 list_of_sheet.append(merged_df)
                 
@@ -207,7 +207,7 @@ class Calculator:
                 list_of_sheet_name.append(fname)
             
         
-        print(list_of_sheet_same_col,"list_of_sheet_same_collist_of_sheet_same_col209209209")
+        #print(list_of_sheet_same_col,"list_of_sheet_same_collist_of_sheet_same_col209209209")
         
         FINAL_STATUS_df = pd.DataFrame([])
         if(len(list_of_sheet_same_col) > 0):
@@ -225,7 +225,7 @@ class Calculator:
         summary_rows = []
 
         
-        print(FINAL_STATUS_df,"FINAL_STATUS_dfFINAL_STATUS_dfFINAL_STATUS_df")
+        #print(FINAL_STATUS_df,"FINAL_STATUS_dfFINAL_STATUS_dfFINAL_STATUS_df")
         
         if "NodeId" in FINAL_STATUS_df.columns:
             for node, group in FINAL_STATUS_df.groupby("NodeId"):
@@ -250,7 +250,7 @@ class Calculator:
 
         summary_df = pd.DataFrame(summary_rows)
         
-        print(syncStatus_data,summary_df,"syncStatus_datasyncStatus_datasyncStatus_datasyncStatus_data")
+        #print(syncStatus_data,summary_df,"syncStatus_datasyncStatus_datasyncStatus_datasyncStatus_data")
         
         if("NodeId" in syncStatus_data.columns):
                 
@@ -259,12 +259,12 @@ class Calculator:
             ).fillna("N/A")
 
 
-        # print(",".join(summary_df["NodeId"].to_list()),"resultresultresultresult")
+        # #print(",".join(summary_df["NodeId"].to_list()),"resultresultresultresult")
         # for node, node_df in FINAL_STATUS_df.groupby("NodeId"):
-        #     print("Node:", node)
+        #     #print("Node:", node)
         #     for celltype, ct_df in node_df.groupby("CellType"):
-        #         print("   CellType:", celltype)
-        #         print(ct_df, "\n")
+        #         #print("   CellType:", celltype)
+        #         #print(ct_df, "\n")
                 
                 
         list_of_sheet.insert(0, summary_df)
@@ -281,7 +281,7 @@ class Calculator:
         file_list_all = ", ".join(file_list)
                 
                 
-        print(list_of_sheet_name,"list_of_sheet_namelist_of_sheet_name")
+        #print(list_of_sheet_name,"list_of_sheet_namelist_of_sheet_name")
         file_name = calc+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
         with pd.ExcelWriter(os.path.join("downloads",file_name), engine="xlsxwriter") as writer:
             
@@ -297,7 +297,7 @@ class Calculator:
 
                 disableformat1 = workbook.add_format({'bg_color': 'red'})
                 
-                print(df.columns,"df.columnsdf.columns")
+                #print(df.columns,"df.columnsdf.columns")
                 # col_idx = df.columns.get_loc("operationalState")
                 start_row = 1 
                 stop_row = len(df)
@@ -305,7 +305,7 @@ class Calculator:
                 
                 for liei in ["operationalState","operationalState_pre","operationalState_post","administrativeState_pre","administrativeState_post","Syncstatus"]:
                     
-                    print(df.columns,"df.columnsdf.columnsdf.columns137137137")    
+                    #print(df.columns,"df.columnsdf.columnsdf.columns137137137")    
                     if liei in df.columns:
 
                         col_idx = df.columns.get_loc(liei)
@@ -378,11 +378,11 @@ class Calculator:
             
             
             name_only = os.path.splitext(os.path.basename(i))[0]
-            print(i)
+            #print(i)
             
             df_list = []
             with open(os.path.join(path,i)) as file:
-                print(file.name," file.name()")
+                #print(file.name," file.name()")
                 file_data = file.read()
                 start_point = "presentSeverity"
                 stop_point = "Total number"
@@ -396,7 +396,7 @@ class Calculator:
                     stop_matches = re.findall(stop_point, line)
                     
                     
-                    print(start_matches,"start_matches","stop_matches")
+                    #print(start_matches,"start_matches","stop_matches")
                     if start_matches:
                         read_enabled = True
                     
@@ -417,7 +417,7 @@ class Calculator:
                     
                     
                     for i in df.iterrows():
-                        print(i["NodeName"],"sadmnasjdnasndsajdkjasdnsajkdjkas")
+                        #print(i["NodeName"],"sadmnasjdnasndsajdkjasdnsajkdjkas")
                      
                     
                     # filtered_data = df[
@@ -429,7 +429,7 @@ class Calculator:
                     
                     
                  
-            print(df_list,"df_listdf_listdf_listdf_list")
+            #print(df_list,"df_listdf_listdf_listdf_list")
             merged_df = pd.concat(df_list, ignore_index=True)
             
             rename_map = {
@@ -438,31 +438,31 @@ class Calculator:
                 "FieldReplaceableUnit": {"col": "FieldReplaceableUnitId", "type": "NR"}
             }
             
-            print(df_list,"df_listdf_listdf_listdf_list")
+            #print(df_list,"df_listdf_listdf_listdf_list")
 
             merged_df = pd.concat(df_list, ignore_index=True)
 
-            print(name_only, "name_only")
+            #print(name_only, "name_only")
             
             
             if name_only in rename_map:
                 merged_df = merged_df.rename(columns={rename_map[name_only]["col"]: "CellName"})
                 merged_df["CellType"] = rename_map[name_only]["type"]
-                print(name_only, "processed")
+                #print(name_only, "processed")
                 
                 list_of_sheet_same_col.append(merged_df)
                 
             
                 
 
-            print(merged_df.columns)
+            #print(merged_df.columns)
 
             list_of_sheet.append(merged_df)
             list_of_sheet_name.append(name_only)
             
             
             
-        print(len(list_of_sheet),"list_of_sheetlist_of_sheet")
+        #print(len(list_of_sheet),"list_of_sheetlist_of_sheet")
         file_name = "alarmsss"+datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + "_cells_data.xlsx"
         with pd.ExcelWriter(os.path.join("downloads",file_name), engine="xlsxwriter") as writer:
             
@@ -478,7 +478,7 @@ class Calculator:
 
                 disableformat1 = workbook.add_format({'bg_color': 'red'})
                 
-                print(df.columns,"df.columnsdf.columns")
+                #print(df.columns,"df.columnsdf.columns")
                 # col_idx = df.columns.get_loc("operationalState")
                 # start_row = 1 
                 # stop_row = len(df)
@@ -505,14 +505,14 @@ class Calculator:
 
     
     def startdiffCalc(self,pre_files,post_files):
-        print(pre_files,post_files,"pre_files,post_filespre_files,post_files")
+        #print(pre_files,post_files,"pre_files,post_filespre_files,post_files")
                 
 
         pre_df = pd.read_excel(pre_files,sheet_name="CellStatus")
         post_df = pd.read_excel(post_files,sheet_name="CellStatus")
         
         
-        print(pre_df,post_df,"pre_df,post_dfpre_df,post_dfpre_df,post_dfpre_df,post_df")
+        #print(pre_df,post_df,"pre_df,post_dfpre_df,post_dfpre_df,post_dfpre_df,post_df")
         
         
         
@@ -525,13 +525,13 @@ class Calculator:
         # post_df["administrativeStatePost"] = post_df["administrativeState"]
         
         
-        print(pre_df["merged_data"].to_string())
-        print(post_df["merged_data"].to_string())
+        #print(pre_df["merged_data"].to_string())
+        #print(post_df["merged_data"].to_string())
         
         
         
-        print(pre_df.keys())
-        print(post_df.keys())
+        #print(pre_df.keys())
+        #print(post_df.keys())
         
         merged = pre_df.merge(post_df, on=["merged_data"], how="outer",indicator=True,suffixes=("_pre", "_post"))
         
@@ -591,7 +591,7 @@ class Calculator:
 
                 disableformat1 = workbook.add_format({'bg_color': 'red'})
                 
-                print(df.columns,"df.columnsdf.columns")
+                #print(df.columns,"df.columnsdf.columns")
                 # col_idx = df.columns.get_loc("operationalState")
                 start_row = 1 
                 stop_row = len(df)
@@ -599,7 +599,7 @@ class Calculator:
                 
                 for liei in ["operationalState","operationalState_pre","operationalState_post","administrativeState_pre","administrativeState_post"]:
                     
-                    print(df.columns,"df.columnsdf.columnsdf.columns137137137")    
+                    #print(df.columns,"df.columnsdf.columnsdf.columns137137137")    
                     if liei in df.columns:
 
                         col_idx = df.columns.get_loc(liei)
@@ -634,6 +634,6 @@ class Calculator:
             
             
         
-        print(filtered_data.to_csv("sdasdasdasdasdasd987s.csv"))
+        #print(filtered_data.to_csv("sdasdasdasdasdasd987s.csv"))
         
         
