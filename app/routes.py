@@ -150,30 +150,36 @@ def login():
 
         mongo.db.login_status.insert_one(login_details)
         return jsonify({"error": "Invalid credentials"}), 401
+    domain = email.split("@")[1]
+    domain_data = mongo.db.domain_settings.find_one({"domain": domain})
+    logo_url = domain_data.get("logo_url") if domain_data else "/uploads/default_logo.png"
 
     token = jwt.encode(
         {
             "sub": str(user["_id"]),
             "role": user.get("role", "admin"),  
+            "domain": domain, 
             "exp": datetime.utcnow() + timedelta(hours=6)
         },
         current_app.config["JWT_SECRET"],
         algorithm=current_app.config["JWT_ALGORITHM"]
     )
-
+    
     login_details = {
         "created_ts":datetime.now().timestamp(),
         # "created_by":user_id,
         "email":email,
         "password":password,
-        "status":"valid"
+        "status":"valid",
+        "logo_url":logo_url
     }
 
     mongo.db.login_status.insert_one(login_details)
     return jsonify({
         "email": user["email"],
         "role": user.get("role", "admin"),
-        "access_token": token
+        "access_token": token,
+        "logo_url": logo_url
     })
 
 @api.route("/", methods=["GET"])
@@ -2495,13 +2501,91 @@ def delete_gpl_audit_file(uID):
     },{"$set":{"deleteStatus":1,"deletedBy":user_id}})
     return jsonify({"message": "Deleted successfully"}), 200
 
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@api.route("/upload-logo", methods=["POST"])
+@token_required
+def upload_logo():
+    try:
+        # Only admins allowed
+        if request.user.get("role") != "admin":
+            return jsonify({"message": "Forbidden: Admin access required"}), 403
+
+        # Get domain
+        domain = request.form.get("domain")
+        if not domain:
+            return jsonify({"status": False, "message": "domain is required"}), 400
+
+        # Validate file
+        if "file" not in request.files:
+            return jsonify({"status": False, "message": "file is required"}), 400
+
+        file = request.files["file"]
+
+        if not file or file.filename == "":
+            return jsonify({"status": False, "message": "invalid file"}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({"status": False, "message": "Invalid file format"}), 400
+
+        # Make sure path exists
+        upload_dir = os.path.join("uploads", "logos")
+        os.makedirs(upload_dir, exist_ok=True)
+
+        ext = file.filename.rsplit(".", 1)[1].lower()
+        filename = secure_filename(f"logo_{domain}.{ext}")
+        filepath = os.path.join(upload_dir, filename)
+
+        # Save file
+        file.save(filepath)
+
+        file_url = f"/uploads/logos/{filename}"
+
+        # ----------- SAVE LOGO MAPPING PER DOMAIN -----------
+        mongo.db.domain_settings.update_one(
+                {"domain": domain},
+                {
+                    "$set": {
+                        "domain": domain,        # <-- REQUIRED FIELD
+                        "logo_url": file_url
+                    }
+                },
+                upsert=True
+            )
+
+
+        return jsonify({
+            "status": True,
+            "message": "Logo uploaded successfully",
+            "logo_url": file_url,
+            "domain": domain
+        })
+
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 500
+
+@api.route("/uploads/logos/<filename>", methods=["GET"])
+def serve_logo(filename):
+    folder = os.path.abspath(os.path.join(os.getcwd(), "uploads", "logos"))
+
+    filepath = os.path.join(folder, filename)
+
+    if not os.path.exists(filepath):
+        return jsonify({"status": False, "message": "Logo not found"}), 404
+
+    return send_file(filepath)
 
 @api.route("/sidebar-links", methods=["GET"])
 @token_required
 def get_sidebar_links():
     user_role = request.user.get("role")
-    links = mongo.db.sidebar_links.find({"roles": {"$in": [user_role]}})
+    domain = request.user.get("domain")
+    arg_domain = request.args.get("domain")
+    match_condition = {} if arg_domain else {"domains": {"$in": [domain]}}
+    links = mongo.db.sidebar_links.find(match_condition)
     
     link_list = []
     for link in links:
@@ -2510,7 +2594,8 @@ def get_sidebar_links():
             "label": link.get("label"),
             "href": link.get("href"),
             "icon": link.get("icon"),
-            "roles":link.get("roles")
+            "roles":link.get("roles"),
+            "domains":link.get("domains"),
         })
 
     return jsonify(link_list), 200
@@ -2532,9 +2617,10 @@ def toggle_sidebar_link_role(link_id):
     # 2. Get the role to toggle from the request body
     try:
         data = request.get_json()
-        role_to_toggle = data.get("role")
-        if not role_to_toggle:
-            raise ValueError("'role' key is required in the request body.")
+        # role_to_toggle = data.get("role")
+        domain_to_toggle = data.get("domain")
+        if not domain_to_toggle:
+            raise ValueError(f"'domain' key is required in the request body.")
     except Exception as e:
         return jsonify({"message": f"Bad Request: Invalid JSON or data format. {str(e)}"}), 400
 
@@ -2548,14 +2634,14 @@ def toggle_sidebar_link_role(link_id):
         if not link:
             return jsonify({"message": "Link not found"}), 404
 
-        current_roles = link.get("roles", [])
+        current_domains = link.get("domains", [])
         
         # This is the core "toggle" logic
-        if role_to_toggle in current_roles:
+        if domain_to_toggle in current_domains:
             # If role exists, REMOVE it using the $pull operator
             mongo.db.sidebar_links.update_one(
                 {"_id": object_id},
-                {"$pull": {"roles": role_to_toggle}}
+                {"$pull": {"domains": domain_to_toggle}}
             )
             action_taken = "disabled"
         else:
@@ -2563,7 +2649,7 @@ def toggle_sidebar_link_role(link_id):
             # $addToSet is safer than $push as it prevents duplicates
             mongo.db.sidebar_links.update_one(
                 {"_id": object_id},
-                {"$addToSet": {"roles": role_to_toggle}}
+                {"$addToSet": {"domains": domain_to_toggle}}
             )
             action_taken = "enabled"
         
@@ -2572,7 +2658,7 @@ def toggle_sidebar_link_role(link_id):
         updated_link["_id"] = str(updated_link["_id"]) # Convert ObjectId for JSON
 
         return jsonify({
-            "message": f"Role '{role_to_toggle}' has been {action_taken} for link '{updated_link['label']}'.",
+            "message": f"Domain '{domain_to_toggle}' has been {action_taken} for link '{updated_link['label']}'.",
             "link": updated_link
         }), 200
 
@@ -2609,3 +2695,67 @@ def create_sidebar_links():
         "inserted_ids": inserted_ids
     }), 201
     
+
+
+@api.route("/domain")
+# @token_required
+def domain_list():
+    # if request.user.get("role") != "admin":
+    #     return jsonify({"message": "Unauthorized"}), 403
+
+    pipeline = [
+    {
+        '$group': {
+            '_id': {
+                '$arrayElemAt': [
+                    {
+                        '$split': [
+                            '$email', '@'
+                        ]
+                    }, 1
+                ]
+            }
+        }
+    }, {
+        '$addFields': {
+            'domainPriority': {
+                '$cond': [
+                    {
+                        '$eq': [
+                            '$_id', 'datayog.com'
+                        ]
+                    }, 0, 1
+                ]
+            }
+        }
+    }, {
+        '$sort': {
+            'domainPriority': 1, 
+            '_id': 1
+        }
+    }, {
+        '$lookup': {
+            'from': 'domain_settings', 
+            'localField': '_id', 
+            'foreignField': 'domain', 
+            'as': 'domain_settings'
+        }
+    }, {
+        '$project': {
+            '_id': 0, 
+            'logo_url': {
+                '$arrayElemAt': [
+                    '$domain_settings.logo_url', 0
+                ]
+            }, 
+            'domain': '$_id'
+        }
+    }
+]
+
+    data = list(mongo.db.users.aggregate(pipeline))
+
+    return jsonify({
+        "status": True,
+        "domains": data
+    })

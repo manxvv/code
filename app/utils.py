@@ -118,6 +118,7 @@ def token_required(f):
                 {
                     "sub": str(decoded.get("sub")),
                     "role": str(decoded.get("role")),
+                    "domain": str(decoded.get("domain")),
                     "exp": datetime.utcnow() + timedelta(hours=6)
                 },
                 current_app.config["JWT_SECRET"],
