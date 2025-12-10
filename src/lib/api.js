@@ -51,12 +51,23 @@ export const editUsers = async (id, data) => {
   return response.data;
 };
 
-export const toggleRoleForLink  = async ({ linkId, role }) => {
-    const payload = { role };
-
-  const response = await http.put(`/sidebar-links/${linkId}/toggle-role`, payload);
+export const toggleRoleForLink = async ({ linkId, role, domain }) => {
+  const response = await http.put(
+    `/sidebar-links/${linkId}/toggle-role`,
+    {
+      role,
+      domain, // 👈 required value
+    }
+  );
   return response.data;
 };
+
+// export const toggleRoleForLink  = async ({ linkId, role }) => {
+//     const payload = { role };
+
+//   const response = await http.put(`/sidebar-links/${linkId}/toggle-role`, payload);
+//   return response.data;
+// };
 
 
 export const deleteUsers = async (id, data) => {
@@ -108,8 +119,47 @@ export const Urlfiles = async (data) => {
   return response.data;
 };
 
-export const sidebarList = async (data) => {
-  const response = await http.get(`${Urls.sidebarlinks}`, data);
+
+export const getDomains = async () => {
+  const res = await http.get("/domain");
+  return res.data;
+};
+
+export const sidebarList = async (data = {}) => {
+  const params = {};
+
+  // only include domain if exists
+  if (data.domain) {
+    params.domain = data.domain;
+  }
+
+  // you can also forward other parameters if required
+  // example:
+  // if (data.role) params.role = data.role;
+
+  const response = await http.get(Urls.sidebarlinks, {
+    params, // axios automatically builds ?domain=xxxx
+  });
+  return response.data;
+};
+
+
+
+// export const sidebarList = async (data) => {
+//   const response = await http.get(`${Urls.sidebarlinks}`, data);
+//   return response.data;
+// };
+export const uploadLogo = async (formData) => {
+  const response = await http.post(
+    "/upload-logo",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
   return response.data;
 };
 

@@ -11,7 +11,7 @@ import { login, logout, setAuthToke } from "@/features/auth/authSlice";
 let all_urls={
   "vedang.dataplus.live":"https://api.vedang.dataplus.live",
   "dataplus.mpulsenet.com":"https://api.mpulsenet.dataplus.live",
-  "localhost:5174":"https://5352aaad8058.ngrok-free.app",
+  // "localhost:5174":"https://5352aaad8058.ngrok-free.app",
   "localhost:5175":"http://localhost:5000"
 }
 
@@ -22,8 +22,8 @@ export const final_url = `https://api.mpulsenet.dataplus.live`
 console.log("Current host:", window.location.host);
 console.log("Using base URL:", final_url);
 const http = axios.create({
-  baseURL: all_urls[window.location.host],
-// baseURL:`${Urls.baseURL}`,
+  // baseURL: all_urls[window.location.host],
+baseURL:`${Urls.baseURL}`,
   withCredentials: true
 });
 

@@ -1,10 +1,10 @@
 const Urls = {
     // baseURL: "",
     // baseURL: "https://cautionapi.mpulsenet.com",
-    // baseURL: "http://127.0.0.1:5000",
+    baseURL: "http://127.0.0.1:5000",
     downloadbaseURL: "https://api.mpulsenet.dataplus.live",
     // baseURL: "https://0da4be62c9ad.ngrok-free.app",
-    baseURL: "https://api.mpulsenet.dataplus.live",
+    // baseURL: "https://api.mpulsenet.dataplus.live",
     // baseURL: "https://api.vedang.dataplus.live",
     // downloadbaseURL: "https://api.vedang.dataplus.live",
     signin: "/login",

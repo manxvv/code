@@ -20,14 +20,24 @@ function LoginForm() {
   const loginMutation = useMutation({
     mutationFn: (data) => http.post(Urls.signin, data),
     onSuccess: (res, variables) => {      
-      const { email, role, access_token } = res?.data;
+      const { email, role, access_token, logo_url  } = res?.data;
 
+      // localStorage.setItem("authData", JSON.stringify({
+      //   user: { email, role },
+      //   access_token,
+      // }));
+
+      // dispatch(login({ user: { email, role }, access_token }));
+
+      // Save auth in localStorage
       localStorage.setItem("authData", JSON.stringify({
-        user: { email, role },
+        user: { email, role, logo_url },
         access_token,
       }));
 
-      dispatch(login({ user: { email, role }, access_token }));
+      // Save to Redux
+      dispatch(login({ user: { email, role, logo_url }, access_token }));
+
       navigate('/app/e-dashboard');
     },
   });
