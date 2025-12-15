@@ -2050,7 +2050,7 @@ def create_enm():
     data = request.get_json()
 
     vendor = data.get("vendor")
-    vendor = data["vendor"].strip().lower()  # Normalize to lowercase
+    vendor = data.get("vendor","").strip().lower()  # Normalize to lowercase
     # Conditional validation based on vendor
     if vendor == "ericsson":
         if not data or "enm" not in data or "circle" not in data:
@@ -2225,15 +2225,15 @@ def run_gpl_audit_nokia_api():
     
     settings = request.files.get("settings")
     enm_files = request.files.get("enm_file")
-    if not settings or not enm_files:
-        return jsonify({"message": "No selected settings or eFile file"}), 400
+    if not settings and not enm_files:
+        return jsonify({"message": "No selected settings or enm_files"}), 400
     
     
     
     if settings:
         settings_original_filename = secure_filename(settings.filename)
         settings_unique_filename = f"{uuid.uuid4().hex}_{settings_original_filename}"
-        settings_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"settings_nokia"), settings_unique_filename)
+        settings_file_path = os.path.join(os.getcwd(),UPLOAD_FOLDER,"settings_nokia", settings_unique_filename)
         settings.save(settings_file_path)
         
     
@@ -2254,6 +2254,46 @@ def run_gpl_audit_nokia_api():
     
     
     return ""
+
+# @api.route("/run_gpl_audit_nokia", methods=["POST"])
+# @token_required
+# def run_gpl_audit_nokia_api():
+    
+    
+    
+#     circle_name = request.form.get("circle")
+    
+#     settings = request.files.get("settings")
+#     enm_files = request.files.get("enm_file")
+#     if not settings or not enm_files:
+#         return jsonify({"message": "No selected settings or eFile file"}), 400
+    
+    
+    
+#     if settings:
+#         settings_original_filename = secure_filename(settings.filename)
+#         settings_unique_filename = f"{uuid.uuid4().hex}_{settings_original_filename}"
+#         settings_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"settings_nokia"), settings_unique_filename)
+#         settings.save(settings_file_path)
+        
+    
+#     if enm_files:
+#         enm_files_original_filename = secure_filename(enm_files.filename)
+#         enm_files_unique_filename = f"{uuid.uuid4().hex}_{enm_files_original_filename}"
+#         enm_files_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"enm_files_nokia"), enm_files_unique_filename)
+#         enm_files.save(enm_files_file_path)
+        
+        
+        
+#         # 
+        
+    
+        
+
+#     return jsonify({"message": "GPL Audit Nokia Completed successfully"}), 201
+    
+    
+#     return ""
 
 
 @api.route("/run_gpl_audit", methods=["POST"])
