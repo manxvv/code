@@ -17,6 +17,7 @@ import Admin from './components/Admin';
 import Enm from './Pages/Enm';
 import AdminUM from './components/AdminUM';
 import GplNokia from './Pages/GplNokia';
+import GplTwo from './Pages/GplTwo';
 import Gpl from './Pages/Gpl';
 import EDashboard from './Pages/EDashboard';
 import NDashboard from './Pages/NDashboard';
@@ -139,6 +140,10 @@ const router = createBrowserRouter([
       {
         path: "gpl-audit-///",
         element: <Gpl />
+      },
+      {
+        path: "gpl-audit-///-2",
+        element: <GplTwo />
       },
       {
         path: "gpl-audit-nokia",

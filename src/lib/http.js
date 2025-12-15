@@ -22,7 +22,7 @@ export const final_url = `https://api.mpulsenet.dataplus.live`
 console.log("Current host:", window.location.host);
 console.log("Using base URL:", final_url);
 const http = axios.create({
-  // baseURL: all_urls[window.location.host],
+  baseURL: all_urls[window.location.host],
 baseURL:`${Urls.baseURL}`,
   withCredentials: true
 });
