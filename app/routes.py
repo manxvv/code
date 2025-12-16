@@ -1,4 +1,4 @@
-from flask import send_file,send_from_directory,Blueprint,url_for, request, jsonify, current_app
+from flask import send_file,send_from_directory,Blueprint,url_for, request, jsonify, current_app, after_this_request
 from app.database import mongo
 from passlib.hash import bcrypt
 import jwt
@@ -26,6 +26,7 @@ import sys
 
 from app.nsa_sa.script_runner import scripting_nsa_sa
 from app.gpl_audit.audit_test_runner import run_gpl_audit
+from app.gpl_audit_two import upload_excel_sheets_to_mssql, process_zip_and_run_procedures
 
 cal = Calculator()
 
@@ -2233,7 +2234,7 @@ def run_gpl_audit_nokia_api():
     if settings:
         settings_original_filename = secure_filename(settings.filename)
         settings_unique_filename = f"{uuid.uuid4().hex}_{settings_original_filename}"
-        settings_file_path = os.path.join(os.getcwd(),UPLOAD_FOLDER,"settings_nokia", settings_unique_filename)
+        settings_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"settings_nokia"), settings_unique_filename)
         settings.save(settings_file_path)
         
     
@@ -2254,6 +2255,77 @@ def run_gpl_audit_nokia_api():
     
     
     return ""
+
+@api.route("/run_gpl_audit_nokia_two", methods=["POST"])
+@token_required
+def run_gpl_audit_nokia_api_two():
+    
+    circle_name = request.form.get("circle")
+    
+    settings = request.files.get("settings")
+    enm_files = request.files.get("enm_file")
+    if not settings and not enm_files:
+        return jsonify({"message": "No selected settings or enm_files"}), 400
+    
+    
+    
+    if settings:
+        settings_original_filename = secure_filename(settings.filename)
+        settings_unique_filename = f"{uuid.uuid4().hex}_{settings_original_filename}"
+        settings_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"settings_nokia_two"), settings_unique_filename)
+        settings.save(settings_file_path)
+        upload_excel_sheets_to_mssql(settings_file_path)
+        
+    
+    if enm_files:
+        enm_files_original_filename = secure_filename(enm_files.filename)
+        enm_files_unique_filename = f"{uuid.uuid4().hex}_{enm_files_original_filename}"
+        enm_files_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"enm_files_nokia_two"), enm_files_unique_filename)
+        enm_files.save(enm_files_file_path)
+        process_zip_and_run_procedures(enm_files_file_path)
+        
+        exported_excel_path = os.path.join(
+                    "/root/ma/backend/code/uploads/", "gpt_audit_two_output", "exported_data.xlsx"
+                )
+        if exported_excel_path and os.path.exists(exported_excel_path):
+            response = send_file(
+                exported_excel_path,
+                as_attachment=True,
+                download_name="exported_data.xlsx",
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            @after_this_request
+            def cleanup_file(response):
+                try:
+                    os.remove(exported_excel_path)
+                    print("🗑️ Deleted temp file:", exported_excel_path)
+                    if os.path.exists(enm_files_file_path):
+                        os.remove(enm_files_file_path)
+                        print("🗑️ Deleted ENM file:", enm_files_file_path)
+                except Exception as e:
+                    print("⚠️ Error deleting file:", str(e))
+                
+                return response
+            return response
+
+    return jsonify({"message": "GPL Audit Nokia Completed successfully"}), 201
+
+@api.route("/test")
+def sdkjkjsdh():
+    exported_excel_path = os.path.join(
+        "/root/ma/backend/code/uploads/", "gpt_audit_two_output", "exported_data.xlsx"
+    )
+
+    # CHECK PROPERLY IF FILE EXISTS
+    if os.path.exists(exported_excel_path):
+        return send_file(
+            exported_excel_path,
+            as_attachment=True,
+            download_name="exported_data.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        return "File not found", 404
 
 # @api.route("/run_gpl_audit_nokia", methods=["POST"])
 # @token_required
