@@ -40,6 +40,7 @@ const Urls = {
     uploadScripting:"/uploadScripting",
     gplauditNokiauploadScripting:"/uploadScripting",
     gplauditNokiaSetting:"/run_gpl_audit_nokia",
+    gplauditNokiaSetting_two:"/run_gpl_audit_nokia_two",
     gplaudituploadScripting:"/run_gpl_audit",
     emns:"/enms",
     circles:"/circles",
