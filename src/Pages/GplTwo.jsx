@@ -787,7 +787,7 @@ function GplNokia() {
               <input
                 type="file"
                 {...register("Ufile")}
-                accept=".txt"
+                  accept=".xlsx,.xls,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                 className="p-1 border rounded-md"
               />
             </div>
@@ -828,7 +828,7 @@ function GplNokia() {
               <input
                 type="file"
                 {...register("Efile")}
-                accept=".txt"
+                accept=".zip,application/zip,application/x-zip-compressed"
                 className="p-1 border rounded-md"
               />
             </div>
