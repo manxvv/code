@@ -1,9 +1,9 @@
 const Urls = {
     // baseURL: "",
     // baseURL: "https://cautionapi.mpulsenet.com",
-    // baseURL: "http://127.0.0.1:5000",
+    baseURL: "http://127.0.0.1:5000",
     downloadbaseURL: "https://api.mpulsenet.dataplus.live",
-    baseURL: "https://api.mpulsenet.dataplus.live",
+    // baseURL: "https://api.mpulsenet.dataplus.live",
     // baseURL: "https://api.mpulsenet.dataplus.live",
     // baseURL: "https://api.vedang.dataplus.live",
     // downloadbaseURL: "https://api.vedang.dataplus.live",
@@ -48,7 +48,8 @@ const Urls = {
     mlistcount:"/migrationList/count",
     uscriptcount:"/user-scripting-files/count",
     userfilescount:"/user-files/count",
-    migration:"/migrationlist"
+    migration:"/migrationlist",
+    compare: "/e-compare"
     
 
 

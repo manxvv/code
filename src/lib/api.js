@@ -355,3 +355,13 @@ export const migData = async ({ page = 1, limit = 10, search = "" }) => {
   return response.data;
 };
 
+
+
+export const runEricCompare = async (formData) => {
+  return await http.post("/run_eric_compare", formData, {
+    responseType: "blob", // 🔥 IMPORTANT
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};

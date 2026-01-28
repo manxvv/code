@@ -388,6 +388,8 @@ export function SidebarDemo({ outlet }) {
         return "GPL Audit ///";
       case "/app/gpl-audit-///-2":
         return "GPL Audit ///-2";
+      case "/app/e-compare":
+        return "/// Compare";
       case "/app/gpl-audit-nokia":
         return "GPL Audit Nokia";
       case "/app/scripting-nokia":

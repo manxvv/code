@@ -25,6 +25,7 @@ import LinkSettings from './components/admin/LinkSetting';
 import Test from './Test';
 import ScriptingEric from './Pages/ScriptingEric';
 import ScriptingNokia from './Pages/ScriptingNokia';
+import ECompare from './Pages/ECompare';
 
 
 function GuestOnly({ children }) {
@@ -144,6 +145,10 @@ const router = createBrowserRouter([
       {
         path: "gpl-audit-///-2",
         element: <GplTwo />
+      },
+      {
+        path: "e-compare",
+        element: <ECompare />
       },
       {
         path: "gpl-audit-nokia",
