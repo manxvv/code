@@ -27,6 +27,7 @@ import sys
 from app.nsa_sa.script_runner import scripting_nsa_sa
 from app.gpl_audit.audit_test_runner import run_gpl_audit
 from app.gpl_audit_two import upload_excel_sheets_to_mssql, process_zip_and_run_procedures
+from app.eric_compare import upload_setting_to_mssql, run_eric_compare_file
 
 cal = Calculator()
 
@@ -2871,3 +2872,188 @@ def domain_list():
         "status": True,
         "domains": data
     })
+
+
+# @api.route("/run_eric_compare", methods=["POST"])
+# @token_required
+# def run_eric_compare():
+
+#     req_type = request.form.get("type")
+
+#     if req_type not in ["setting", "compare"]:
+#         return jsonify({"message": "Invalid type"}), 400
+
+#     UPLOAD_BASE = "uploads/eric_compare"
+
+#     # ================= SETTING =================
+#     if req_type == "setting":
+#         file = request.files.get("settings")
+#         if not file:
+#             return jsonify({"message": "Settings file required"}), 400
+
+#         ext = file.filename.split(".")[-1].lower()
+#         if ext not in ["xlsx", "xls", "csv"]:
+#             return jsonify({"message": "Invalid settings file type"}), 400
+
+#         os.makedirs(UPLOAD_BASE, exist_ok=True)
+#         path = os.path.join(
+#             UPLOAD_BASE,
+#             f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+#         )
+#         file.save(path)
+
+#         try:
+#             upload_setting_to_mssql(path)
+#         except Exception as e:
+#             return jsonify({"message": str(e)}), 500
+#         finally:
+#             if os.path.exists(path):
+#                 os.remove(path)
+
+#         return jsonify({"message": "Settings uploaded successfully"}), 201
+
+#     # ================= COMPARE =================
+#     if req_type == "compare":
+#         old_file = request.files.get("old")
+#         new_file = request.files.get("new")
+
+#         try:
+#             output_zip = run_eric_compare_file(old_file, new_file)
+#         except Exception as e:
+#             return jsonify({"message": str(e)}), 500
+
+#         return send_file(
+#             output_zip,
+#             as_attachment=True,
+#             download_name="eric_compare_result.xlsx",
+#             mimetype="application/zip"
+#         )
+
+
+@api.route("/run_eric_compare", methods=["POST"])
+@token_required
+def run_eric_compare():
+
+    req_type = request.form.get("type")
+
+    if req_type not in ["setting", "compare"]:
+        return jsonify({"message": "Invalid type"}), 400
+
+    BASE_UPLOAD = "uploads/eric_compare"
+    os.makedirs(BASE_UPLOAD, exist_ok=True)
+
+    # =====================================================
+    # ===================== SETTING =======================
+    # =====================================================
+    if req_type == "setting":
+        file = request.files.get("settings")
+
+        if not file:
+            return jsonify({"message": "Settings file required"}), 400
+
+        if file.filename.strip() == "":
+            return jsonify({"message": "Empty filename"}), 400
+
+        ext = file.filename.rsplit(".", 1)[-1].lower()
+        if ext not in ["xlsx", "xls", "csv"]:
+            return jsonify({"message": "Only xlsx / xls / csv allowed"}), 400
+
+        setting_path = os.path.join(
+            BASE_UPLOAD,
+            f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+        )
+        file.save(setting_path)
+
+        try:
+            upload_setting_to_mssql(setting_path)
+        except Exception as e:
+            return jsonify({"message": str(e)}), 500
+        finally:
+            if os.path.exists(setting_path):
+                os.remove(setting_path)
+
+        return jsonify({
+            "status": True,
+            "message": "Settings uploaded successfully"
+        }), 201
+
+    # =====================================================
+    # ===================== COMPARE =======================
+    # =====================================================
+    if req_type == "compare":
+        old_file = request.files.get("old")
+        new_file = request.files.get("new")
+
+        # ---------- BASIC VALIDATION ----------
+        if not old_file or not new_file:
+            return jsonify({
+                "message": "Both old and new ZIP files are required"
+            }), 400
+
+        if old_file.filename.strip() == "" or new_file.filename.strip() == "":
+            return jsonify({
+                "message": "Invalid file name"
+            }), 400
+
+        old_ext = old_file.filename.rsplit(".", 1)[-1].lower()
+        new_ext = new_file.filename.rsplit(".", 1)[-1].lower()
+
+        if old_ext != "zip" or new_ext != "zip":
+            return jsonify({
+                "message": "Only ZIP files allowed for compare"
+            }), 400
+
+        if old_file.filename == new_file.filename:
+            return jsonify({
+                "message": "Old and New ZIP cannot be same file"
+            }), 400
+
+        # ---------- SAVE FILES ----------
+        old_path = os.path.join(
+            BASE_UPLOAD,
+            f"old_{uuid.uuid4().hex}.zip"
+        )
+        new_path = os.path.join(
+            BASE_UPLOAD,
+            f"new_{uuid.uuid4().hex}.zip"
+        )
+
+        old_file.save(old_path)
+        new_file.save(new_path)
+
+        # ---------- RUN COMPARE ----------
+        try:
+            final_excel_path = run_eric_compare_file(
+                old_zip_path=old_path,
+                new_zip_path=new_path
+            )
+        except Exception as e:
+            return jsonify({"message": str(e)}), 500
+        finally:
+            # cleanup uploaded zips
+            if os.path.exists(old_path):
+                os.remove(old_path)
+            if os.path.exists(new_path):
+                os.remove(new_path)
+
+        # ---------- SEND FILE & DELETE AFTER ----------
+        response = send_file(
+            final_excel_path,
+            as_attachment=True,
+            download_name="eric_compare_result.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+
+        @after_this_request
+        def cleanup_output(response):
+            try:
+                if os.path.exists(final_excel_path):
+                    os.remove(final_excel_path)
+                    print("🗑️ Deleted output file:", final_excel_path)
+            except Exception as e:
+                print("⚠️ Cleanup error:", str(e))
+            return response
+
+        return response
+
