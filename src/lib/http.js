@@ -3,6 +3,9 @@ import Urls from "../config/urls";
 import { store } from "@/app/store";
 import { useNavigate } from "react-router-dom";
 import { login, logout, setAuthToke } from "@/features/auth/authSlice";
+import Swal from "sweetalert2";
+
+
 
 
 // console.log(window.location.host,"dsadasdas")
@@ -79,11 +82,41 @@ http.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
     // console.log(error.response, status, "errorerrorerrorerrorerrorerror")
     if (error.response && error.response.status === 401) {
       store.dispatch(logout());
       window.location.replace("/auth/login");
+    }
+    if (error.response) {
+      const { data, headers } = error.response;
+      const contentType = headers?.["content-type"] || "";
+
+      
+      if (
+        data instanceof Blob &&
+        contentType.includes("application/json")
+      ) {
+        const text = await data.text();
+        const json = JSON.parse(text);
+        error.response.data = json;
+      }
+
+      
+      if (
+        error.response.data?.message &&
+        !error.config?.skipToast
+      ) {
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "warning",
+          title: error.response.data.message,
+          showConfirmButton: false,
+          timer: 4000,
+          timerProgressBar: true,
+        });
+      }
     }
     return Promise.reject(error);
   }

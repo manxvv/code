@@ -618,7 +618,7 @@ function GplNokia() {
     onError: (err) => {
       Swal.close();
       setUploading(false);
-      Swal.fire("Error", "Something went wrong!", "error");
+      Swal.fire("Error", err?.response?.data?.message || "Something went wrong!", "error");
       console.error(err);
     },
   });

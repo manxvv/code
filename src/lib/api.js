@@ -115,7 +115,7 @@ export const uploadSettingNokia = async (data) => {
 
 export const uploadSettingNokiaTwo = async (formData) => {
   return await http.post(Urls.gplauditNokiaSetting_two, formData, {
-    responseType: "blob", // IMPORTANT
+    responseType: "blob", 
     headers: {
       "Content-Type": "multipart/form-data",
     },
