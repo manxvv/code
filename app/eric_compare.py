@@ -214,12 +214,51 @@ def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
         # ============================================================
         # STEP 4 → UNZIP BOTH FILES
         # ============================================================
-        ssh.exec_command(f"unzip -o {remote_old_zip} -d {xml_path}")
-        ssh.exec_command(f"unzip -o {remote_new_zip} -d {xml_path}")
-        ssh.exec_command(f"rm -f {remote_old_zip} {remote_new_zip}")
-        time.sleep(2)
+        # ssh.exec_command(f"unzip -o {remote_old_zip} -d {xml_path}")
+        # ssh.exec_command(
+        #     f"cd {xml_path} && "
+        #     f"ls *.xml | head -n 1 | xargs -I {{}} mv {{}} old.xml"
+        # )
+        # ssh.exec_command(f"unzip -o {remote_new_zip} -d {xml_path}")
+        # time.sleep(1)
+        # ssh.exec_command(
+        #     f"cd {xml_path} && "
+        #     f"ls *.xml | grep -v old.xml | head -n 1 | xargs -I {{}} mv {{}} new.xml"
+        # )
+        # ssh.exec_command(f"rm -f {remote_old_zip} {remote_new_zip}")
+        # time.sleep(2)
+        # print("🟢 Unzip completed")
 
-        print("🟢 Unzip completed")
+        # ============================================================
+        # STEP 4 → UNZIP BOTH FILES & RENAME TO old.xml / new.xml
+        # ============================================================
+
+        # Unzip old.zip
+        ssh.exec_command(f"unzip -o {remote_old_zip} -d {xml_path}")
+        time.sleep(1)
+
+        # Rename extracted OLD file to old.xml
+        ssh.exec_command(
+            f"cd {xml_path} && "
+            f"ls *.xml | head -n 1 | xargs -I {{}} mv {{}} old.xml"
+        )
+
+        # Unzip new.zip
+        ssh.exec_command(f"unzip -o {remote_new_zip} -d {xml_path}")
+        time.sleep(1)
+
+        # Rename extracted NEW file to new.xml
+        ssh.exec_command(
+            f"cd {xml_path} && "
+            f"ls *.xml | grep -v old.xml | head -n 1 | xargs -I {{}} mv {{}} new.xml"
+        )
+
+        # Remove zip files
+        ssh.exec_command(f"rm -f {remote_old_zip} {remote_new_zip}")
+
+        time.sleep(2)
+        print("🟢 Unzip + rename completed (old.xml & new.xml)")
+
 
         # ============================================================
         # STEP 5 → RUN JAVA JAR
@@ -325,7 +364,7 @@ def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
 
     return final_excel_path
 
-print("dsjgfjdsf",os.getcwd(),"/uploads/eric_compare/output/")
+
 
 # # ============================================================
 # # STEP 1 → OLD OUTPUT FILES DELETE

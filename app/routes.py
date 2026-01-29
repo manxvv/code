@@ -4,7 +4,7 @@ from passlib.hash import bcrypt
 import jwt
 import traceback
 from datetime import datetime, timedelta
-from app.utils import token_required
+from app.utils import token_required , check_and_lock_process
 from bson import ObjectId
 import os
 import uuid
@@ -2230,7 +2230,9 @@ def run_gpl_audit_nokia_api():
     if not settings and not enm_files:
         return jsonify({"message": "No selected settings or enm_files"}), 400
     
-    
+    user_id = request.user.get("sub")
+    req_type = "gpl_audit_nokia"
+    check_and_lock_process(user_id=user_id, req_type=req_type, status="inprocess")
     
     if settings:
         settings_original_filename = secure_filename(settings.filename)
@@ -2251,7 +2253,7 @@ def run_gpl_audit_nokia_api():
         
     
         
-
+    check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
     return jsonify({"message": "GPL Audit Nokia Completed successfully"}), 201
     
     
@@ -2268,9 +2270,12 @@ def run_gpl_audit_nokia_api_two():
     if not settings and not enm_files:
         return jsonify({"message": "No selected settings or enm_files"}), 400
     
-    
+    user_id = request.user.get("sub")
+    req_type = "gpl_audit_nokia_two"
+    check_and_lock_process(user_id=user_id, req_type=req_type, status="inprocess")
     
     if settings:
+        
         settings_original_filename = secure_filename(settings.filename)
         settings_unique_filename = f"{uuid.uuid4().hex}_{settings_original_filename}"
         settings_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"settings_nokia_two"), settings_unique_filename)
@@ -2305,10 +2310,11 @@ def run_gpl_audit_nokia_api_two():
                         print("🗑️ Deleted ENM file:", enm_files_file_path)
                 except Exception as e:
                     print("⚠️ Error deleting file:", str(e))
-                
+                check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
                 return response
+            check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
             return response
-
+    check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
     return jsonify({"message": "GPL Audit Nokia Completed successfully"}), 201
 
 @api.route("/test")
@@ -2933,12 +2939,14 @@ def domain_list():
 @api.route("/run_eric_compare", methods=["POST"])
 @token_required
 def run_eric_compare():
-
+    
+    
     req_type = request.form.get("type")
 
     if req_type not in ["setting", "compare"]:
         return jsonify({"message": "Invalid type"}), 400
-
+    user_id = request.user.get("sub")
+    check_and_lock_process(user_id=user_id, req_type=req_type, status="inprocess")
     BASE_UPLOAD = "uploads/eric_compare"
     os.makedirs(BASE_UPLOAD, exist_ok=True)
 
@@ -2971,20 +2979,17 @@ def run_eric_compare():
         finally:
             if os.path.exists(setting_path):
                 os.remove(setting_path)
-
+        check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
         return jsonify({
             "status": True,
             "message": "Settings uploaded successfully"
         }), 201
 
-    # =====================================================
-    # ===================== COMPARE =======================
-    # =====================================================
     if req_type == "compare":
         old_file = request.files.get("old")
         new_file = request.files.get("new")
 
-        # ---------- BASIC VALIDATION ----------
+        
         if not old_file or not new_file:
             return jsonify({
                 "message": "Both old and new ZIP files are required"
@@ -3008,20 +3013,20 @@ def run_eric_compare():
                 "message": "Old and New ZIP cannot be same file"
             }), 400
 
-        # ---------- SAVE FILES ----------
+        
         old_path = os.path.join(
             BASE_UPLOAD,
-            f"old_{uuid.uuid4().hex}.zip"
+            f"old.zip"
         )
         new_path = os.path.join(
             BASE_UPLOAD,
-            f"new_{uuid.uuid4().hex}.zip"
+            f"new.zip"
         )
 
         old_file.save(old_path)
         new_file.save(new_path)
 
-        # ---------- RUN COMPARE ----------
+        
         try:
             final_excel_path = run_eric_compare_file(
                 old_zip_path=old_path,
@@ -3030,13 +3035,13 @@ def run_eric_compare():
         except Exception as e:
             return jsonify({"message": str(e)}), 500
         finally:
-            # cleanup uploaded zips
+            
             if os.path.exists(old_path):
                 os.remove(old_path)
             if os.path.exists(new_path):
                 os.remove(new_path)
 
-        # ---------- SEND FILE & DELETE AFTER ----------
+        check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
         response = send_file(
             final_excel_path,
             as_attachment=True,

@@ -93,6 +93,8 @@ from functools import wraps
 from datetime import datetime, timedelta
 import jwt
 from flask import request, jsonify, current_app, g, make_response
+import time
+from threading import Lock
 
 def token_required(f):
     @wraps(f)
@@ -194,3 +196,62 @@ def token_required(f):
 #         return response
 
 #     return decorated
+
+
+
+PROCESS_TIMEOUT = (10 * 60)  # 15 minutes
+PROCESS_REGISTRY = {}
+PROCESS_LOCK = Lock()
+
+def check_and_lock_process(user_id: str, req_type: str, status: str):
+    now = time.time()
+
+    with PROCESS_LOCK:
+
+        
+        if status == "completed":
+            existing = PROCESS_REGISTRY.get(req_type)
+            if existing and existing["user_id"] == user_id:
+                PROCESS_REGISTRY.pop(req_type, None)
+            return
+
+        existing = PROCESS_REGISTRY.get(req_type)
+
+        if existing and existing["status"] == "inprocess":
+
+            started_at = existing.get("started_at")
+            if not started_at:
+                PROCESS_REGISTRY.pop(req_type, None)
+
+            else:
+                elapsed = now - started_at
+
+                if elapsed <= PROCESS_TIMEOUT:
+                    remaining = int(PROCESS_TIMEOUT - elapsed)
+                    minutes = remaining // 60
+                    seconds = remaining % 60
+
+                    if existing["user_id"] == user_id:
+                        message = (
+                            "another process running using your id. "
+                            f"please wait {minutes} minute(s) {seconds} second(s)"
+                        )
+                    else:
+                        message = (
+                            "already process another user. "
+                            f"please wait {minutes} minute(s) {seconds} second(s)"
+                        )
+
+                    
+                    raise ValueError({
+                        "message": message
+                    })
+
+                
+                PROCESS_REGISTRY.pop(req_type, None)
+
+        PROCESS_REGISTRY[req_type] = {
+            "user_id": user_id,
+            "status": "inprocess",
+            "started_at": now,
+        }
