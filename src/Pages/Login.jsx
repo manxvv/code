@@ -16,31 +16,87 @@ function LoginForm() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const getDomainFromEmail = (email) => {
+    if (!email || !email.includes("@")) return null;
+    return email.split("@")[1].toLowerCase();
+  };
+
+  const domainRedirectMap = {  
+    "ust.com": "/app/gpl-audit-///-2"
+  };
 
   const loginMutation = useMutation({
     mutationFn: (data) => http.post(Urls.signin, data),
-    onSuccess: (res, variables) => {      
-      const { email, role, access_token, logo_url  } = res?.data;
 
-      // localStorage.setItem("authData", JSON.stringify({
-      //   user: { email, role },
-      //   access_token,
-      // }));
+    onSuccess: (res) => {
+      const { email, role, access_token, logo_url } = res?.data;
 
-      // dispatch(login({ user: { email, role }, access_token }));
+      // 🔹 Extract domain
+      const domain = getDomainFromEmail(email);
 
-      // Save auth in localStorage
-      localStorage.setItem("authData", JSON.stringify({
-        user: { email, role, logo_url },
-        access_token,
-      }));
+      // ❌ Case 1: Invalid email / domain missing
+      if (!domain) {
+        Swal.fire(
+          "Login Error",
+          "Invalid email format. Please contact support.",
+          "error",
+        );
+        return;
+      }
 
-      // Save to Redux
-      dispatch(login({ user: { email, role, logo_url }, access_token }));
+      
 
-      navigate('/app/e-dashboard');
+      const redirectPath = domainRedirectMap[domain] || "/app/e-dashboard";
+
+      // 🔹 Save auth in localStorage
+      localStorage.setItem(
+        "authData",
+        JSON.stringify({
+          user: { email, role, logo_url, domain },
+          access_token,
+        }),
+      );
+
+      // 🔹 Save to Redux
+      dispatch(
+        login({
+          user: { email, role, logo_url, domain },
+          access_token,
+        }),
+      );
+
+      navigate(redirectPath);
+    },
+
+    onError: () => {
+      Swal.fire("Login Failed", "Invalid credentials", "error");
     },
   });
+
+  // const loginMutation = useMutation({
+  //   mutationFn: (data) => http.post(Urls.signin, data),
+  //   onSuccess: (res, variables) => {
+  //     const { email, role, access_token, logo_url  } = res?.data;
+
+  //     // localStorage.setItem("authData", JSON.stringify({
+  //     //   user: { email, role },
+  //     //   access_token,
+  //     // }));
+
+  //     // dispatch(login({ user: { email, role }, access_token }));
+
+  //     // Save auth in localStorage
+  //     localStorage.setItem("authData", JSON.stringify({
+  //       user: { email, role, logo_url },
+  //       access_token,
+  //     }));
+
+  //     // Save to Redux
+  //     dispatch(login({ user: { email, role, logo_url }, access_token }));
+
+  //     navigate('/app/e-dashboard');
+  //   },
+  // });
 
   const onSubmit = (data) => {
     loginMutation.mutate(data);
@@ -51,22 +107,21 @@ function LoginForm() {
       <div className="w-full max-w-md p-8 bg-slate-800 shadow-2xl rounded-xl border border-slate-700">
         {/* Logo section */}
         <div className="flex justify-center mb-6">
-          <img 
-            src="/download.png" 
+          <img
+            src="/download.png"
             alt="Company Logo"
             className="h-16 w-auto object-contain"
             onError={(e) => {
-              e.target.style.display = 'none';
+              e.target.style.display = "none";
             }}
           />
         </div>
-        
+
         <h2 className="text-2xl font-semibold text-center text-slate-100 mb-6">
           Sign in to your account
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
-         
           {loginMutation.error && (
             <div className="mb-4 p-3 bg-red-900/50 border border-red-500/50 text-red-300 rounded-lg backdrop-blur-sm">
               {loginMutation.error.message || "Login failed. Please try again."}
@@ -75,32 +130,38 @@ function LoginForm() {
 
           {/* Email */}
           <div className="mb-4">
-            <label className="block mb-2 text-slate-300 font-medium">Email</label>
+            <label className="block mb-2 text-slate-300 font-medium">
+              Email
+            </label>
             <input
               type="email"
               placeholder="Enter your email"
               {...register("email", { required: "Email is required" })}
               className={`w-full px-4 py-3 bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-slate-100 placeholder-slate-400 transition-all duration-200 ${
-                errors.email 
-                  ? "border-red-500 focus:ring-red-400" 
+                errors.email
+                  ? "border-red-500 focus:ring-red-400"
                   : "border-slate-600 hover:border-slate-500"
               }`}
             />
             {errors.email && (
-              <p className="mt-2 text-sm text-red-400">{errors.email.message}</p>
+              <p className="mt-2 text-sm text-red-400">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
           {/* Password */}
           <div className="mb-6">
-            <label className="block mb-2 text-slate-300 font-medium">Password</label>
+            <label className="block mb-2 text-slate-300 font-medium">
+              Password
+            </label>
             <input
               type="password"
               placeholder="Enter your password"
               {...register("password", { required: "Password is required" })}
               className={`w-full px-4 py-3 bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-slate-100 placeholder-slate-400 transition-all duration-200 ${
-                errors.password 
-                  ? "border-red-500 focus:ring-red-400" 
+                errors.password
+                  ? "border-red-500 focus:ring-red-400"
                   : "border-slate-600 hover:border-slate-500"
               }`}
             />
@@ -127,9 +188,25 @@ function LoginForm() {
           >
             {loginMutation.isPending ? (
               <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Logging in...
               </span>
