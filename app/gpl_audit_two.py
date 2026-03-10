@@ -7,20 +7,23 @@ import glob
 import re
 
 # ================== GLOBAL CONFIG ==================
-ssh_host = "31.220.88.4"
-ssh_user = "root"
-ssh_pass = "cf2DgN8vhM4d"
+
+ssh_host = os.environ.get("SSH_HOST")
+ssh_user = os.environ.get("SSH_USER")
+ssh_pass = os.environ.get("SSH_PASS")
+
 
 user = "eric2"
-data_path  = f"/data/web/{user}/"
+data_path  = f"/data/web/eric_audit/{user}/"
 xml_path   = f"{data_path}xml/"
 output_dir = f"{data_path}output/"
 
-local_zip_folder = "/root/ma/backend/code/uploads/enm_files_nokia_two/"
+# local_zip_folder = "/root/ma/backend/code/uploads/enm_files_nokia_two/"
+local_zip_folder = "/var/www/dataplusBe/code/uploads/enm_files_nokia_two/"
 
-mssql_host = "31.220.88.4"
-mssql_user = "sa"
-mssql_pass = "Sarfraz@987"
+mssql_host = os.environ.get("MSSQL_HOST")
+mssql_user = os.environ.get("MSSQL_USER")
+mssql_pass = os.environ.get("MSSQL_PASS")
 mssql_db   = "mcom_india_cm"
 
 
@@ -65,9 +68,16 @@ def process_zip_and_run_procedures(local_zip_file):
         sftp.put(latest_zip, remote_zip)
 
     # ---------------- UNZIP ----------------
+    # stdin, stdout, stderr = ssh.exec_command(f"unzip -o {remote_zip} -d {xml_path}")
+    # print(stdout.read().decode())
+    # print(stderr.read().decode())
+    # print("🟢 Unzip completed.\n")
     stdin, stdout, stderr = ssh.exec_command(f"unzip -o {remote_zip} -d {xml_path}")
-    print(stdout.read().decode())
-    print(stderr.read().decode())
+    stdout.channel.recv_exit_status()
+
+    # ⭐ DELETE ZIP so jar doesn't parse it
+    ssh.exec_command(f"rm -f {remote_zip}")
+
     print("🟢 Unzip completed.\n")
 
     # ---------------- RUN JAVA JAR ----------------
@@ -143,7 +153,17 @@ def process_zip_and_run_procedures(local_zip_file):
             continue
 
         fpath = os.path.join(local_tmp, file)
-        df = pd.read_csv(fpath, dtype=str)
+        # df = pd.read_csv(fpath, dtype=str)
+        df = pd.read_csv(
+                fpath,
+                dtype=str,
+                engine="python",        # tolerant parser
+                on_bad_lines="skip",    # skip broken rows
+                sep=",",
+                quotechar='"',
+                encoding_errors="ignore"
+            )
+
 
         # FIX COLUMN NAMES FIRST
         fixed_columns = {}
@@ -180,7 +200,8 @@ def process_zip_and_run_procedures(local_zip_file):
             server=mssql_host,
             user=mssql_user,
             password=mssql_pass,
-            database=mssql_db
+            database=mssql_db,
+            autocommit=True
         )
         cursor = conn.cursor()
 
@@ -203,7 +224,8 @@ def process_zip_and_run_procedures(local_zip_file):
         conn.commit()
 
         # EXPORT FINAL TABLES
-        output_path = "/root/ma/backend/code/uploads/gpt_audit_two_output/"
+        # output_path = "/root/ma/backend/code/uploads/gpt_audit_two_output/"
+        output_path = "/var/www/dataplusBe/code/uploads/gpt_audit_two_output"
         os.makedirs(output_path, exist_ok=True)
 
         export_queries = {
@@ -325,7 +347,8 @@ def upload_excel_sheets_to_mssql(excel_path):
         server=mssql_host,
         user=mssql_user,
         password=mssql_pass,
-        database=mssql_db
+        database=mssql_db,
+        autocommit=True
     )
     cur = conn.cursor()
 

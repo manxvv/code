@@ -86,7 +86,7 @@ ssh.close()
 
 # ================== Step 6: MSSQL Stored Procedures + CSV Export ==================
 try:
-    conn = pymssql.connect(server=mssql_host, user=mssql_user, password=mssql_pass, database=mssql_db)
+    conn = pymssql.connect(server=mssql_host, user=mssql_user, password=mssql_pass, database=mssql_db, autocommit=True)
     cursor = conn.cursor()
     #print("Executing MSSQL stored procedures...")
 

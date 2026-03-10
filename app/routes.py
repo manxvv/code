@@ -27,6 +27,7 @@ import sys
 from app.nsa_sa.script_runner import scripting_nsa_sa
 from app.gpl_audit.audit_test_runner import run_gpl_audit
 from app.gpl_audit_two import upload_excel_sheets_to_mssql, process_zip_and_run_procedures
+from app import nokia_gpl_audit as nga
 from app.eric_compare import upload_setting_to_mssql, run_eric_compare_file
 
 cal = Calculator()
@@ -2217,11 +2218,51 @@ def check_conn():
 
 
 
+# @api.route("/run_gpl_audit_nokia", methods=["POST"])
+# @token_required
+# def run_gpl_audit_nokia_api():
+    
+    
+    
+#     circle_name = request.form.get("circle")
+    
+#     settings = request.files.get("settings")
+#     enm_files = request.files.get("enm_file")
+#     if not settings and not enm_files:
+#         return jsonify({"message": "No selected settings or enm_files"}), 400
+    
+#     user_id = request.user.get("sub")
+#     req_type = "gpl_audit_nokia"
+#     check_and_lock_process(user_id=user_id, req_type=req_type, status="inprocess")
+    
+#     if settings:
+#         settings_original_filename = secure_filename(settings.filename)
+#         settings_unique_filename = f"{uuid.uuid4().hex}_{settings_original_filename}"
+#         settings_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"settings_nokia"), settings_unique_filename)
+#         settings.save(settings_file_path)
+        
+    
+#     if enm_files:
+#         enm_files_original_filename = secure_filename(enm_files.filename)
+#         enm_files_unique_filename = f"{uuid.uuid4().hex}_{enm_files_original_filename}"
+#         enm_files_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"enm_files_nokia"), enm_files_unique_filename)
+#         enm_files.save(enm_files_file_path)
+        
+        
+        
+#         # 
+        
+    
+        
+#     check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
+#     return jsonify({"message": "GPL Audit Nokia Completed successfully"}), 201
+    
+    
+    # return ""
+
 @api.route("/run_gpl_audit_nokia", methods=["POST"])
 @token_required
 def run_gpl_audit_nokia_api():
-    
-    
     
     circle_name = request.form.get("circle")
     
@@ -2235,10 +2276,12 @@ def run_gpl_audit_nokia_api():
     check_and_lock_process(user_id=user_id, req_type=req_type, status="inprocess")
     
     if settings:
+        
         settings_original_filename = secure_filename(settings.filename)
         settings_unique_filename = f"{uuid.uuid4().hex}_{settings_original_filename}"
         settings_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"settings_nokia"), settings_unique_filename)
         settings.save(settings_file_path)
+        nga.upload_excel_sheets_to_mssql(settings_file_path)
         
     
     if enm_files:
@@ -2246,18 +2289,36 @@ def run_gpl_audit_nokia_api():
         enm_files_unique_filename = f"{uuid.uuid4().hex}_{enm_files_original_filename}"
         enm_files_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"enm_files_nokia"), enm_files_unique_filename)
         enm_files.save(enm_files_file_path)
+        nga.process_xml_and_audit(enm_files_file_path)
         
         
-        
-        # 
-        
-    
-        
+        exported_excel_path = os.path.join(
+                    "/var/www/dataplusBe/code/uploads/nokia_gpt_audit_output/exported_data.xlsx"
+                )
+        if exported_excel_path and os.path.exists(exported_excel_path):
+            response = send_file(
+                exported_excel_path,
+                as_attachment=True,
+                download_name="exported_data.xlsx",
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            @after_this_request
+            def cleanup_file(response):
+                try:
+                    os.remove(exported_excel_path)
+                    print("🗑️ Deleted temp file:", exported_excel_path)
+                    if os.path.exists(enm_files_file_path):
+                        os.remove(enm_files_file_path)
+                        print("🗑️ Deleted ENM file:", enm_files_file_path)
+                except Exception as e:
+                    print("⚠️ Error deleting file:", str(e))
+                check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
+                return response
+            check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
+            return response
     check_and_lock_process(user_id=user_id, req_type=req_type, status="completed")
     return jsonify({"message": "GPL Audit Nokia Completed successfully"}), 201
-    
-    
-    return ""
+
 
 @api.route("/run_gpl_audit_nokia_two", methods=["POST"])
 @token_required
@@ -2290,8 +2351,12 @@ def run_gpl_audit_nokia_api_two():
         enm_files.save(enm_files_file_path)
         process_zip_and_run_procedures(enm_files_file_path)
         
+        # exported_excel_path = os.path.join(
+        #             "/root/ma/backend/code/uploads/", "gpt_audit_two_output", "exported_data.xlsx"
+        #         )
+
         exported_excel_path = os.path.join(
-                    "/root/ma/backend/code/uploads/", "gpt_audit_two_output", "exported_data.xlsx"
+                    "/var/www/dataplusBe/code/uploads/gpt_audit_two_output/exported_data.xlsx"
                 )
         if exported_excel_path and os.path.exists(exported_excel_path):
             response = send_file(

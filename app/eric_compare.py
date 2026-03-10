@@ -17,13 +17,14 @@ ssh_pass = os.environ.get("SSH_PASS")
 # ================== USER & PATH CONFIG ==================
 user = "sarfraz"
 
-# data_path  = f"/data/mcom/airtel/eric/compare/{user}/"
-data_path  = f"/ssd/mcom/airtel/eric/compare/{user}/"
+data_path  = f"/data/mcom/airtel/eric/compare/{user}/"
+# data_path  = f"/ssd/mcom/airtel/eric/compare/{user}/"
 xml_path   = f"{data_path}xml/"
 output_dir = f"{data_path}output/"
 
 
-local_zip_folder = "/root/ma/backend/code/uploads/eric_compare/"
+# local_zip_folder = "/root/ma/backend/code/uploads/eric_compare/"
+local_zip_folder = "/var/www/dataplusBe/code/uploads/eric_compare/"
 
 # ================== MSSQL CONFIG ==================
 mssql_host = os.environ.get("MSSQL_HOST")
@@ -38,12 +39,6 @@ ssh.connect(ssh_host, username=ssh_user, password=ssh_pass)
 
 
 def upload_setting_to_mssql(setting_file_path: str):
-    """
-    Read setting XLSX / CSV having columns:
-    - MO_Class
-    - Compare
-    Insert data into [set].[MO_Class]
-    """
 
     print("\n============================")
     print("📄 Reading Setting File:", setting_file_path)
@@ -52,33 +47,11 @@ def upload_setting_to_mssql(setting_file_path: str):
     if not os.path.exists(setting_file_path):
         raise Exception("❌ Setting file not found")
 
-    # ---------------- READ FILE ----------------
+    # ---------------- READ EXCEL ----------------
     try:
-        if setting_file_path.lower().endswith(".csv"):
-            df = pd.read_csv(setting_file_path)
-        else:
-            df = pd.read_excel(setting_file_path)
+        xls = pd.ExcelFile(setting_file_path)
     except Exception as e:
         raise Exception(f"❌ Unable to read setting file: {str(e)}")
-
-    if df.empty:
-        raise Exception("❌ Setting file is empty")
-
-    # ---------------- NORMALIZE COLUMN NAMES ----------------
-    df.columns = (
-        df.columns.str.strip()
-        .str.lower()
-        .str.replace(" ", "_")
-    )
-
-    print("🔍 Detected Columns:", df.columns.tolist())
-
-    # ---------------- REQUIRED COLUMNS ----------------
-    required_cols = ["mo_class", "compare"]
-    missing = [c for c in required_cols if c not in df.columns]
-
-    if missing:
-        raise Exception(f"❌ Missing required columns: {missing}")
 
     # ---------------- SAFE STRING CLEANER ----------------
     def clean_str(val):
@@ -91,54 +64,123 @@ def upload_setting_to_mssql(setting_file_path: str):
             return v
         return str(val)
 
-    df = df.applymap(clean_str)
-    df = df.where(pd.notnull(df), None)
-
     # ---------------- CONNECT MSSQL ----------------
     conn = pymssql.connect(
         server=mssql_host,
         user=mssql_user,
         password=mssql_pass,
-        database=mssql_db
+        database=mssql_db,
+        autocommit=True
     )
+
     cursor = conn.cursor()
 
     try:
-        print("🧹 Clearing old data from [set].[MO_Class] ...")
+
+        # ==================================================
+        # 1️⃣ MO_CLASS SHEET
+        # ==================================================
+        print("📥 Processing sheet: MO_Class")
+
+        df_mo = pd.read_excel(xls, "MO_Class")
+
+        df_mo.columns = (
+            df_mo.columns.str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+        )
+
+        required_cols = ["mo_class", "compare", "script"]
+
+        missing = [c for c in required_cols if c not in df_mo.columns]
+        if missing:
+            raise Exception(f"❌ Missing columns in MO_Class sheet: {missing}")
+
+        df_mo = df_mo.applymap(clean_str)
+        df_mo = df_mo.where(pd.notnull(df_mo), None)
+
+        print("🧹 Clearing old data from [set].[MO_Class]")
         cursor.execute("DELETE FROM [set].[MO_Class]")
-        conn.commit()
 
         insert_sql = """
-            INSERT INTO [set].[MO_Class]
-            (MO_Class, Compare)
-            VALUES (%s, %s)
+        INSERT INTO [set].[MO_Class]
+        (MO_Class, Compare, Script)
+        VALUES (%s, %s, %s)
         """
 
-        inserted = 0
-        skipped = 0
+        inserted_mo = 0
 
-        for _, row in df.iterrows():
-            mo_class = row.get("mo_class")
-            compare_val = row.get("compare")
+        for _, row in df_mo.iterrows():
 
-            # Mandatory check
-            if not mo_class or not compare_val:
-                skipped += 1
+            if not row["mo_class"] or not row["compare"] or not row["script"]:
                 continue
 
             cursor.execute(
                 insert_sql,
                 (
-                    mo_class,
-                    compare_val,
+                    row["mo_class"],
+                    row["compare"],
+                    row["script"]
                 )
             )
-            inserted += 1
+
+            inserted_mo += 1
+
+
+        # ==================================================
+        # 2️⃣ EXCLUSIONS SHEET
+        # ==================================================
+        print("📥 Processing sheet: Exclusions")
+
+        df_ex = pd.read_excel(xls, "Exclusions")
+        print("Raw Exclusions rows:", len(df_ex))
+
+        df_ex.columns = (
+            df_ex.columns.str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+        )
+
+        required_cols = ["mo_class", "parameter"]
+
+        missing = [c for c in required_cols if c not in df_ex.columns]
+        if missing:
+            raise Exception(f"❌ Missing columns in Exclusions sheet: {missing}")
+
+        df_ex = df_ex.applymap(clean_str)
+        df_ex = df_ex.where(pd.notnull(df_ex), None)
+
+        print("🧹 Clearing old data from [set].[Exclusions]")
+        cursor.execute("DELETE FROM [set].[Exclusions]")
+
+        insert_sql = """
+        INSERT INTO [set].[Exclusions]
+        (MO_Class, Parameters)
+        VALUES (%s, %s)
+        """
+
+        inserted_ex = 0
+
+        for _, row in df_ex.iterrows():
+
+            if not row["mo_class"] or not row["parameter"]:
+                continue
+
+            cursor.execute(
+                insert_sql,
+                (
+                    row["mo_class"],
+                    row["parameter"]
+                )
+            )
+
+            inserted_ex += 1
+
 
         conn.commit()
 
-        print(f"✅ Inserted rows: {inserted}")
-        print(f"⚠ Skipped rows: {skipped}")
+        print(f"✅ MO_Class inserted: {inserted_mo}")
+        print(f"✅ Exclusions inserted: {inserted_ex}")
 
     except Exception as e:
         conn.rollback()
@@ -150,10 +192,9 @@ def upload_setting_to_mssql(setting_file_path: str):
     print("\n🎉 Setting upload completed successfully!\n")
 
     return {
-        "inserted": inserted,
-        "skipped": skipped
+        "mo_class_inserted": inserted_mo,
+        "exclusions_inserted": inserted_ex
     }
-
 
 
 def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
@@ -263,8 +304,8 @@ def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
         # ============================================================
         # STEP 5 → RUN JAVA JAR
         # ============================================================
-        # java_cmd = f"java -jar /opt/jar/DataPlus_E_CM.jar {xml_path} {output_dir}"
-        java_cmd = f"java -jar /data/system/parser/DataPlus_E_CM.jar {xml_path} {output_dir}"
+        java_cmd = f"java -jar /opt/jar/DataPlus_E_CM.jar {xml_path} {output_dir}"
+        # java_cmd = f"java -jar /data/system/parser/DataPlus_E_CM.jar {xml_path} {output_dir}"
         stdin, stdout, stderr = ssh.exec_command(java_cmd)
 
         print(stdout.read().decode())
@@ -284,7 +325,8 @@ def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
             server=mssql_host,
             user=mssql_user,
             password=mssql_pass,
-            database=mssql_db
+            database=mssql_db,
+            autocommit=True
         )
         cursor = conn.cursor()
         cursor.execute("SELECT DB_NAME()")
@@ -294,7 +336,13 @@ def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
         cursor.execute("EXEC clean_data")
         print("output_dir",output_dir)
         cursor.execute("EXEC load_csv %s, %s", ("Yes", output_dir))
-        cursor.execute("EXEC create_distname")
+        print("✅ clean_data & load_csv executed")
+        try:
+            cursor.execute("EXEC create_distname")
+        except Exception as e:
+            print("⚠ WARNING: create_distname failed — skipped")
+            print(e)
+        print("✅ create_distname executed")
         try:
             cursor.execute("EXEC data_compare 'old.xml','new.xml'")
         except Exception as e:
@@ -312,16 +360,19 @@ def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
         # ============================================================
         csv_output_path = os.path.join(os.getcwd(),"uploads/eric_compare/output/")
         os.makedirs(csv_output_path, exist_ok=True)
-
+        print("📤 Exporting CSV files to:", csv_output_path)
         export_queries = {
             "Parameters.csv":
                 "SELECT * FROM [dbo].[compare_output_formatted]",
             "Features.csv":
-                "SELECT * FROM [set].feature_comparison_output"
+                "SELECT * FROM [set].feature_comparison_output",
+            "Scripts.csv":
+                "select * from [dbo].[compare_output_script]",
         }
 
         for file, query in export_queries.items():
             df = pd.read_sql(query, conn)
+            print(f"📤 Exporting {file} with {len(df)} rows")
             df.to_csv(os.path.join(os.getcwd(), csv_output_path, file), index=False)
             print(f"📁 Saved: {file}")
 
@@ -353,10 +404,12 @@ def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
 
     df_param = pd.read_csv(os.path.join(output_path, "Parameters.csv"))
     df_feat = pd.read_csv(os.path.join(output_path, "Features.csv"))
+    df_scripts = pd.read_csv(os.path.join(output_path, "Scripts.csv"))
 
     with pd.ExcelWriter(final_excel_path, engine="xlsxwriter") as writer:
         df_param.to_excel(writer, sheet_name="Parameters", index=False)
         df_feat.to_excel(writer, sheet_name="Features", index=False)
+        df_scripts.to_excel(writer, sheet_name="Scripts", index=False)
 
     print("✅ Final Excel created:", final_excel_path)
 
