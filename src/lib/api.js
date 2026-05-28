@@ -103,10 +103,19 @@ export const uploadScripting = async (data) => {
 };
 
 
-export const uploadSettingNokia = async (data) => {
-  const response = await http.post(`${Urls.gplauditNokiaSetting}`, data);
-  return response.data;
+// export const uploadSettingNokia = async (data) => {
+//   const response = await http.post(`${Urls.gplauditNokiaSetting}`, data);
+//   return response.data;
+// };
+export const uploadSettingNokia = async (formData) => {
+  return await http.post(Urls.gplauditNokiaSetting, formData, {
+    responseType: "blob", 
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };
+
 // export const uploadSettingNokiaTwo = async (data) => {
 //   const response = await http.post(`${Urls.gplauditNokiaSetting_two}`, data);
 //   return response.data;
