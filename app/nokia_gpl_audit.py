@@ -184,201 +184,391 @@ def process_xml_and_audit(local_zip_file):
 
 
 
-# ===================================================================
-# 🔵 FUNCTION 2 — Upload Excel Sheets into MSSQL (Clean + Insert)
-# ===================================================================
+# # ===================================================================
+# # 🔵 FUNCTION 2 — Upload Excel Sheets into MSSQL (Clean + Insert)
+# # ===================================================================
+# def upload_excel_sheets_to_mssql(excel_path):
+#     print("\n============================")
+#     print("📄 Reading Excel File:", excel_path)
+#     print("============================\n")
+
+#     # SHEET ORDER (as per your requirement)
+#     df_parameters = pd.read_excel(excel_path, sheet_name=0)   # Nokia_Parameters
+#     df_condition  = pd.read_excel(excel_path, sheet_name=1)   # Condition_Defination
+#     df_class_map  = pd.read_excel(excel_path, sheet_name=2)   # Condition_Defination
+
+#     # Normalize column names
+#     df_condition.columns  = df_condition.columns.str.strip().str.lower().str.replace(" ", "_")
+#     df_parameters.columns = df_parameters.columns.str.strip().str.lower().str.replace(" ", "_")
+#     df_class_map.columns = df_class_map.columns.str.strip().str.lower().str.replace(" ", "_")
+
+#     print("🔍 SHEET-1 PARAMETERS HEADERS:", df_parameters.columns.tolist(), "\n")
+#     print("🔍 SHEET-2 CONDITION HEADERS:", df_condition.columns.tolist(), "\n")
+#     print("🔍 SHEET-3 CLASS MAP HEADERS:", df_class_map.columns.tolist(), "\n")
+
+#     # Replace NaN with None
+#     df_condition  = df_condition.where(pd.notnull(df_condition), None)
+#     df_parameters = df_parameters.where(pd.notnull(df_parameters), None)
+#     df_class_map = df_class_map.where(pd.notnull(df_class_map), None)
+
+#     # -------------------------------------------------------------------
+#     # SAFE STRING CLEANER
+#     # -------------------------------------------------------------------
+#     def clean_str(val):
+#         if val is None:
+#             return None
+#         if pd.isna(val):
+#             return None
+#         if isinstance(val, str):
+#             v = val.strip().lower()
+#             if v in ["nan", "none", "null", "-", ""]:
+#                 return None
+#             return val.strip()
+#         return val
+
+#     # -------------------------------------------------------------------
+#     # FLOAT SAFE CLEANER (for float SQL columns)
+#     # -------------------------------------------------------------------
+#     def clean_float(val):
+#         try:
+#             if val is None:
+#                 return None
+#             if isinstance(val, str):
+#                 v = val.replace(",", "").replace("%", "").strip()
+#                 if v == "" or v.lower() in ["nan", "none", "null", "-"]:
+#                     return None
+#                 return float(v)
+#             return float(val)
+#         except:
+#             return None
+
+#     # ---------------- APPLY CLEANING FOR FLOAT COLUMNS ----------------
+#     float_cols_parameters = [
+#         "coun_check", "percentage", "meeting_criteria", "total_count"
+#     ]
+
+#     for col in float_cols_parameters:
+#         if col in df_parameters.columns:
+#             df_parameters[col] = df_parameters[col].apply(clean_float)
+
+#     # Condition_Defination FLOAT column
+#     if "priority" in df_condition.columns:
+#         df_condition["priority"] = df_condition["priority"].apply(clean_float)
+
+#     # Clean string columns
+#     df_parameters = df_parameters.applymap(clean_str)
+#     df_condition  = df_condition.applymap(clean_str)
+#     df_class_map = df_class_map.applymap(clean_str)
+
+#     print("🧹 Cleaning completed.\n")
+
+#     # ---------------- CONNECT DATABASE ----------------
+#     conn = pymssql.connect(
+#         server=mssql_host,
+#         user=mssql_user,
+#         password=mssql_pass,
+#         database=mssql_db,
+#         autocommit=True
+#     )
+#     cur = conn.cursor()
+
+#     # Detect schema
+#     cur.execute("""
+#         SELECT TABLE_SCHEMA 
+#         FROM INFORMATION_SCHEMA.TABLES 
+#         WHERE TABLE_NAME = 'Nokia_Parameters'
+#     """)
+#     row = cur.fetchone()
+
+#     if not row:
+#         raise Exception("❌ ERROR: SQL TABLE 'Nokia_Parameters' NOT FOUND!")
+
+#     schema = row[0]
+#     print(f"🟢 Using schema: {schema}")
+
+#     # ------- TRUNCATE DATA ONLY (NO DROP) ------
+#     cur.execute(f"DELETE FROM [{schema}].[Condition_Defination]")
+#     cur.execute(f"DELETE FROM [{schema}].[Nokia_Parameters]")
+#     cur.execute(f"DELETE FROM [{schema}].[class_map]")
+#     conn.commit()
+
+#     print("🗑 Old data cleared.\n")
+
+#     # ---------------- INSERT INTO Class_Map ----------------
+#     class_map = {
+#         "class": "Class",
+#         "class_map": "class_map"
+#     }
+
+#     insert_class_map = f"""
+#         INSERT INTO [{schema}].[class_map]
+#         ({','.join(f'[{v}]' for v in class_map.values())})
+#         VALUES ({','.join(['%s'] * len(class_map))})
+#     """
+
+#     for _, row in df_class_map.iterrows():
+#         values = [row.get(col) for col in class_map.keys()]
+#         cur.execute(insert_class_map, values)
+
+#     conn.commit()
+#     print("🟢 class_map inserted.\n")
+
+#     # ---------------- INSERT INTO Condition_Defination ----------------
+#     condition_map = {
+#         "condition_name": "Condition_name",
+#         "priority": "Priority",
+#         "class": "Class",
+#         "class_map": "class_map",
+#         "query": "Query"
+#     }
+
+#     insert_condition = f"""
+#         INSERT INTO [{schema}].[Condition_Defination]
+#         ({','.join(f'[{v}]' for v in condition_map.values())})
+#         VALUES ({','.join(['%s'] * len(condition_map))})
+#     """
+
+#     for _, row in df_condition.iterrows():
+#         values = [row.get(col) for col in condition_map.keys()]
+#         cur.execute(insert_condition, values)
+    
+
+#     conn.commit()
+#     print("🟢 Condition_Defination inserted.\n")
+
+#     # ---------------- INSERT INTO Parameters ----------------
+#     parameter_map = {
+#   "technology": "Technology",
+#   "parent": "Parent",
+#   "mo_class": "MO_Class",
+#   "abbreviated_name": "Abbreviated_Name",
+#   "full_name": "Full_Name",
+#   "description": "Description",
+#   "category": "Category",
+#   "condition_name": "Condition_name",
+#   "operator_recommended_value": "Operator_Recommended_Value",
+#   "data_type": "Data_Type",
+#   "son_enforced": "SON_Enforced",
+#   "priority": "Priority",
+#   "remarks": "Remarks",
+#   "last_updated_on": "Last_Updated_On",
+#   "total_count": "Total_Count",
+#   "meeting_criteria": "Meeting_Criteria",
+#   "percentage": "Percentage"
+# }
+
+
+#     insert_parameters = f"""
+#         INSERT INTO [{schema}].[Nokia_Parameters]
+#         ({','.join(f'[{v}]' for v in parameter_map.values())})
+#         VALUES ({','.join(['%s'] * len(parameter_map))})
+#     """
+
+#     for idx, row3 in df_parameters.iterrows():
+#         values = [clean_str(row3.get(col)) for col in parameter_map.keys()]
+
+        
+
+#         try:
+#             cur.execute(insert_parameters, values)
+#         except Exception as e:
+
+#             raise e
+#     conn.commit()
+#     conn.close()
+
+#     print("\n Upload completed successfully — No Float Error, No NULL Issue!")
+
+
+import pyodbc
+import pandas as pd
+import os
+
 def upload_excel_sheets_to_mssql(excel_path):
+
     print("\n============================")
     print("📄 Reading Excel File:", excel_path)
     print("============================\n")
 
-    # SHEET ORDER (as per your requirement)
-    df_parameters = pd.read_excel(excel_path, sheet_name=0)   # Nokia_Parameters
-    df_condition  = pd.read_excel(excel_path, sheet_name=1)   # Condition_Defination
-    df_class_map  = pd.read_excel(excel_path, sheet_name=2)   # Condition_Defination
+    if not os.path.exists(excel_path):
+        raise Exception("❌ Excel file not found")
 
-    # Normalize column names
-    df_condition.columns  = df_condition.columns.str.strip().str.lower().str.replace(" ", "_")
-    df_parameters.columns = df_parameters.columns.str.strip().str.lower().str.replace(" ", "_")
-    df_class_map.columns = df_class_map.columns.str.strip().str.lower().str.replace(" ", "_")
+    # ---------------- READ EXCEL ----------------
+    xls = pd.ExcelFile(excel_path)
 
-    print("🔍 SHEET-1 PARAMETERS HEADERS:", df_parameters.columns.tolist(), "\n")
-    print("🔍 SHEET-2 CONDITION HEADERS:", df_condition.columns.tolist(), "\n")
-    print("🔍 SHEET-3 CLASS MAP HEADERS:", df_class_map.columns.tolist(), "\n")
+    df_parameters = pd.read_excel(xls, sheet_name=0, dtype=str)
+    df_condition  = pd.read_excel(xls, sheet_name=1, dtype=str)
+    df_class_map  = pd.read_excel(xls, sheet_name=2, dtype=str)
 
-    # Replace NaN with None
-    df_condition  = df_condition.where(pd.notnull(df_condition), None)
-    df_parameters = df_parameters.where(pd.notnull(df_parameters), None)
-    df_class_map = df_class_map.where(pd.notnull(df_class_map), None)
+    print("🔍 PARAMETERS HEADERS:", df_parameters.columns.tolist())
+    print("🔍 CONDITION HEADERS:", df_condition.columns.tolist())
+    print("🔍 CLASS_MAP HEADERS:", df_class_map.columns.tolist())
 
-    # -------------------------------------------------------------------
-    # SAFE STRING CLEANER
-    # -------------------------------------------------------------------
-    def clean_str(val):
-        if val is None:
-            return None
-        if pd.isna(val):
-            return None
-        if isinstance(val, str):
-            v = val.strip().lower()
-            if v in ["nan", "none", "null", "-", ""]:
-                return None
-            return val.strip()
-        return val
+    # ---------------- CLEAN DATA ----------------
+    replace_map = {
+        "": None,
+        "nan": None,
+        "None": None,
+        "null": None,
+        "-": None
+    }
 
-    # -------------------------------------------------------------------
-    # FLOAT SAFE CLEANER (for float SQL columns)
-    # -------------------------------------------------------------------
-    def clean_float(val):
-        try:
-            if val is None:
-                return None
-            if isinstance(val, str):
-                v = val.replace(",", "").replace("%", "").strip()
-                if v == "" or v.lower() in ["nan", "none", "null", "-"]:
-                    return None
-                return float(v)
-            return float(val)
-        except:
-            return None
+    df_parameters = df_parameters.replace(replace_map)
+    df_condition  = df_condition.replace(replace_map)
+    df_class_map  = df_class_map.replace(replace_map)
 
-    # ---------------- APPLY CLEANING FOR FLOAT COLUMNS ----------------
-    float_cols_parameters = [
-        "coun_check", "percentage", "meeting_criteria", "total_count"
-    ]
+    # ------------------------------------------------
+    # PARAMETERS SHEET → COLUMN Q TAK
+    # ------------------------------------------------
+    df_parameters = df_parameters.iloc[:, :17]
 
-    for col in float_cols_parameters:
-        if col in df_parameters.columns:
-            df_parameters[col] = df_parameters[col].apply(clean_float)
-
-    # Condition_Defination FLOAT column
-    if "priority" in df_condition.columns:
-        df_condition["priority"] = df_condition["priority"].apply(clean_float)
-
-    # Clean string columns
-    df_parameters = df_parameters.applymap(clean_str)
-    df_condition  = df_condition.applymap(clean_str)
-    df_class_map = df_class_map.applymap(clean_str)
-
-    print("🧹 Cleaning completed.\n")
-
-    # ---------------- CONNECT DATABASE ----------------
-    conn = pymssql.connect(
-        server=mssql_host,
-        user=mssql_user,
-        password=mssql_pass,
-        database=mssql_db,
-        autocommit=True
+    # ---------------- CONNECT MSSQL ----------------
+    conn = pyodbc.connect(
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+        f"SERVER={mssql_host};"
+        f"DATABASE={mssql_db};"
+        f"UID={mssql_user};"
+        f"PWD={mssql_pass};"
+        "Encrypt=no;"
+        "TrustServerCertificate=yes;"
     )
-    cur = conn.cursor()
 
-    # Detect schema
-    cur.execute("""
-        SELECT TABLE_SCHEMA 
-        FROM INFORMATION_SCHEMA.TABLES 
+    cursor = conn.cursor()
+    cursor.fast_executemany = True
+
+    try:
+
+        # ======================================================
+        # SCHEMA DETECT
+        # ======================================================
+
+        cursor.execute("""
+        SELECT TABLE_SCHEMA
+        FROM INFORMATION_SCHEMA.TABLES
         WHERE TABLE_NAME = 'Nokia_Parameters'
-    """)
-    row = cur.fetchone()
+        """)
 
-    if not row:
-        raise Exception("❌ ERROR: SQL TABLE 'Nokia_Parameters' NOT FOUND!")
+        row = cursor.fetchone()
 
-    schema = row[0]
-    print(f"🟢 Using schema: {schema}")
+        if not row:
+            raise Exception("❌ ERROR: Nokia_Parameters table not found")
 
-    # ------- TRUNCATE DATA ONLY (NO DROP) ------
-    cur.execute(f"DELETE FROM [{schema}].[Condition_Defination]")
-    cur.execute(f"DELETE FROM [{schema}].[Nokia_Parameters]")
-    cur.execute(f"DELETE FROM [{schema}].[class_map]")
-    conn.commit()
+        schema = row[0]
 
-    print("🗑 Old data cleared.\n")
+        print(f"🟢 Using schema: {schema}")
 
-    # ---------------- INSERT INTO Class_Map ----------------
-    class_map = {
-        "class": "Class",
-        "class_map": "class_map"
-    }
+        # ======================================================
+        # CLEAR OLD DATA
+        # ======================================================
 
-    insert_class_map = f"""
+        print("🧹 Clearing old data...")
+
+        cursor.execute(f"DELETE FROM [{schema}].[class_map]")
+        cursor.execute(f"DELETE FROM [{schema}].[Condition_Defination]")
+        cursor.execute(f"DELETE FROM [{schema}].[Nokia_Parameters]")
+
+        conn.commit()
+
+        # ======================================================
+        # 1️⃣ INSERT CLASS_MAP
+        # ======================================================
+
+        class_map_cols = [
+            "Config_Id",
+            "Source",
+            "Target",
+            "Condition",
+            "Query"
+        ]
+
+        insert_class_map = f"""
         INSERT INTO [{schema}].[class_map]
-        ({','.join(f'[{v}]' for v in class_map.values())})
-        VALUES ({','.join(['%s'] * len(class_map))})
-    """
+        ([Config_Id],[Source],[Target],[Condition],[Query])
+        VALUES (?,?,?,?,?)
+        """
 
-    for _, row in df_class_map.iterrows():
-        values = [row.get(col) for col in class_map.keys()]
-        cur.execute(insert_class_map, values)
+        data_class_map = list(
+            df_class_map[class_map_cols]
+            .itertuples(index=False, name=None)
+        )
 
-    conn.commit()
-    print("🟢 class_map inserted.\n")
+        cursor.executemany(insert_class_map, data_class_map)
 
-    # ---------------- INSERT INTO Condition_Defination ----------------
-    condition_map = {
-        "condition_name": "Condition_name",
-        "priority": "Priority",
-        "class": "Class",
-        "class_map": "class_map",
-        "query": "Query"
-    }
+        inserted_class_map = len(data_class_map)
 
-    insert_condition = f"""
+        print(f"✅ class_map inserted: {inserted_class_map}")
+
+        # ======================================================
+        # 2️⃣ INSERT CONDITION_DEFINATION
+        # ======================================================
+
+        condition_cols = [
+            "Condition_name",
+            "Priority",
+            "Class",
+            "Class_Map",
+            "Query"
+        ]
+
+        insert_condition = f"""
         INSERT INTO [{schema}].[Condition_Defination]
-        ({','.join(f'[{v}]' for v in condition_map.values())})
-        VALUES ({','.join(['%s'] * len(condition_map))})
-    """
+        ([Condition_name],[Priority],[Class],[class_map],[Query])
+        VALUES (?,?,?,?,?)
+        """
 
-    for _, row in df_condition.iterrows():
-        values = [row.get(col) for col in condition_map.keys()]
-        cur.execute(insert_condition, values)
-    
+        data_condition = list(
+            df_condition[condition_cols]
+            .itertuples(index=False, name=None)
+        )
 
-    conn.commit()
-    print("🟢 Condition_Defination inserted.\n")
+        cursor.executemany(insert_condition, data_condition)
 
-    # ---------------- INSERT INTO Parameters ----------------
-    parameter_map = {
-  "technology": "Technology",
-  "parent": "Parent",
-  "mo_class": "MO_Class",
-  "abbreviated_name": "Abbreviated_Name",
-  "full_name": "Full_Name",
-  "description": "Description",
-  "category": "Category",
-  "condition_name": "Condition_name",
-  "operator_recommended_value": "Operator_Recommended_Value",
-  "data_type": "Data_Type",
-  "son_enforced": "SON_Enforced",
-  "priority": "Priority",
-  "remarks": "Remarks",
-  "last_updated_on": "Last_Updated_On",
-  "total_count": "Total_Count",
-  "meeting_criteria": "Meeting_Criteria",
-  "percentage": "Percentage"
-}
+        inserted_condition = len(data_condition)
 
+        print(f"✅ Condition_Defination inserted: {inserted_condition}")
 
-    insert_parameters = f"""
+        # ======================================================
+        # 3️⃣ INSERT PARAMETERS
+        # ======================================================
+
+        parameter_cols = df_parameters.columns.tolist()
+
+        insert_parameters = f"""
         INSERT INTO [{schema}].[Nokia_Parameters]
-        ({','.join(f'[{v}]' for v in parameter_map.values())})
-        VALUES ({','.join(['%s'] * len(parameter_map))})
-    """
+        ({','.join(f'[{c}]' for c in parameter_cols)})
+        VALUES ({','.join(['?'] * len(parameter_cols))})
+        """
 
-    for idx, row3 in df_parameters.iterrows():
-        values = [clean_str(row3.get(col)) for col in parameter_map.keys()]
+        data_parameters = list(
+            df_parameters[parameter_cols]
+            .itertuples(index=False, name=None)
+        )
 
-        
+        cursor.executemany(insert_parameters, data_parameters)
 
-        try:
-            cur.execute(insert_parameters, values)
-        except Exception as e:
+        inserted_parameters = len(data_parameters)
 
-            raise e
-    conn.commit()
-    conn.close()
+        print(f"✅ Nokia_Parameters inserted: {inserted_parameters}")
 
-    print("\n Upload completed successfully — No Float Error, No NULL Issue!")
+        conn.commit()
 
+    except Exception as e:
+
+        conn.rollback()
+
+        raise Exception(f"❌ Upload Failed: {str(e)}")
+
+    finally:
+
+        conn.close()
+
+    print("\n🎉 Excel Upload Completed Successfully\n")
+
+    return {
+        "class_map_inserted": inserted_class_map,
+        "condition_inserted": inserted_condition,
+        "parameters_inserted": inserted_parameters
+    }
 
 
 # process_zip_and_run_procedures("/root/ma/backend/code/uploads/enm_files_nokia_two/823dbad598344a9db8426ad27fcfb5b4_JK2.zip")

@@ -37,6 +37,10 @@ ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ssh.connect(ssh_host, username=ssh_user, password=ssh_pass)
 
+import pyodbc
+import pandas as pd
+import os
+
 
 def upload_setting_to_mssql(setting_file_path: str):
 
@@ -53,27 +57,19 @@ def upload_setting_to_mssql(setting_file_path: str):
     except Exception as e:
         raise Exception(f"❌ Unable to read setting file: {str(e)}")
 
-    # ---------------- SAFE STRING CLEANER ----------------
-    def clean_str(val):
-        if val is None or pd.isna(val):
-            return None
-        if isinstance(val, str):
-            v = val.strip()
-            if v.lower() in ["", "nan", "none", "null", "-"]:
-                return None
-            return v
-        return str(val)
-
     # ---------------- CONNECT MSSQL ----------------
-    conn = pymssql.connect(
-        server=mssql_host,
-        user=mssql_user,
-        password=mssql_pass,
-        database=mssql_db,
-        autocommit=True
+    conn = pyodbc.connect(
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+        f"SERVER={mssql_host};"
+        f"DATABASE={mssql_db};"
+        f"UID={mssql_user};"
+        f"PWD={mssql_pass};"
+        "Encrypt=no;"
+        "TrustServerCertificate=yes;"
     )
 
     cursor = conn.cursor()
+    cursor.fast_executemany = True
 
     try:
 
@@ -82,7 +78,7 @@ def upload_setting_to_mssql(setting_file_path: str):
         # ==================================================
         print("📥 Processing sheet: MO_Class")
 
-        df_mo = pd.read_excel(xls, "MO_Class")
+        df_mo = pd.read_excel(xls, "MO_Class", dtype=str)
 
         df_mo.columns = (
             df_mo.columns.str.strip()
@@ -96,8 +92,9 @@ def upload_setting_to_mssql(setting_file_path: str):
         if missing:
             raise Exception(f"❌ Missing columns in MO_Class sheet: {missing}")
 
-        df_mo = df_mo.applymap(clean_str)
-        df_mo = df_mo.where(pd.notnull(df_mo), None)
+        df_mo = df_mo.replace(
+            {"": None, "nan": None, "None": None, "null": None, "-": None}
+        )
 
         print("🧹 Clearing old data from [set].[MO_Class]")
         cursor.execute("DELETE FROM [set].[MO_Class]")
@@ -105,34 +102,27 @@ def upload_setting_to_mssql(setting_file_path: str):
         insert_sql = """
         INSERT INTO [set].[MO_Class]
         (MO_Class, Compare, Script)
-        VALUES (%s, %s, %s)
+        VALUES (?, ?, ?)
         """
 
-        inserted_mo = 0
+        df_mo = df_mo.dropna(subset=["mo_class", "compare", "script"])
 
-        for _, row in df_mo.iterrows():
+        data_mo = list(
+            df_mo[["mo_class", "compare", "script"]]
+            .itertuples(index=False, name=None)
+        )
 
-            if not row["mo_class"] or not row["compare"] or not row["script"]:
-                continue
+        cursor.executemany(insert_sql, data_mo)
 
-            cursor.execute(
-                insert_sql,
-                (
-                    row["mo_class"],
-                    row["compare"],
-                    row["script"]
-                )
-            )
-
-            inserted_mo += 1
-
+        inserted_mo = len(data_mo)
 
         # ==================================================
         # 2️⃣ EXCLUSIONS SHEET
         # ==================================================
         print("📥 Processing sheet: Exclusions")
 
-        df_ex = pd.read_excel(xls, "Exclusions")
+        df_ex = pd.read_excel(xls, "Exclusions", dtype=str)
+
         print("Raw Exclusions rows:", len(df_ex))
 
         df_ex.columns = (
@@ -141,41 +131,38 @@ def upload_setting_to_mssql(setting_file_path: str):
             .str.replace(" ", "_")
         )
 
+        print("Cleaned Exclusions columns:", df_ex.columns.tolist())
+
         required_cols = ["mo_class", "parameter"]
 
         missing = [c for c in required_cols if c not in df_ex.columns]
         if missing:
             raise Exception(f"❌ Missing columns in Exclusions sheet: {missing}")
 
-        df_ex = df_ex.applymap(clean_str)
-        df_ex = df_ex.where(pd.notnull(df_ex), None)
+        df_ex = df_ex.replace(
+            {"": None, "nan": None, "None": None, "null": None, "-": None}
+        )
 
         print("🧹 Clearing old data from [set].[Exclusions]")
         cursor.execute("DELETE FROM [set].[Exclusions]")
+        print("🧹 Old Exclusions cleared")
 
         insert_sql = """
         INSERT INTO [set].[Exclusions]
         (MO_Class, Parameters)
-        VALUES (%s, %s)
+        VALUES (?, ?)
         """
 
-        inserted_ex = 0
+        df_ex = df_ex.dropna(subset=["mo_class", "parameter"])
 
-        for _, row in df_ex.iterrows():
+        data_ex = list(
+            df_ex[["mo_class", "parameter"]]
+            .itertuples(index=False, name=None)
+        )
 
-            if not row["mo_class"] or not row["parameter"]:
-                continue
+        cursor.executemany(insert_sql, data_ex)
 
-            cursor.execute(
-                insert_sql,
-                (
-                    row["mo_class"],
-                    row["parameter"]
-                )
-            )
-
-            inserted_ex += 1
-
+        inserted_ex = len(data_ex)
 
         conn.commit()
 
@@ -195,8 +182,6 @@ def upload_setting_to_mssql(setting_file_path: str):
         "mo_class_inserted": inserted_mo,
         "exclusions_inserted": inserted_ex
     }
-
-
 def run_eric_compare_file(old_zip_path: str, new_zip_path: str):
     """
     

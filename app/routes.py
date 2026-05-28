@@ -2290,6 +2290,7 @@ def run_gpl_audit_nokia_api():
         enm_files_file_path = os.path.join(os.path.join(UPLOAD_FOLDER,"enm_files_nokia"), enm_files_unique_filename)
         enm_files.save(enm_files_file_path)
         nga.process_xml_and_audit(enm_files_file_path)
+        # sdhbfksjdfkjsdfjk
         
         
         exported_excel_path = os.path.join(
